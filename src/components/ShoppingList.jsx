@@ -28,16 +28,184 @@ function ShoppingList({ weekPlan }) {
           if (!ingredients[key]) {
             ingredients[key] = {
               name: ingredient.name,
-              quantities: [ingredient.quantity]
+              quantities: [ingredient.quantity],
+              totalQuantity: parseQuantity(ingredient.quantity)
             };
           } else {
             ingredients[key].quantities.push(ingredient.quantity);
+            
+            // Try to add to the total quantity if possible
+            const parsedQuantity = parseQuantity(ingredient.quantity);
+            if (parsedQuantity && ingredients[key].totalQuantity) {
+              // Normalize units for comparison
+              const normalizedCurrentUnit = normalizeUnit(ingredients[key].totalQuantity.unit);
+              const normalizedNewUnit = normalizeUnit(parsedQuantity.unit);
+              
+              // Only add if normalized units match or both are unitless
+              if (normalizedCurrentUnit === normalizedNewUnit) {
+                ingredients[key].totalQuantity.value += parsedQuantity.value;
+                // Keep the original unit format from the first occurrence
+              } else {
+                // Units don't match, can't sum
+                ingredients[key].totalQuantity = null;
+              }
+            }
           }
         });
       });
     });
     
     setShoppingList(ingredients);
+  };
+
+  // Helper function to normalize units for comparison
+  const normalizeUnit = (unit) => {
+    if (!unit) return '';
+    
+    const unitLower = unit.toLowerCase().trim();
+    
+    // Handle Spanish abbreviations and variations
+    if (unitLower === 'cda' || unitLower === 'cdas' || unitLower === 'cucharada' || unitLower === 'cucharadas') {
+      return 'cda';
+    }
+    if (unitLower === 'cdta' || unitLower === 'cdtas' || unitLower === 'cucharadita' || unitLower === 'cucharaditas') {
+      return 'cdta';
+    }
+    if (unitLower === 'tza' || unitLower === 'tzas' || unitLower === 'taza' || unitLower === 'tazas') {
+      return 'tza';
+    }
+    
+    // Handle English units
+    if (unitLower === 'tbsp' || unitLower === 'tablespoon' || unitLower === 'tablespoons') {
+      return 'tbsp';
+    }
+    if (unitLower === 'tsp' || unitLower === 'teaspoon' || unitLower === 'teaspoons') {
+      return 'tsp';
+    }
+    if (unitLower === 'cup' || unitLower === 'cups') {
+      return 'cup';
+    }
+    
+    // Return the original unit if no normalization is needed
+    return unitLower;
+  };
+
+  // Helper function to parse quantity strings like "150g", "2 cups", "1/2 cup", "1", "1/2", "2 1/2 tzas", "1 cda", etc.
+  const parseQuantity = (quantityStr) => {
+    // Trim the input
+    const trimmed = quantityStr.trim();
+    
+    // Handle simple numeric values (e.g., "1", "2")
+    if (/^\d+$/.test(trimmed)) {
+      return { value: parseInt(trimmed), unit: '' };
+    }
+    
+    // Handle simple fractions without units (e.g., "1/2")
+    const simpleFractionMatch = trimmed.match(/^(\d+)\/(\d+)$/);
+    if (simpleFractionMatch) {
+      const numerator = parseInt(simpleFractionMatch[1]);
+      const denominator = parseInt(simpleFractionMatch[2]);
+      
+      if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+        return { value: numerator / denominator, unit: '' };
+      }
+    }
+    
+    // Handle mixed numbers with units (e.g., "2 1/2 tzas")
+    const mixedNumberWithUnitMatch = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)\s+(.+)$/);
+    if (mixedNumberWithUnitMatch) {
+      const whole = parseInt(mixedNumberWithUnitMatch[1]);
+      const numerator = parseInt(mixedNumberWithUnitMatch[2]);
+      const denominator = parseInt(mixedNumberWithUnitMatch[3]);
+      const unit = mixedNumberWithUnitMatch[4];
+      
+      if (!isNaN(whole) && !isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+        return { value: whole + (numerator / denominator), unit };
+      }
+    }
+    
+    // Handle fractions with units (e.g., "1/2 cup")
+    const fractionWithUnitMatch = trimmed.match(/^(\d+)\/(\d+)\s+(.+)$/);
+    if (fractionWithUnitMatch) {
+      const numerator = parseInt(fractionWithUnitMatch[1]);
+      const denominator = parseInt(fractionWithUnitMatch[2]);
+      const unit = fractionWithUnitMatch[3];
+      
+      if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+        return { value: numerator / denominator, unit };
+      }
+    }
+    
+    // Handle number with units (e.g., "150g", "1.5 cups", "2 tzas", "1 cda")
+    const numberWithUnitMatch = trimmed.match(/^([\d.]+)\s*(.+)$/);
+    if (numberWithUnitMatch) {
+      const value = parseFloat(numberWithUnitMatch[1]);
+      const unit = numberWithUnitMatch[2];
+      
+      if (!isNaN(value)) {
+        return { value, unit };
+      }
+    }
+    
+    return null;
+  };
+
+  // Format the quantity for display
+  const formatQuantity = (item) => {
+    if (item.totalQuantity) {
+      const { value, unit } = item.totalQuantity;
+      
+      // Format based on unit type
+      if (unit === '') {
+        // For unitless quantities, handle fractions nicely
+        if (value === 0.5) return "1/2";
+        if (value === 0.25) return "1/4";
+        if (value === 0.75) return "3/4";
+        if (Math.floor(value) !== value) {
+          // Try to convert to a mixed number if appropriate
+          const whole = Math.floor(value);
+          const fraction = value - whole;
+          
+          if (whole > 0) {
+            if (Math.abs(fraction - 0.5) < 0.01) return `${whole} 1/2`;
+            if (Math.abs(fraction - 0.25) < 0.01) return `${whole} 1/4`;
+            if (Math.abs(fraction - 0.75) < 0.01) return `${whole} 3/4`;
+          } else {
+            if (Math.abs(fraction - 0.5) < 0.01) return "1/2";
+            if (Math.abs(fraction - 0.25) < 0.01) return "1/4";
+            if (Math.abs(fraction - 0.75) < 0.01) return "3/4";
+          }
+        }
+        // For other values, use decimal or whole number
+        return value % 1 === 0 ? Math.round(value).toString() : value.toFixed(2);
+      } else {
+        // For units like "tzas", "cup", etc.
+        // Handle common fractions and mixed numbers
+        const whole = Math.floor(value);
+        const fraction = value - whole;
+        
+        if (whole === 0) {
+          // Just a fraction
+          if (Math.abs(fraction - 0.5) < 0.01) return `1/2 ${unit}`;
+          if (Math.abs(fraction - 0.25) < 0.01) return `1/4 ${unit}`;
+          if (Math.abs(fraction - 0.75) < 0.01) return `3/4 ${unit}`;
+        } else if (Math.abs(fraction) < 0.01) {
+          // Just a whole number
+          return `${whole} ${unit}`;
+        } else {
+          // Mixed number
+          if (Math.abs(fraction - 0.5) < 0.01) return `${whole} 1/2 ${unit}`;
+          if (Math.abs(fraction - 0.25) < 0.01) return `${whole} 1/4 ${unit}`;
+          if (Math.abs(fraction - 0.75) < 0.01) return `${whole} 3/4 ${unit}`;
+        }
+        
+        // For other values, use decimal
+        return `${value % 1 === 0 ? whole : value.toFixed(2)} ${unit}`;
+      }
+    }
+    
+    // Fall back to the original quantities if we couldn't parse and sum them
+    return item.quantities.join(', ');
   };
 
   const exportToPDF = () => {
@@ -68,7 +236,7 @@ function ShoppingList({ weekPlan }) {
             <li style="padding: 8px 0; border-bottom: 1px solid #E5E7EB;">
               <div style="display: flex; justify-content: space-between;">
                 <span style="font-weight: bold;">${item.name}</span>
-                <span style="color: #6B7280;">${item.quantities.join(', ')}</span>
+                <span style="color: #6B7280;">${formatQuantity(item)}</span>
               </div>
             </li>
           `).join('')}
@@ -125,7 +293,7 @@ function ShoppingList({ weekPlan }) {
                   <div className="flex justify-between">
                     <span className="font-medium">{item.name}</span>
                     <span className="text-gray-600">
-                      {item.quantities.join(', ')}
+                      {formatQuantity(item)}
                     </span>
                   </div>
                 </li>
