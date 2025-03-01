@@ -6,6 +6,16 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
     // Use the original diet plan days
     return dietPlan.days;
   });
+  
+  // Track expanded meal states
+  const [expandedMeals, setExpandedMeals] = useState({});
+
+  const toggleMealExpand = (mealId) => {
+    setExpandedMeals(prev => ({
+      ...prev,
+      [mealId]: !prev[mealId]
+    }));
+  };
 
   const addDayToWeekday = (dayPlan, weekdayId) => {
     // Create a copy of the meals from the day plan
@@ -41,7 +51,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
     <div className="mb-8">
       <h2 className="text-2xl font-bold mb-4">Meal Planner</h2>
       <p className="mb-4 text-gray-600">
-        Select a full day meal plan and assign it to a day of the week.
+        Select a full day meal plan and assign it to a day of the week. Click on a meal to see its ingredients.
       </p>
       
       <div className="flex flex-col lg:flex-row gap-6">
@@ -58,11 +68,37 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
                 
                 <div className="space-y-3 mb-4">
                   {dayPlan.meals.map((meal) => (
-                    <div key={meal.id} className="bg-white p-3 rounded shadow-sm">
-                      <p className="font-medium">{meal.name}</p>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {meal.ingredients.length} ingredients
+                    <div 
+                      key={meal.id} 
+                      className="bg-white p-3 rounded shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => toggleMealExpand(meal.id)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <p className="font-medium">{meal.name}</p>
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className={`h-4 w-4 text-gray-500 transition-transform ${expandedMeals[meal.id] ? 'transform rotate-180' : ''}`} 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                       </div>
+                      
+                      {expandedMeals[meal.id] && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs font-semibold text-gray-600 mb-2">Ingredients:</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            {meal.ingredients.map((ingredient, idx) => (
+                              <li key={idx} className="flex justify-between">
+                                <span>{ingredient.name}</span>
+                                <span className="text-gray-500">{ingredient.quantity}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -102,8 +138,37 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
                     <>
                       <div className="space-y-3 mb-3">
                         {weekPlan[weekday.id].map((meal) => (
-                          <div key={meal.id} className="bg-gray-50 p-2 rounded border border-gray-100">
-                            <p className="font-medium text-sm">{meal.name}</p>
+                          <div 
+                            key={meal.id} 
+                            className="bg-gray-50 p-2 rounded border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors"
+                            onClick={() => toggleMealExpand(meal.id)}
+                          >
+                            <div className="flex justify-between items-center">
+                              <p className="font-medium text-sm">{meal.name}</p>
+                              <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className={`h-3 w-3 text-gray-500 transition-transform ${expandedMeals[meal.id] ? 'transform rotate-180' : ''}`} 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                            
+                            {expandedMeals[meal.id] && (
+                              <div className="mt-2 pt-2 border-t border-gray-200">
+                                <p className="text-xs font-semibold text-gray-600 mb-1">Ingredients:</p>
+                                <ul className="text-xs text-gray-600 space-y-1">
+                                  {meal.ingredients.map((ingredient, idx) => (
+                                    <li key={idx} className="flex justify-between">
+                                      <span>{ingredient.name}</span>
+                                      <span className="text-gray-500">{ingredient.quantity}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
