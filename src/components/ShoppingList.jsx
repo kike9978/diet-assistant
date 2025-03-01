@@ -3,6 +3,7 @@ import html2pdf from 'html2pdf.js';
 
 function ShoppingList({ weekPlan }) {
   const [shoppingList, setShoppingList] = useState({});
+  const [groupedShoppingList, setGroupedShoppingList] = useState({});
   const [pdfState, setPdfState] = useState({
     isGenerating: false,
     error: null,
@@ -12,9 +13,34 @@ function ShoppingList({ weekPlan }) {
   // Create a ref for the PDF content
   const pdfContentRef = useRef(null);
 
+  // Define food categories
+  const categories = {
+    'Verduras': ['lechuga', 'tomate', 'cebolla', 'zanahoria', 'espinaca', 'pepino', 'pimiento', 'calabacín', 'brócoli', 'coliflor', 'ajo', 'champiñones', 'apio', 'berenjena', 'alcachofa', 'espárragos', 'rábano', 'col', 'acelga', 'puerro', 'calabaza', 'rúcula', 'jitomate', 'chile', 'chayote', 'nopales', 'elote', 'ejotes', 'chícharos', 'jícama'],
+    
+    'Alimentos de origen animal': ['pollo', 'res', 'cerdo', 'pescado', 'atún', 'salmón', 'camarones', 'huevo', 'leche', 'yogur', 'queso', 'requesón', 'jamón', 'pavo', 'salchicha', 'tocino', 'chorizo', 'sardinas', 'cabra', 'cordero', 'conejo', 'pato', 'ternera', 'bacalao', 'trucha', 'pulpo', 'calamar', 'langosta', 'cangrejo', 'mejillones'],
+    
+    'Frutas': ['manzana', 'plátano', 'naranja', 'uva', 'fresa', 'piña', 'mango', 'sandía', 'melón', 'pera', 'durazno', 'kiwi', 'limón', 'lima', 'mandarina', 'ciruela', 'cereza', 'arándano', 'frambuesa', 'mora', 'coco', 'papaya', 'guayaba', 'granada', 'higo', 'maracuyá', 'lichi', 'aguacate', 'toronja', 'banana', 'berries'],
+    
+    'Aceites y grasas (sin proteína)': ['aceite de oliva', 'aceite vegetal', 'aceite de coco', 'aceite de girasol', 'aceite de canola', 'mantequilla', 'margarina', 'manteca', 'ghee', 'aceite de sésamo', 'aceite de aguacate', 'aceite de maíz', 'aceite de cacahuate', 'aceite de linaza', 'aceite de palma'],
+    
+    'Cereales y tubérculos': ['arroz', 'pasta', 'pan', 'avena', 'quinoa', 'maíz', 'trigo', 'cebada', 'centeno', 'amaranto', 'papa', 'camote', 'yuca', 'ñame', 'malanga', 'tapioca', 'harina', 'tortilla', 'cereal', 'galletas', 'bagel', 'muffin', 'panecillo', 'cuscús', 'bulgur', 'palomitas', 'tostada', 'granola'],
+    
+    'Leguminosas': ['frijol', 'lenteja', 'garbanzo', 'haba', 'soya', 'edamame', 'alubia', 'chícharo', 'cacahuate', 'judía', 'guisante', 'frijoles', 'lentejas', 'garbanzos', 'habas', 'alubias', 'guisantes'],
+    
+    'Aceites y grasas con proteína': ['almendra', 'nuez', 'cacahuate', 'avellana', 'pistacho', 'anacardo', 'nuez de brasil', 'nuez de macadamia', 'semilla de girasol', 'semilla de calabaza', 'semilla de chía', 'semilla de lino', 'tahini', 'mantequilla de maní', 'mantequilla de almendra', 'mantequilla de anacardo', 'crema de cacahuate']
+  };
+  
+  // Add a catch-all category
+  const otherCategoryName = 'Otros ingredientes';
+
   useEffect(() => {
     generateShoppingList();
   }, [weekPlan]);
+
+  useEffect(() => {
+    // Group ingredients by category when shopping list changes
+    groupIngredientsByCategory();
+  }, [shoppingList]);
 
   const generateShoppingList = () => {
     const ingredients = {};
@@ -56,6 +82,49 @@ function ShoppingList({ weekPlan }) {
     });
     
     setShoppingList(ingredients);
+  };
+
+  const groupIngredientsByCategory = () => {
+    const grouped = {};
+    
+    // Initialize categories
+    Object.keys(categories).forEach(category => {
+      grouped[category] = [];
+    });
+    grouped[otherCategoryName] = [];
+    
+    // Categorize each ingredient
+    Object.values(shoppingList).forEach(item => {
+      let categorized = false;
+      const itemNameLower = item.name.toLowerCase();
+      
+      // Check each category's keywords
+      for (const [category, keywords] of Object.entries(categories)) {
+        // Check if the item name contains or matches any of the category keywords
+        for (const keyword of keywords) {
+          if (itemNameLower.includes(keyword) || keyword.includes(itemNameLower)) {
+            grouped[category].push(item);
+            categorized = true;
+            break;
+          }
+        }
+        if (categorized) break;
+      }
+      
+      // If not categorized, add to "Other"
+      if (!categorized) {
+        grouped[otherCategoryName].push(item);
+      }
+    });
+    
+    // Remove empty categories
+    Object.keys(grouped).forEach(category => {
+      if (grouped[category].length === 0) {
+        delete grouped[category];
+      }
+    });
+    
+    setGroupedShoppingList(grouped);
   };
 
   // Helper function to normalize units for comparison
@@ -229,24 +298,30 @@ function ShoppingList({ weekPlan }) {
     const pdfContent = document.createElement('div');
     pdfContent.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 16px;">Shopping List</h1>
-        <h2 style="font-size: 18px; margin-bottom: 12px;">Ingredients to Buy (${Object.keys(shoppingList).length})</h2>
-        <ul style="list-style: none; padding: 0;">
-          ${Object.values(shoppingList).map(item => `
-            <li style="padding: 8px 0; border-bottom: 1px solid #E5E7EB;">
-              <div style="display: flex; justify-content: space-between;">
-                <span style="font-weight: bold;">${item.name}</span>
-                <span style="color: #6B7280;">${formatQuantity(item)}</span>
-              </div>
-            </li>
-          `).join('')}
-        </ul>
+        <h1 style="color: #4F46E5; font-size: 24px; margin-bottom: 16px;">Lista de Compras</h1>
+        <h2 style="font-size: 18px; margin-bottom: 12px;">Ingredientes (${Object.keys(shoppingList).length})</h2>
+        
+        ${Object.entries(groupedShoppingList).map(([category, items]) => `
+          <div style="margin-bottom: 16px;">
+            <h3 style="font-size: 16px; color: #4F46E5; margin-bottom: 8px;">${category} (${items.length})</h3>
+            <ul style="list-style: none; padding: 0;">
+              ${items.map(item => `
+                <li style="padding: 8px 0; border-bottom: 1px solid #E5E7EB;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="font-weight: bold;">${item.name}</span>
+                    <span style="color: #6B7280;">${formatQuantity(item)}</span>
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `).join('')}
       </div>
     `;
     
     const opt = {
       margin: 1,
-      filename: 'shopping-list.pdf',
+      filename: 'lista-de-compras.pdf',
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
@@ -279,26 +354,32 @@ function ShoppingList({ weekPlan }) {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Shopping List</h2>
+      <h2 className="text-2xl font-bold mb-4">Lista de Compras</h2>
       
       {ingredientCount === 0 ? (
-        <p className="text-gray-500">Add meals to your week plan to generate a shopping list.</p>
+        <p className="text-gray-500">Agrega comidas a tu plan semanal para generar una lista de compras.</p>
       ) : (
         <>
           <div id="shopping-list-content" ref={pdfContentRef} className="mb-6">
-            <h3 className="text-xl font-semibold mb-3">Ingredients to Buy ({ingredientCount})</h3>
-            <ul className="divide-y divide-gray-200">
-              {Object.values(shoppingList).map((item, index) => (
-                <li key={index} className="py-3">
-                  <div className="flex justify-between">
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-gray-600">
-                      {formatQuantity(item)}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <h3 className="text-xl font-semibold mb-3">Ingredientes ({ingredientCount})</h3>
+            
+            {Object.entries(groupedShoppingList).map(([category, items]) => (
+              <div key={category} className="mb-6">
+                <h4 className="text-lg font-medium text-indigo-600 mb-2">{category} ({items.length})</h4>
+                <ul className="divide-y divide-gray-200">
+                  {items.map((item, index) => (
+                    <li key={index} className="py-3">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{item.name}</span>
+                        <span className="text-gray-600">
+                          {formatQuantity(item)}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
           
           <div className="space-y-3">
@@ -315,9 +396,9 @@ function ShoppingList({ weekPlan }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Generating PDF...
+                  Generando PDF...
                 </>
-              ) : 'Export to PDF'}
+              ) : 'Exportar a PDF'}
             </button>
             
             {pdfState.error && (
@@ -328,7 +409,7 @@ function ShoppingList({ weekPlan }) {
             
             {pdfState.success && (
               <div className="p-3 bg-green-100 text-green-700 rounded-md text-sm">
-                PDF generated successfully!
+                ¡PDF generado exitosamente!
               </div>
             )}
           </div>
