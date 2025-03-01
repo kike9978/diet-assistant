@@ -2,44 +2,32 @@ import { useState } from 'react';
 import { PlusIcon } from './Icons';
 
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
-  const [availableMeals, setAvailableMeals] = useState(() => {
-    // Transform diet plan days into a flat list of meals with unique IDs
-    return dietPlan.days.flatMap(day => 
-      day.meals.map(meal => ({
-        ...meal,
-        dayId: day.id,
-        dayName: day.name
-      }))
-    );
+  const [availableDays, setAvailableDays] = useState(() => {
+    // Use the original diet plan days
+    return dietPlan.days;
   });
 
-  const addMealToDay = (meal, dayId) => {
-    const mealToAdd = { 
-      ...meal, 
-      id: `${meal.id}-${Date.now()}` 
-    };
+  const addDayToWeekday = (dayPlan, weekdayId) => {
+    // Create a copy of the meals from the day plan
+    const mealsToAdd = dayPlan.meals.map(meal => ({
+      ...meal,
+      id: `${meal.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
     
     setWeekPlan(prev => ({
       ...prev,
-      [dayId]: [...prev[dayId], mealToAdd]
+      [weekdayId]: mealsToAdd
     }));
   };
 
-  const duplicateMeal = (meal) => {
-    const duplicatedMeal = {
-      ...meal,
-      id: `${meal.id}-${Date.now()}`
-    };
-    setAvailableMeals(prev => [...prev, duplicatedMeal]);
+  const clearDay = (weekdayId) => {
+    setWeekPlan(prev => ({
+      ...prev,
+      [weekdayId]: []
+    }));
   };
 
-  const removeMealFromDay = (day, index) => {
-    const newWeekPlan = { ...weekPlan };
-    newWeekPlan[day].splice(index, 1);
-    setWeekPlan(newWeekPlan);
-  };
-
-  const days = [
+  const weekdays = [
     { id: 'monday', name: 'Monday' },
     { id: 'tuesday', name: 'Tuesday' },
     { id: 'wednesday', name: 'Wednesday' },
@@ -53,44 +41,45 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
     <div className="mb-8">
       <h2 className="text-2xl font-bold mb-4">Meal Planner</h2>
       <p className="mb-4 text-gray-600">
-        Select meals from the available meals to plan your week. You can duplicate meals if needed.
+        Select a full day meal plan and assign it to a day of the week.
       </p>
       
-      <div className="flex flex-col lg:flex-row gap-4">
-        {/* Available Meals */}
-        <div className="lg:w-1/4 bg-white p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-3">Available Meals</h3>
-          <div className="min-h-[200px]">
-            {availableMeals.map((meal) => (
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Available Day Plans */}
+        <div className="lg:w-1/3 bg-white p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-3">Available Day Plans</h3>
+          <div className="space-y-6">
+            {availableDays.map((dayPlan) => (
               <div
-                key={meal.id}
-                className="bg-indigo-50 p-3 mb-2 rounded border border-indigo-100 group"
+                key={dayPlan.id}
+                className="bg-indigo-50 p-4 rounded-lg border border-indigo-100"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium">{meal.name}</p>
-                    <p className="text-xs text-gray-500">{meal.dayName}</p>
-                  </div>
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={() => duplicateMeal(meal)}
-                      className="text-gray-400 hover:text-indigo-600 p-1"
-                      title="Duplicate meal"
-                    >
-                      <PlusIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {days.map(day => (
-                    <button
-                      key={day.id}
-                      onClick={() => addMealToDay(meal, day.id)}
-                      className="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-2 py-1 rounded"
-                    >
-                      {day.name.substring(0, 3)}
-                    </button>
+                <h4 className="font-bold text-indigo-700 mb-2">{dayPlan.name}</h4>
+                
+                <div className="space-y-3 mb-4">
+                  {dayPlan.meals.map((meal) => (
+                    <div key={meal.id} className="bg-white p-3 rounded shadow-sm">
+                      <p className="font-medium">{meal.name}</p>
+                      <div className="mt-1 text-xs text-gray-500">
+                        {meal.ingredients.length} ingredients
+                      </div>
+                    </div>
                   ))}
+                </div>
+                
+                <div className="mt-3">
+                  <p className="text-sm font-medium mb-2">Assign to:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {weekdays.map(weekday => (
+                      <button
+                        key={weekday.id}
+                        onClick={() => addDayToWeekday(dayPlan, weekday.id)}
+                        className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded"
+                      >
+                        {weekday.name.substring(0, 3)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -98,33 +87,38 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
         </div>
         
         {/* Week Plan */}
-        <div className="lg:w-3/4 overflow-x-auto">
-          <div className="flex space-x-4 min-w-max">
-            {days.map(day => (
-              <div key={day.id} className="w-64 flex-shrink-0">
-                <h3 className="text-lg font-semibold mb-2 bg-indigo-600 text-white p-2 rounded-t-lg">
-                  {day.name}
+        <div className="lg:w-2/3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {weekdays.map(weekday => (
+              <div key={weekday.id} className="bg-white rounded-lg shadow overflow-hidden">
+                <h3 className="text-lg font-semibold bg-indigo-600 text-white p-2">
+                  {weekday.name}
                 </h3>
-                <div className="bg-white p-3 rounded-b-lg shadow min-h-[400px]">
-                  {weekPlan[day.id].map((meal, index) => (
-                    <div
-                      key={meal.id}
-                      className="bg-white p-3 mb-2 rounded border border-gray-200 shadow-sm hover:shadow group"
-                    >
-                      <div className="flex justify-between items-start">
-                        <p className="font-medium">{meal.name}</p>
-                        <button
-                          onClick={() => removeMealFromDay(day.id, index)}
-                          className="text-gray-400 hover:text-red-600 p-1"
-                          title="Remove meal"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                
+                <div className="p-3 min-h-[250px]">
+                  {weekPlan[weekday.id].length === 0 ? (
+                    <p className="text-gray-400 text-center mt-8">No meals assigned</p>
+                  ) : (
+                    <>
+                      <div className="space-y-3 mb-3">
+                        {weekPlan[weekday.id].map((meal) => (
+                          <div key={meal.id} className="bg-gray-50 p-2 rounded border border-gray-100">
+                            <p className="font-medium text-sm">{meal.name}</p>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
+                      
+                      <button
+                        onClick={() => clearDay(weekday.id)}
+                        className="w-full mt-2 text-xs text-red-600 hover:text-red-800 flex items-center justify-center py-1"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Clear day
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
