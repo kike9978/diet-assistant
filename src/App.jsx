@@ -58,6 +58,10 @@ function App() {
     setShowLanding(true)
   }
 
+  const updateDietPlan = (updatedPlan) => {
+    setDietPlan(updatedPlan)
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-indigo-600 text-white p-4 shadow-md">
@@ -94,6 +98,7 @@ function App() {
                 dietPlan={dietPlan} 
                 weekPlan={weekPlan} 
                 setWeekPlan={setWeekPlan} 
+                setDietPlan={updateDietPlan} 
               />
             </div>
             

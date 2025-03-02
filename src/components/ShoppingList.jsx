@@ -58,6 +58,7 @@ function ShoppingList({ weekPlan }) {
     'arroz': ['arroz', 'arroz blanco', 'arroz integral'],
     'frijol': ['frijol', 'frijoles', 'frijoles negros', 'frijoles pintos'],
     'queso panela': ['queso panela', 'queso panela en cubos', 'queso panela para espolvorear', 'queso panela rebanado', 'queso panela rallado'],
+    'queso mozzarella': ['queso mozzarella', 'queso mozzarella rallado', 'queso mozzarella fresco', 'mozzarella'],
     'queso': ['queso', 'queso fresco', 'queso oaxaca', 'queso manchego']
   };
 
@@ -68,6 +69,11 @@ function ShoppingList({ weekPlan }) {
     // Special case for queso panela
     if (lowerName.startsWith('queso panela')) {
       return 'queso panela';
+    }
+    
+    // Special case for queso mozzarella
+    if (lowerName.startsWith('queso mozzarella') || lowerName === 'mozzarella') {
+      return 'queso mozzarella';
     }
     
     // First, check for exact matches in our similar ingredients map
@@ -94,6 +100,134 @@ function ShoppingList({ weekPlan }) {
     
     // If no match found, return the original name
     return lowerName;
+  };
+
+  // Función para normalizar cantidades especiales
+  const normalizeSpecialQuantities = (quantity) => {
+    // Normalizar "c.s.", "c.s" y variantes similares
+    if (quantity.toLowerCase().includes('c.s') || 
+        quantity.toLowerCase().includes('cs') || 
+        quantity.toLowerCase().includes('cucharada sopera')) {
+      return 'c.s.';
+    }
+    
+    // Normalizar "c.c.", "c.c" y variantes similares (cucharada cafetera)
+    if (quantity.toLowerCase().includes('c.c') || 
+        quantity.toLowerCase().includes('cc') || 
+        quantity.toLowerCase().includes('cucharada cafetera')) {
+      return 'c.c.';
+    }
+    
+    // Normalizar "al gusto" y variantes
+    if (quantity.toLowerCase().includes('gusto') || 
+        quantity.toLowerCase() === 'g' || 
+        quantity.toLowerCase() === 'al g.') {
+      return 'al gusto';
+    }
+    
+    return quantity;
+  };
+
+  // Modificar la función que procesa los ingredientes para usar la normalización de cantidades especiales
+  const processIngredients = () => {
+    const processedList = {};
+    
+    // Iterate through each day in the week plan
+    Object.values(weekPlan).forEach(dayMeals => {
+      // Iterate through each meal in the day
+      dayMeals.forEach(meal => {
+        // Iterate through each ingredient in the meal
+        meal.ingredients.forEach(ingredient => {
+          const normalizedName = normalizeIngredientName(ingredient.name);
+          const normalizedQuantity = normalizeSpecialQuantities(ingredient.quantity);
+          
+          if (!processedList[normalizedName]) {
+            processedList[normalizedName] = {
+              name: normalizedName,
+              quantities: [normalizedQuantity],
+              variations: [ingredient.name]
+            };
+          } else {
+            // Add the quantity if it's not already in the list
+            if (!processedList[normalizedName].quantities.includes(normalizedQuantity)) {
+              processedList[normalizedName].quantities.push(normalizedQuantity);
+            }
+            
+            // Add the variation if it's not already in the list
+            if (!processedList[normalizedName].variations.includes(ingredient.name)) {
+              processedList[normalizedName].variations.push(ingredient.name);
+            }
+          }
+        });
+      });
+    });
+    
+    return processedList;
+  };
+
+  // Modificar la función formatQuantity para manejar casos especiales
+  const formatQuantity = (item) => {
+    // Casos especiales que no necesitan agregación
+    const specialCases = ['c.s.', 'c.c.', 'al gusto', 'pizca', 'pizcas'];
+    
+    // Si solo hay una cantidad y es un caso especial, mostrarla directamente
+    if (item.quantities.length === 1 && 
+        specialCases.some(special => item.quantities[0].toLowerCase().includes(special))) {
+      return item.quantities[0];
+    }
+    
+    // Filtrar cantidades especiales para que aparezcan solo una vez
+    const uniqueSpecialQuantities = item.quantities.filter(q => 
+      specialCases.some(special => q.toLowerCase().includes(special))
+    ).filter((value, index, self) => 
+      self.findIndex(q => 
+        specialCases.some(special => 
+          q.toLowerCase().includes(special) && 
+          value.toLowerCase().includes(special)
+        )
+      ) === index
+    );
+    
+    // Filtrar cantidades numéricas (no especiales)
+    const numericQuantities = item.quantities.filter(q => 
+      !specialCases.some(special => q.toLowerCase().includes(special))
+    );
+    
+    // Procesar cantidades numéricas
+    let processedNumericQuantities = [];
+    
+    // Si tenemos cantidades numéricas, procesarlas
+    if (numericQuantities.length > 0) {
+      // Special case for queso mozzarella to show total grams
+      if (item.name === 'queso mozzarella' && item.totalQuantity && 
+          item.totalQuantity.unit === 'gr' && item.variations.length > 1) {
+        processedNumericQuantities.push(`${item.totalQuantity.value} ${item.totalQuantity.unit}`);
+      }
+      // If we have a valid total quantity, format it
+      else if (item.totalQuantity) {
+        const value = item.totalQuantity.value;
+        const unit = item.totalQuantity.unit;
+        
+        // Format the value (round to 2 decimal places if needed)
+        const formattedValue = Number.isInteger(value) ? value : value.toFixed(2);
+        
+        // Handle pluralization for pieces (pza/pzas)
+        if (unit === 'pza') {
+          processedNumericQuantities.push(`${formattedValue} ${value === 1 ? 'pza' : 'pzas'}`);
+        } else {
+          processedNumericQuantities.push(`${formattedValue} ${unit}`);
+        }
+      }
+      // Si no podemos calcular una cantidad total, usar las cantidades originales
+      else {
+        processedNumericQuantities = [...numericQuantities];
+      }
+    }
+    
+    // Combinar cantidades numéricas procesadas con cantidades especiales únicas
+    const allQuantities = [...processedNumericQuantities, ...uniqueSpecialQuantities];
+    
+    return allQuantities.join(', ');
   };
 
   useEffect(() => {
@@ -221,147 +355,76 @@ function ShoppingList({ weekPlan }) {
     if (unitLower === 'tza' || unitLower === 'tzas' || unitLower === 'taza' || unitLower === 'tazas') {
       return 'tza';
     }
+    if (unitLower === 'pza' || unitLower === 'pzas' || unitLower === 'pieza' || unitLower === 'piezas') {
+      return 'pza';
+    }
+    if (unitLower === 'gr' || unitLower === 'g' || unitLower === 'gramo' || unitLower === 'gramos') {
+      return 'gr';
+    }
+    if (unitLower === 'ml' || unitLower === 'mililitro' || unitLower === 'mililitros') {
+      return 'ml';
+    }
+    if (unitLower === 'l' || unitLower === 'litro' || unitLower === 'litros') {
+      return 'l';
+    }
+    if (unitLower === 'kg' || unitLower === 'kilo' || unitLower === 'kilos' || unitLower === 'kilogramo' || unitLower === 'kilogramos') {
+      return 'kg';
+    }
     
-    // Handle English units
-    if (unitLower === 'tbsp' || unitLower === 'tablespoon' || unitLower === 'tablespoons') {
-      return 'tbsp';
-    }
-    if (unitLower === 'tsp' || unitLower === 'teaspoon' || unitLower === 'teaspoons') {
-      return 'tsp';
-    }
-    if (unitLower === 'cup' || unitLower === 'cups') {
-      return 'cup';
-    }
-    
-    // Return the original unit if no normalization is needed
     return unitLower;
   };
 
   // Helper function to parse quantity strings like "150g", "2 cups", "1/2 cup", "1", "1/2", "2 1/2 tzas", "1 cda", etc.
   const parseQuantity = (quantityStr) => {
-    // Trim the input
-    const trimmed = quantityStr.trim();
+    if (!quantityStr) return null;
     
-    // Handle simple numeric values (e.g., "1", "2")
-    if (/^\d+$/.test(trimmed)) {
-      return { value: parseInt(trimmed), unit: '' };
+    const quantityLower = quantityStr.toLowerCase().trim();
+    
+    // Handle fractions like "1/2"
+    const fractionMatch = quantityLower.match(/^(\d+)\/(\d+)\s*(.*?)$/);
+    if (fractionMatch) {
+      const numerator = parseInt(fractionMatch[1], 10);
+      const denominator = parseInt(fractionMatch[2], 10);
+      const unit = fractionMatch[3].trim();
+      
+      return {
+        value: numerator / denominator,
+        unit: unit || ''
+      };
     }
     
-    // Handle simple fractions without units (e.g., "1/2")
-    const simpleFractionMatch = trimmed.match(/^(\d+)\/(\d+)$/);
-    if (simpleFractionMatch) {
-      const numerator = parseInt(simpleFractionMatch[1]);
-      const denominator = parseInt(simpleFractionMatch[2]);
+    // Handle mixed numbers like "1 1/2"
+    const mixedMatch = quantityLower.match(/^(\d+)\s+(\d+)\/(\d+)\s*(.*?)$/);
+    if (mixedMatch) {
+      const whole = parseInt(mixedMatch[1], 10);
+      const numerator = parseInt(mixedMatch[2], 10);
+      const denominator = parseInt(mixedMatch[3], 10);
+      const unit = mixedMatch[4].trim();
       
-      if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
-        return { value: numerator / denominator, unit: '' };
-      }
+      return {
+        value: whole + (numerator / denominator),
+        unit: unit || ''
+      };
     }
     
-    // Handle mixed numbers with units (e.g., "2 1/2 tzas")
-    const mixedNumberWithUnitMatch = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)\s+(.+)$/);
-    if (mixedNumberWithUnitMatch) {
-      const whole = parseInt(mixedNumberWithUnitMatch[1]);
-      const numerator = parseInt(mixedNumberWithUnitMatch[2]);
-      const denominator = parseInt(mixedNumberWithUnitMatch[3]);
-      const unit = mixedNumberWithUnitMatch[4];
+    // Handle simple numbers like "2"
+    const simpleMatch = quantityLower.match(/^(\d+(?:\.\d+)?)\s*(.*?)$/);
+    if (simpleMatch) {
+      const value = parseFloat(simpleMatch[1]);
+      let unit = simpleMatch[2].trim();
       
-      if (!isNaN(whole) && !isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
-        return { value: whole + (numerator / denominator), unit };
+      // Normalize "pza" and "pzas" to a single unit for comparison
+      if (unit === 'pza' || unit === 'pzas') {
+        unit = 'pza';
       }
-    }
-    
-    // Handle fractions with units (e.g., "1/2 cup")
-    const fractionWithUnitMatch = trimmed.match(/^(\d+)\/(\d+)\s+(.+)$/);
-    if (fractionWithUnitMatch) {
-      const numerator = parseInt(fractionWithUnitMatch[1]);
-      const denominator = parseInt(fractionWithUnitMatch[2]);
-      const unit = fractionWithUnitMatch[3];
       
-      if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
-        return { value: numerator / denominator, unit };
-      }
-    }
-    
-    // Handle number with units (e.g., "150g", "1.5 cups", "2 tzas", "1 cda")
-    const numberWithUnitMatch = trimmed.match(/^([\d.]+)\s*(.+)$/);
-    if (numberWithUnitMatch) {
-      const value = parseFloat(numberWithUnitMatch[1]);
-      const unit = numberWithUnitMatch[2];
-      
-      if (!isNaN(value)) {
-        return { value, unit };
-      }
+      return {
+        value: value,
+        unit: unit
+      };
     }
     
     return null;
-  };
-
-  // Format the quantity for display
-  const formatQuantity = (item) => {
-    // If we have a valid total quantity, format it
-    if (item.totalQuantity) {
-      const { value, unit } = item.totalQuantity;
-      
-      // Format based on unit type
-      if (!unit) {
-        // For unitless values (e.g., "2", "1.5")
-        // Handle common fractions
-        const whole = Math.floor(value);
-        const fraction = value - whole;
-        
-        if (whole === 0) {
-          // Just a fraction
-          if (Math.abs(fraction - 0.5) < 0.01) {
-            return "1/2";
-          } else if (Math.abs(fraction - 0.25) < 0.01) {
-            return "1/4";
-          } else if (Math.abs(fraction - 0.75) < 0.01) {
-            return "3/4";
-          }
-        } else if (Math.abs(fraction) < 0.01) {
-          // Just a whole number
-          return whole.toString();
-        } else {
-          // Mixed number
-          if (Math.abs(fraction - 0.5) < 0.01) {
-            return `${whole} 1/2`;
-          } else if (Math.abs(fraction - 0.25) < 0.01) {
-            return `${whole} 1/4`;
-          } else if (Math.abs(fraction - 0.75) < 0.01) {
-            return `${whole} 3/4`;
-          }
-        }
-        // For other values, use decimal or whole number
-        return value % 1 === 0 ? Math.round(value).toString() : value.toFixed(2);
-      } else {
-        // For units like "tzas", "cup", etc.
-        // Handle common fractions and mixed numbers
-        const whole = Math.floor(value);
-        const fraction = value - whole;
-        
-        if (whole === 0) {
-          // Just a fraction
-          if (Math.abs(fraction - 0.5) < 0.01) return `1/2 ${unit}`;
-          if (Math.abs(fraction - 0.25) < 0.01) return `1/4 ${unit}`;
-          if (Math.abs(fraction - 0.75) < 0.01) return `3/4 ${unit}`;
-        } else if (Math.abs(fraction) < 0.01) {
-          // Just a whole number
-          return `${whole} ${unit}`;
-        } else {
-          // Mixed number
-          if (Math.abs(fraction - 0.5) < 0.01) return `${whole} 1/2 ${unit}`;
-          if (Math.abs(fraction - 0.25) < 0.01) return `${whole} 1/4 ${unit}`;
-          if (Math.abs(fraction - 0.75) < 0.01) return `${whole} 3/4 ${unit}`;
-        }
-        
-        // For other values, use decimal
-        return `${value % 1 === 0 ? whole : value.toFixed(2)} ${unit}`;
-      }
-    }
-    
-    // Fall back to the original quantities if we couldn't parse and sum them
-    return item.quantities.join(', ');
   };
 
   const exportToPDF = () => {
