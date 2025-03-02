@@ -10,22 +10,30 @@ function App() {
   const [weekPlan, setWeekPlan] = useState({})
   const [showLanding, setShowLanding] = useState(true)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [planId, setPlanId] = useState(() => {
+    // Intentar recuperar el ID del plan actual del localStorage
+    return localStorage.getItem('currentPlanId') || null;
+  })
 
   // Load saved data from localStorage on initial render
   useEffect(() => {
     const savedDietPlan = localStorage.getItem('dietPlan')
     const savedWeekPlan = localStorage.getItem('weekPlan')
+    const savedPlanId = localStorage.getItem('currentPlanId')
     
-    if (savedDietPlan && savedWeekPlan) {
+    if (savedDietPlan && savedWeekPlan && savedPlanId) {
       try {
         setDietPlan(JSON.parse(savedDietPlan))
         setWeekPlan(JSON.parse(savedWeekPlan))
+        setPlanId(savedPlanId)
         setShowLanding(false)
       } catch (error) {
         console.error('Error loading saved data:', error)
         // Clear potentially corrupted data
         localStorage.removeItem('dietPlan')
         localStorage.removeItem('weekPlan')
+        localStorage.removeItem('currentPlanId')
+        localStorage.removeItem('checkedItems')
       }
     }
   }, [])
@@ -43,9 +51,30 @@ function App() {
     }
   }, [weekPlan])
 
+  // Guardar el ID del plan actual en localStorage
+  useEffect(() => {
+    if (planId) {
+      localStorage.setItem('currentPlanId', planId)
+    }
+  }, [planId])
+
   const handleDietPlanUpload = (plan) => {
+    // Generar un nuevo ID único para este plan
+    const newPlanId = `plan_${Date.now()}`
+    
+    // Actualizar el estado
     setDietPlan(plan)
+    setWeekPlan({})
+    setPlanId(newPlanId)
     setShowLanding(false)
+    
+    // Guardar inmediatamente en localStorage
+    localStorage.setItem('dietPlan', JSON.stringify(plan))
+    localStorage.setItem('weekPlan', JSON.stringify({}))
+    localStorage.setItem('currentPlanId', newPlanId)
+    
+    // Limpiar los elementos marcados del plan anterior
+    localStorage.removeItem('checkedItems')
   }
 
   const handleClearAndReset = () => {
@@ -56,10 +85,13 @@ function App() {
     // Clear localStorage
     localStorage.removeItem('dietPlan')
     localStorage.removeItem('weekPlan')
+    localStorage.removeItem('currentPlanId')
+    localStorage.removeItem('checkedItems')
     
     // Reset state
     setDietPlan(null)
     setWeekPlan({})
+    setPlanId(null)
     setShowLanding(true)
     setShowResetConfirmation(false)
   }
