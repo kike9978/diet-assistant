@@ -27,7 +27,10 @@ function ShoppingList({ weekPlan }) {
   // Modificar el estado de la barra lateral para que esté cerrada por defecto
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Cargar el estado de los elementos marcados desde localStorage al iniciar
+  // Add a new state variable for source visibility
+  const [showSources, setShowSources] = useState(false);
+
+  // Load checked items from localStorage on initial render
   useEffect(() => {
     const savedCheckedItems = localStorage.getItem('checkedItems');
     if (savedCheckedItems) {
@@ -40,12 +43,96 @@ function ShoppingList({ weekPlan }) {
     }
   }, []);
 
-  // Guardar el estado de los elementos marcados en localStorage cuando cambie
+  // Save checked items to localStorage whenever they change
   useEffect(() => {
     if (Object.keys(checkedItems).length > 0) {
       localStorage.setItem('checkedItems', JSON.stringify(checkedItems));
     }
   }, [checkedItems]);
+
+  // Generate shopping list from week plan
+  useEffect(() => {
+    if (!weekPlan) return;
+
+    const newShoppingList = {};
+    let totalEstimatedBudget = 0;
+
+    // Process each day's meals
+    Object.values(weekPlan).forEach(meals => {
+      meals.forEach(meal => {
+        meal.ingredients.forEach(ingredient => {
+          const normalizedName = normalizeIngredientName(ingredient.name.toLowerCase());
+          
+          if (!newShoppingList[normalizedName]) {
+            newShoppingList[normalizedName] = {
+              name: ingredient.name,
+              normalizedName,
+              quantities: [ingredient.quantity],
+              totalQuantity: parseQuantity(ingredient.quantity),
+              variations: [ingredient.name.toLowerCase()]
+            };
+          } else {
+            // Add quantity
+            newShoppingList[normalizedName].quantities.push(ingredient.quantity);
+            newShoppingList[normalizedName].totalQuantity += parseQuantity(ingredient.quantity);
+            
+            // Add variation if it's a new one
+            if (!newShoppingList[normalizedName].variations.includes(ingredient.name.toLowerCase())) {
+              newShoppingList[normalizedName].variations.push(ingredient.name.toLowerCase());
+            }
+          }
+        });
+      });
+    });
+
+    // Group by category and calculate budget
+    const grouped = groupIngredientsByCategory(newShoppingList);
+    
+    // Calculate budget
+    Object.values(newShoppingList).forEach(item => {
+      const priceEstimate = estimatePrice(item);
+      if (priceEstimate && priceEstimate.price) {
+        totalEstimatedBudget += priceEstimate.price;
+      }
+    });
+
+    setShoppingList(newShoppingList);
+    setGroupedShoppingList(grouped);
+    setTotalBudget(Math.round(totalEstimatedBudget));
+  }, [weekPlan]);
+
+  // This is the key fix - preserve checked items when shopping list changes
+  useEffect(() => {
+    if (Object.keys(shoppingList).length === 0) return;
+    
+    // Get all current item keys in the shopping list
+    const currentItemKeys = new Set();
+    Object.entries(groupedShoppingList).forEach(([category, items]) => {
+      items.forEach(item => {
+        // Generate consistent keys for items
+        const itemKey = generateItemKey(category, item.normalizedName || item.name.toLowerCase());
+        currentItemKeys.add(itemKey);
+      });
+    });
+    
+    // Check if we need to update the checked items
+    let needsUpdate = false;
+    const updatedCheckedItems = {...checkedItems};
+    
+    // First, remove any checked items that no longer exist
+    Object.keys(updatedCheckedItems).forEach(key => {
+      if (!currentItemKeys.has(key)) {
+        delete updatedCheckedItems[key];
+        needsUpdate = true;
+      }
+    });
+    
+    // Only update if there are differences to avoid infinite loops
+    if (needsUpdate) {
+      setCheckedItems(updatedCheckedItems);
+      localStorage.setItem('checkedItems', JSON.stringify(updatedCheckedItems));
+    }
+  }, [groupedShoppingList]);
 
   // Define food categories
   const categories = {
@@ -53,7 +140,7 @@ function ShoppingList({ weekPlan }) {
     
     'Alimentos de origen animal': ['pollo', 'res', 'cerdo', 'pescado', 'atún', 'salmón', 'camarones', 'huevo', 'leche', 'yogur', 'queso', 'requesón', 'jamón', 'pavo', 'salchicha', 'tocino', 'chorizo', 'sardinas', 'cabra', 'cordero', 'conejo', 'pato', 'ternera', 'bacalao', 'trucha', 'pulpo', 'calamar', 'langosta', 'cangrejo', 'mejillones'],
     
-    'Frutas': ['manzana', 'plátano', 'naranja', 'uva', 'fresa', 'piña', 'mango', 'sandía', 'melón', 'pera', 'durazno', 'kiwi', 'limón', 'lima', 'mandarina', 'ciruela', 'cereza', 'arándano', 'frambuesa', 'mora', 'coco', 'papaya', 'guayaba', 'granada', 'higo', 'maracuyá', 'lichi', 'aguacate', 'toronja', 'banana', 'berries', 'guanábana'],
+    'Frutas': ['manzana', 'plátano', 'naranja', 'uva', 'fresa', "fresas", 'piña', 'mango', 'sandía', 'melón', 'pera', 'durazno', 'kiwi', 'limón', 'lima', 'mandarina', 'ciruela', 'cereza', 'arándano', 'frambuesa', 'mora', 'coco', 'papaya', 'guayaba', 'granada', 'higo', 'maracuyá', 'lichi', 'aguacate', 'toronja', 'banana', 'berries', 'guanábana'],
     
     'Aceites y grasas (sin proteína)': ['aceite de oliva', 'aceite vegetal', 'aceite de coco', 'aceite de girasol', 'aceite de canola', 'mantequilla', 'margarina', 'manteca', 'ghee', 'aceite de sésamo', 'aceite de aguacate', 'aceite de maíz', 'aceite de cacahuate', 'aceite de linaza', 'aceite de palma'],
     
@@ -279,7 +366,13 @@ function ShoppingList({ weekPlan }) {
     return wholePart.toString();
   };
 
-  // Improved formatQuantity function to preserve units
+  // Add this function to convert fractions to decimals with specified precision
+  const fractionToDecimal = (value, precision = 2) => {
+    if (value === null || isNaN(value)) return '';
+    return Number(value).toFixed(precision).replace(/\.0+$/, '');
+  };
+
+  // Update the formatQuantity function to use decimals instead of fractions
   const formatQuantity = (item) => {
     if (!item.quantities || item.quantities.length === 0) {
       return item.quantity || '';
@@ -339,12 +432,13 @@ function ShoppingList({ weekPlan }) {
       quantitiesByUnit[unit] += parsedQuantity;
     });
     
-    // Format the combined quantities
+    // Format the combined quantities using decimals instead of fractions
     const formattedQuantities = Object.entries(quantitiesByUnit)
       .map(([unit, total]) => {
         if (isNaN(total)) return '';
         
-        const formattedTotal = decimalToFraction(total);
+        // Use decimal format instead of fraction
+        const formattedTotal = fractionToDecimal(total);
         return unit ? `${formattedTotal} ${unit}` : formattedTotal;
       })
       .filter(q => q); // Remove empty strings
@@ -361,8 +455,10 @@ function ShoppingList({ weekPlan }) {
   }, [weekPlan]);
 
   useEffect(() => {
-    // Group ingredients by category when shopping list changes
-    groupIngredientsByCategory();
+    // Only run this effect when the shopping list is populated
+    if (Object.keys(shoppingList).length > 0) {
+      groupIngredientsByCategory(shoppingList);
+    }
   }, [shoppingList]);
 
   const generateShoppingList = () => {
@@ -419,7 +515,7 @@ function ShoppingList({ weekPlan }) {
     setShoppingList(ingredients);
   };
 
-  const groupIngredientsByCategory = () => {
+  const groupIngredientsByCategory = (ingredientsList = {}) => {
     const grouped = {};
     
     // Initialize categories
@@ -429,7 +525,7 @@ function ShoppingList({ weekPlan }) {
     grouped[otherCategoryName] = [];
     
     // Categorize each ingredient
-    Object.values(shoppingList).forEach(item => {
+    Object.values(ingredientsList).forEach(item => {
       let assigned = false;
       
       // Check each category's keywords
@@ -463,6 +559,7 @@ function ShoppingList({ weekPlan }) {
     });
     
     setGroupedShoppingList(filteredGrouped);
+    return filteredGrouped; // Return the result for use in other functions
   };
 
   // Helper function to normalize units for comparison
@@ -856,6 +953,52 @@ function ShoppingList({ weekPlan }) {
     }
   }, [groupedShoppingList]);
 
+  // Improved function to determine ingredient category
+  const getIngredientCategory = (ingredientName) => {
+    // Normalize the ingredient name: lowercase, remove accents, and singular form
+    const normalizedName = normalizeIngredientName(ingredientName.toLowerCase());
+    
+    // Check if the ingredient is in any of the defined categories
+    for (const [category, ingredients] of Object.entries(categories)) {
+      // Check for exact matches
+      if (ingredients.includes(normalizedName)) {
+        return category;
+      }
+      
+      // Check for plural forms or partial matches
+      for (const ingredient of ingredients) {
+        // Check if the normalized name starts with the ingredient name
+        // or if the ingredient name starts with the normalized name
+        if (normalizedName.startsWith(ingredient) || ingredient.startsWith(normalizedName)) {
+          return category;
+        }
+        
+        // Check for plural forms (simple Spanish pluralization)
+        if (normalizedName + 's' === ingredient || normalizedName === ingredient + 's') {
+          return category;
+        }
+      }
+    }
+    
+    // If no category is found, return the default category
+    return 'Otros';
+  };
+
+  // Add this function to generate consistent item keys
+  const generateItemKey = (category, itemName) => {
+    // Normalize the name to lowercase and remove extra spaces
+    const normalizedName = (typeof itemName === 'string' ? itemName : '').toLowerCase().trim();
+    return `${category}:${normalizedName}`;
+  };
+
+  // Update the useEffect that handles shopping list changes
+  useEffect(() => {
+    // Only run this effect when the shopping list is populated
+    if (Object.keys(shoppingList).length > 0) {
+      groupIngredientsByCategory(shoppingList);
+    }
+  }, [shoppingList]);
+
   return (
     <div className="flex flex-col md:flex-row gap-6 relative">
       <div className="bg-white p-6 rounded-lg shadow-md relative">
@@ -1159,31 +1302,34 @@ function ShoppingList({ weekPlan }) {
             </div>
           ) : (
             <>
-              <div className="mb-6 flex justify-between items-center">
-                <div>
-                  <p className="text-gray-600">
-                    Total de ingredientes: <span className="font-medium">{Object.keys(shoppingList).length}</span>
-                  </p>
-                  {totalBudget > 0 && (
-                    <p className="text-gray-600 mt-1">
-                      Presupuesto estimado: <span className="font-medium text-green-600">${totalBudget} MXN</span>
-                    </p>
-                  )}
-                </div>
+              <div className="flex justify-between items-center mb-4">
                 <div className="flex space-x-2">
                   <button
+                    onClick={() => setShowFullScreenChecklist(true)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    Ver como checklist
+                  </button>
+                  <button
                     onClick={() => setShowPrices(!showPrices)}
-                    className="px-3 py-1 text-sm bg-gray-200 text-sm text-gray-700 rounded-md hover:bg-gray-300"
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
                     {showPrices ? 'Ocultar precios' : 'Mostrar precios'}
                   </button>
                   <button
-                    onClick={() => setShowFullScreenChecklist(true)}
-                    className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    onClick={() => setShowSources(!showSources)}
+                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
-                    Checklist view
+                    {showSources ? 'Ocultar fuentes' : 'Mostrar fuentes'}
                   </button>
                 </div>
+                {totalBudget > 0 && (
+                  <div className="text-right">
+                    <p className="text-gray-600">
+                      Presupuesto estimado: <span className="font-medium text-green-600">${totalBudget} MXN</span>
+                    </p>
+                  </div>
+                )}
               </div>
               
               <div className="mb-6 max-h-[calc(100vh-300px)] overflow-y-auto pr-2" ref={pdfContentRef}>
@@ -1201,7 +1347,9 @@ function ShoppingList({ weekPlan }) {
                               item={item} 
                               showPrices={showPrices} 
                               priceEstimate={priceEstimate}  
-                              formatQuantity={formatQuantity} 
+                              formatQuantity={formatQuantity}
+                              weekPlan={weekPlan}
+                              showSources={showSources}
                             />
                           </li>
                         );
@@ -1247,133 +1395,188 @@ function ShoppingList({ weekPlan }) {
 
       {/* Modal de checklist en pantalla completa */}
       {showFullScreenChecklist && (
-        <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
-          <div className="container mx-auto px-4 py-6">
+        <div className="fixed inset-0 z-50 bg-white overflow-y-auto p-4">
+          <div className="max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Lista de Compras - Checklist</h2>
+              <button
+                onClick={() => setShowFullScreenChecklist(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4 flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-indigo-600">Lista de compras</h2>
+                <p className="text-gray-600">
+                  Total de ingredientes: <span className="font-medium">{Object.keys(shoppingList).length}</span>
+                </p>
                 {totalBudget > 0 && (
                   <p className="text-gray-600 mt-1">
                     Presupuesto estimado: <span className="font-medium text-green-600">${totalBudget} MXN</span>
                   </p>
                 )}
               </div>
-              <button
-                onClick={() => setShowFullScreenChecklist(false)}
-                className="p-2 rounded-md hover:bg-gray-100"
-              >
-                <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-gray-600">
-                  Total de ingredientes: <span className="font-medium">{Object.keys(shoppingList).length}</span>
-                </p>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setShowPrices(!showPrices)}
-                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                  >
-                    {showPrices ? 'Ocultar precios' : 'Mostrar precios'}
-                  </button>
-                  <button
-                    onClick={handleCheckAll}
-                    className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
-                  >
-                    Marcar todos
-                  </button>
-                  <button
-                    onClick={handleUncheckAll}
-                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                  >
-                    Desmarcar todos
-                  </button>
-                </div>
-              </div>
-              <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-green-500 transition-all duration-300"
-                  style={{ 
-                    width: `${Object.keys(checkedItems).filter(key => checkedItems[key]).length / Object.keys(shoppingList).length * 100}%` 
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowPrices(!showPrices)}
+                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                >
+                  {showPrices ? 'Ocultar precios' : 'Mostrar precios'}
+                </button>
+                <button
+                  onClick={() => setShowSources(!showSources)}
+                  className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                >
+                  {showSources ? 'Ocultar fuentes' : 'Mostrar fuentes'}
+                </button>
+                <button
+                  onClick={() => {
+                    // Mark all items as checked using consistent keys
+                    const allItems = {};
+                    Object.entries(groupedShoppingList).forEach(([category, items]) => {
+                      items.forEach((item) => {
+                        const itemKey = generateItemKey(category, item.name);
+                        allItems[itemKey] = true;
+                      });
+                    });
+                    setCheckedItems(allItems);
                   }}
-                ></div>
-              </div>
-              <div className="text-right text-xs text-gray-500 mt-1">
-                {Object.keys(checkedItems).filter(key => checkedItems[key]).length} de {Object.keys(shoppingList).length} ingredientes
+                  className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200"
+                >
+                  Marcar todos
+                </button>
+                <button
+                  onClick={() => {
+                    // Clear all checked items
+                    setCheckedItems({});
+                  }}
+                  className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+                >
+                  Desmarcar todo
+                </button>
               </div>
             </div>
             
             {Object.entries(groupedShoppingList).map(([category, items]) => (
-              <div key={category} className="mb-8">
+              <div key={category} className="mb-6">
                 <h3 className="text-lg font-medium text-indigo-600 mb-3 border-b pb-2">
                   {category} <span className="text-gray-500 text-sm">({items.length})</span>
                 </h3>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {items.map((item, index) => {
-                    const priceEstimate = estimatePrice(item);
+                    const itemKey = generateItemKey(category, item.name);
+                    const isChecked = checkedItems[itemKey] || false;
+                    
+                    // Find sources for this item
+                    const findSources = () => {
+                      const sources = [];
+                      
+                      if (!weekPlan) return sources;
+                      
+                      // Normalize the ingredient name for comparison
+                      const normalizedName = item.name.toLowerCase();
+                      
+                      // Check each day in the week plan
+                      Object.entries(weekPlan).forEach(([day, meals]) => {
+                        // Map day IDs to readable names
+                        const dayName = 
+                          day === 'monday' ? 'Lunes' : 
+                          day === 'tuesday' ? 'Martes' : 
+                          day === 'wednesday' ? 'Miércoles' : 
+                          day === 'thursday' ? 'Jueves' : 
+                          day === 'friday' ? 'Viernes' : 
+                          day === 'saturday' ? 'Sábado' : 'Domingo';
+                        
+                        // Check each meal in the day
+                        meals.forEach(meal => {
+                          // Check if any ingredient in the meal matches our item
+                          const matchingIngredients = meal.ingredients.filter(ing => 
+                            ing.name.toLowerCase() === normalizedName || 
+                            item.variations.includes(ing.name.toLowerCase())
+                          );
+                          
+                          if (matchingIngredients.length > 0) {
+                            sources.push({
+                              day: dayName,
+                              meal: meal.name,
+                              ingredients: matchingIngredients
+                            });
+                          }
+                        });
+                      });
+                      
+                      return sources;
+                    };
+                    
+                    const sources = findSources();
+                    const hasSources = sources.length > 0;
+                    
                     return (
-                      <li key={index} className="py-2">
-                        <label className="flex items-start cursor-pointer">
+                      <li key={itemKey} className={`py-2 px-3 rounded-md ${isChecked ? 'bg-green-50' : 'bg-gray-50'}`}>
+                        <div className="flex items-start">
                           <input
                             type="checkbox"
-                            className="mt-1 h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                            checked={!!checkedItems[item.name]}
-                            onChange={() => handleCheckItem(item.name)}
+                            id={itemKey}
+                            checked={isChecked}
+                            onChange={() => {
+                              setCheckedItems({
+                                ...checkedItems,
+                                [itemKey]: !isChecked
+                              });
+                            }}
+                            className="mt-1 h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500"
                           />
-                          <div className="ml-3 flex-1">
-                            <div className="flex justify-between">
-                              <span className={`font-medium ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
-                                {item.name}
-                              </span>
-                              <span className={`ml-2 text-gray-600 ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
-                                {formatQuantity(item)}
-                              </span>
+                          <div className="ml-3 flex-grow">
+                            <label 
+                              htmlFor={itemKey} 
+                              className={`font-medium cursor-pointer ${isChecked ? 'line-through text-gray-500' : ''}`}
+                            >
+                              {item.name}
+                            </label>
+                            <div className="text-sm text-gray-600 mt-1">
+                              {formatQuantity(item)}
                             </div>
-                            {showPrices && priceEstimate.price && (
-                              <div className={`text-xs text-green-600 mt-1 ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
-                                ${priceEstimate.price} MXN
-                              </div>
-                            )}
+                            
                             {item.variations && item.variations.length > 1 && (
-                              <div className={`text-xs text-gray-500 mt-1 ${checkedItems[item.name] ? 'line-through' : ''}`}>
+                              <div className="text-xs text-gray-500 mt-1">
                                 Incluye: {item.variations.join(', ')}
                               </div>
                             )}
+                            
+                            {/* Show sources in checklist view */}
+                            {hasSources && showSources && (
+                              <div className="mt-2 text-xs text-gray-600">
+                                <details className="cursor-pointer">
+                                  <summary className="text-indigo-600 hover:text-indigo-800">
+                                    Ver detalles
+                                  </summary>
+                                  <div className="mt-2 pl-3 border-l-2 border-indigo-100">
+                                    {sources.map((source, idx) => (
+                                      <div key={idx} className="mb-1">
+                                        <span className="font-medium">{source.day}</span> - {source.meal}:
+                                        <ul className="pl-4 mt-1">
+                                          {source.ingredients.map((ing, ingIdx) => (
+                                            <li key={ingIdx}>{ing.quantity} {ing.name}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </details>
+                              </div>
+                            )}
                           </div>
-                        </label>
+                        </div>
                       </li>
                     );
                   })}
                 </ul>
               </div>
             ))}
-            
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-              <div className="container mx-auto flex justify-between items-center">
-                <div>
-                  <span className="text-gray-700">Presupuesto total: </span>
-                  <span className="font-medium text-green-600">${totalBudget} MXN</span>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setShowFullScreenChecklist(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Volver
-                  </button>
-                  <button
-                    onClick={exportToPDF}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                  >
-                    Exportar a PDF
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}

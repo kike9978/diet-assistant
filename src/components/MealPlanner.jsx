@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { PlusIcon, DuplicateIcon } from './Icons';
 import ToolsSidebar from './ToolsSidebar';
 import FullDayPlanMealAccordion from './ui/FullDayPlanMealAccordion';
+import { useToast } from './Toast';
 
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
+  const toast = useToast();
   const [selectedDay, setSelectedDay] = useState('monday');
   const [expandedDayId, setExpandedDayId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -176,7 +178,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
     closeSubstitutionModal();
 
     // Mostrar un mensaje de éxito
-    alert(`Ingrediente sustituido: ${substitutionModal.ingredientName} por ${name}`);
+    toast.success(`Ingrediente sustituido: ${substitutionModal.ingredientName} por ${name}`);
   };
 
   const days = [
