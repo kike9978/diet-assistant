@@ -191,24 +191,37 @@ function ShoppingList({ weekPlan }) {
     return processedList;
   };
 
-  // Add this helper function to parse and combine fractions
+  // Improved parseFraction function to better handle mixed units
   const parseFraction = (fractionStr) => {
-    if (!fractionStr) return 0;
+    // Handle special cases and non-numeric values
+    if (!fractionStr || 
+        fractionStr.toLowerCase().includes('gusto') ||
+        fractionStr.toLowerCase() === 'c.s.' ||
+        fractionStr.toLowerCase() === 'c.c.' ||
+        fractionStr.toLowerCase() === 'nan') {
+      return null;
+    }
+    
+    // Try to extract numeric part if mixed with text
+    const numericMatch = fractionStr.match(/(\d+\/\d+|\d+\s\d+\/\d+|\d+(\.\d+)?)/);
+    if (!numericMatch) return null;
+    
+    const numericPart = numericMatch[0];
     
     // Handle whole numbers
-    if (!fractionStr.includes('/')) {
-      return parseFloat(fractionStr);
+    if (!numericPart.includes('/')) {
+      return parseFloat(numericPart);
     }
     
     // Handle mixed numbers (e.g., "1 1/2")
-    if (fractionStr.includes(' ')) {
-      const [whole, fraction] = fractionStr.split(' ');
+    if (numericPart.includes(' ')) {
+      const [whole, fraction] = numericPart.split(' ');
       const [numerator, denominator] = fraction.split('/');
       return parseFloat(whole) + (parseFloat(numerator) / parseFloat(denominator));
     }
     
     // Handle simple fractions (e.g., "1/2")
-    const [numerator, denominator] = fractionStr.split('/');
+    const [numerator, denominator] = numericPart.split('/');
     return parseFloat(numerator) / parseFloat(denominator);
   };
 
@@ -266,27 +279,55 @@ function ShoppingList({ weekPlan }) {
     return wholePart.toString();
   };
 
-  // Improved formatQuantity function
+  // Improved formatQuantity function to preserve units
   const formatQuantity = (item) => {
     if (!item.quantities || item.quantities.length === 0) {
-      return item.quantity;
+      return item.quantity || '';
     }
     
-    // Group quantities by unit
+    // Group quantities by unit and handle special cases
     const quantitiesByUnit = {};
+    const specialValues = new Set();
+    const priceUnits = new Set(['MXN', 'MXN/kg']);
     
     item.quantities.forEach(q => {
-      const parts = q.trim().split(' ');
-      let quantity = parts[0];
-      let unit = parts.slice(1).join(' ');
+      // Skip empty quantities
+      if (!q || q.trim() === '') return;
       
-      // Handle special case where unit might be embedded with the quantity
-      if (quantity.includes('pza') || quantity.includes('tza') || quantity.includes('cda')) {
-        const matches = quantity.match(/^([\d\/]+)(\s*pza|\s*tza|\s*cda)/);
-        if (matches) {
-          quantity = matches[1];
-          unit = (matches[2] + ' ' + unit).trim();
-        }
+      // Handle special values
+      if (q.toLowerCase().includes('gusto') || 
+          q.toLowerCase() === 'c.s.' || 
+          q.toLowerCase() === 'c.c.' ||
+          q.toLowerCase() === 'nan') {
+        specialValues.add(q);
+        return;
+      }
+      
+      // Skip price information
+      if (priceUnits.has(q) || q.includes('MXN')) {
+        return;
+      }
+      
+      // Try to extract numeric part and unit
+      const numericMatch = q.match(/(\d+\/\d+|\d+\s\d+\/\d+|\d+(\.\d+)?)/);
+      
+      if (!numericMatch) {
+        // If no numeric part, treat as special value
+        specialValues.add(q);
+        return;
+      }
+      
+      const numericPart = numericMatch[0];
+      const unitPart = q.replace(numericPart, '').trim();
+      
+      // Determine the unit - use the text after the number or a default
+      let unit = unitPart || '';
+      
+      // Parse the quantity
+      const parsedQuantity = parseFraction(numericPart);
+      if (parsedQuantity === null) {
+        specialValues.add(q);
+        return;
       }
       
       // Initialize the unit if it doesn't exist
@@ -295,16 +336,24 @@ function ShoppingList({ weekPlan }) {
       }
       
       // Add the parsed quantity
-      quantitiesByUnit[unit] += parseFraction(quantity);
+      quantitiesByUnit[unit] += parsedQuantity;
     });
     
     // Format the combined quantities
-    return Object.entries(quantitiesByUnit)
+    const formattedQuantities = Object.entries(quantitiesByUnit)
       .map(([unit, total]) => {
+        if (isNaN(total)) return '';
+        
         const formattedTotal = decimalToFraction(total);
         return unit ? `${formattedTotal} ${unit}` : formattedTotal;
       })
-      .join(', ');
+      .filter(q => q); // Remove empty strings
+    
+    // Add special values (but only once per unique value)
+    const uniqueSpecialValues = Array.from(specialValues);
+    
+    // Combine all values
+    return [...formattedQuantities, ...uniqueSpecialValues].join(', ');
   };
 
   useEffect(() => {
