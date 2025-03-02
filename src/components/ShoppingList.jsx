@@ -190,69 +190,99 @@ function ShoppingList({ weekPlan }) {
     return processedList;
   };
 
-  // Modificar la función formatQuantity para manejar casos especiales
+  // Función para formatear la cantidad de un ingrediente
   const formatQuantity = (item) => {
-    // Casos especiales que no necesitan agregación
+    // Verificar si hay cantidades especiales
     const specialCases = ['c.s.', 'c.c.', 'al gusto', 'pizca', 'pizcas'];
-    
-    // Si solo hay una cantidad y es un caso especial, mostrarla directamente
-    if (item.quantities.length === 1 && 
-        specialCases.some(special => item.quantities[0].toLowerCase().includes(special))) {
-      return item.quantities[0];
-    }
-    
-    // Filtrar cantidades especiales para que aparezcan solo una vez
-    const uniqueSpecialQuantities = item.quantities.filter(q => 
+    if (item.quantities && item.quantities.some(q => 
       specialCases.some(special => q.toLowerCase().includes(special))
-    ).filter((value, index, self) => 
-      self.findIndex(q => 
-        specialCases.some(special => 
-          q.toLowerCase().includes(special) && 
-          value.toLowerCase().includes(special)
-        )
-      ) === index
-    );
-    
-    // Filtrar cantidades numéricas (no especiales)
-    const numericQuantities = item.quantities.filter(q => 
-      !specialCases.some(special => q.toLowerCase().includes(special))
-    );
-    
-    // Procesar cantidades numéricas
-    let processedNumericQuantities = [];
-    
-    // Si tenemos cantidades numéricas, procesarlas
-    if (numericQuantities.length > 0) {
-      // Special case for queso mozzarella to show total grams
-      if (item.name === 'queso mozzarella' && item.totalQuantity && 
-          item.totalQuantity.unit === 'gr' && item.variations.length > 1) {
-        processedNumericQuantities.push(`${item.totalQuantity.value} ${item.totalQuantity.unit}`);
-      }
-      // If we have a valid total quantity, format it
-      else if (item.totalQuantity) {
-        const value = item.totalQuantity.value;
-        const unit = item.totalQuantity.unit;
-        
-        // Format the value (round to 2 decimal places if needed)
-        const formattedValue = Number.isInteger(value) ? value : value.toFixed(2);
-        
-        // Handle pluralization for pieces (pza/pzas)
-        if (unit === 'pza') {
-          processedNumericQuantities.push(`${formattedValue} ${value === 1 ? 'pza' : 'pzas'}`);
-        } else {
-          processedNumericQuantities.push(`${formattedValue} ${unit}`);
-        }
-      }
-      // Si no podemos calcular una cantidad total, usar las cantidades originales
-      else {
-        processedNumericQuantities = [...numericQuantities];
-      }
+    )) {
+      return item.quantities.join(', ');
     }
     
-    // Combinar cantidades numéricas procesadas con cantidades especiales únicas
-    const allQuantities = [...processedNumericQuantities, ...uniqueSpecialQuantities];
+    // Si hay cantidades, procesarlas y sumarlas cuando sea posible
+    if (item.quantities && item.quantities.length > 0) {
+      // Primero, limpiar todas las cantidades y eliminar los '0' al final de las unidades
+      const cleanedQuantities = item.quantities.map(q => {
+        return q.replace(/(\d+(?:\/\d+)?)\s*([a-zA-Z]+)0/i, '$1 $2');
+      });
+      
+      // Intentar agrupar y sumar cantidades del mismo tipo
+      const quantityGroups = {};
+      
+      cleanedQuantities.forEach(quantity => {
+        // Extraer valor numérico y unidad
+        const match = quantity.match(/(\d+(?:\/\d+)?)\s*([a-zA-Z]+)/i);
+        if (match) {
+          let value = match[1];
+          const unit = match[2].toLowerCase();
+          
+          // Convertir fracciones a decimales
+          if (value.includes('/')) {
+            const [numerator, denominator] = value.split('/');
+            value = parseFloat(numerator) / parseFloat(denominator);
+          } else {
+            value = parseFloat(value);
+          }
+          
+          // Normalizar unidades para agruparlas correctamente
+          let normalizedUnit = unit;
+          
+          // Normalizar unidades similares
+          if (['lata', 'latas'].includes(unit)) normalizedUnit = 'lata';
+          if (['g', 'gr', 'grs', 'gramos'].includes(unit)) normalizedUnit = 'g';
+          if (['kg', 'kilo', 'kilos'].includes(unit)) normalizedUnit = 'kg';
+          if (['ml', 'mililitro', 'mililitros'].includes(unit)) normalizedUnit = 'ml';
+          if (['l', 'litro', 'litros'].includes(unit)) normalizedUnit = 'l';
+          if (['pza', 'pzas', 'pieza', 'piezas'].includes(unit)) normalizedUnit = 'pza';
+          if (['tza', 'tzas', 'taza', 'tazas'].includes(unit)) normalizedUnit = 'tza';
+          if (['cda', 'cdas', 'cucharada', 'cucharadas'].includes(unit)) normalizedUnit = 'cda';
+          if (['cdita', 'cditas', 'cucharadita', 'cucharaditas'].includes(unit)) normalizedUnit = 'cdita';
+          
+          // Agrupar por unidad normalizada
+          if (!quantityGroups[normalizedUnit]) {
+            quantityGroups[normalizedUnit] = 0;
+          }
+          
+          quantityGroups[normalizedUnit] += value;
+        }
+      });
+      
+      // Si pudimos agrupar cantidades, mostrarlas agrupadas
+      if (Object.keys(quantityGroups).length > 0) {
+        return Object.entries(quantityGroups)
+          .map(([unit, value]) => {
+            // Formatear el valor para que sea legible
+            const formattedValue = Number.isInteger(value) ? value : value.toFixed(1).replace(/\.0$/, '');
+            
+            // Pluralizar unidades si es necesario
+            let displayUnit = unit;
+            if (value > 1) {
+              if (unit === 'lata') displayUnit = 'latas';
+              if (unit === 'pza') displayUnit = 'pzas';
+              if (unit === 'tza') displayUnit = 'tzas';
+              if (unit === 'cda') displayUnit = 'cdas';
+              if (unit === 'cdita') displayUnit = 'cditas';
+            }
+            
+            return `${formattedValue} ${displayUnit}`;
+          })
+          .join(', ');
+      }
+      
+      // Si no pudimos agrupar, mostrar las cantidades limpias
+      return cleanedQuantities.join(', ');
+    }
     
-    return allQuantities.join(', ');
+    // Si hay totalQuantity, usarla con formato corregido
+    if (item.totalQuantity) {
+      const value = item.totalQuantity.value;
+      const unit = item.totalQuantity.unit.replace(/0$/, ''); // Eliminar el '0' al final
+      return `${value} ${unit}`;
+    }
+    
+    // Si no hay cantidad, mostrar mensaje
+    return 'Cantidad no especificada';
   };
 
   useEffect(() => {
