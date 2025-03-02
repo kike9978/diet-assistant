@@ -109,7 +109,7 @@ function ShoppingList({ weekPlan }) {
     const currentItemKeys = new Set();
     Object.entries(groupedShoppingList).forEach(([category, items]) => {
       items.forEach(item => {
-        // Generate consistent keys for items
+        // Generate consistent keys for items using normalizedName instead of name
         const itemKey = generateItemKey(category, item.normalizedName || item.name.toLowerCase());
         currentItemKeys.add(itemKey);
       });
@@ -988,6 +988,7 @@ function ShoppingList({ weekPlan }) {
   const generateItemKey = (category, itemName) => {
     // Normalize the name to lowercase and remove extra spaces
     const normalizedName = (typeof itemName === 'string' ? itemName : '').toLowerCase().trim();
+    // Use the normalized name as the key to ensure consistency
     return `${category}:${normalizedName}`;
   };
 
@@ -1439,7 +1440,7 @@ function ShoppingList({ weekPlan }) {
                     const allItems = {};
                     Object.entries(groupedShoppingList).forEach(([category, items]) => {
                       items.forEach((item) => {
-                        const itemKey = generateItemKey(category, item.name);
+                        const itemKey = generateItemKey(category, item.normalizedName || item.name.toLowerCase());
                         allItems[itemKey] = true;
                       });
                     });
@@ -1468,7 +1469,8 @@ function ShoppingList({ weekPlan }) {
                 </h3>
                 <ul className="space-y-3">
                   {items.map((item, index) => {
-                    const itemKey = generateItemKey(category, item.name);
+                    // Use normalizedName for consistent key generation
+                    const itemKey = generateItemKey(category, item.normalizedName || item.name.toLowerCase());
                     const isChecked = checkedItems[itemKey] || false;
                     
                     // Find sources for this item
