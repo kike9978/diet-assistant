@@ -233,7 +233,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 h-full flex flex-col">
       {/* Day selection tabs */}
       <div className="mb-6 overflow-x-auto">
         <div className="flex space-x-1 min-w-max">
@@ -254,11 +254,11 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
       </div>
       
       {/* Meal selection */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
         {/* Available day plans */}
         <div>
           <h3 className="text-lg font-medium mb-3">Planes de Comida Disponibles:</h3>
-          <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto">
+          <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto flex-grow">
             {/* Verificar la estructura del dietPlan */}
             {dietPlan && Array.isArray(dietPlan.days) ? (
               // Si dietPlan tiene una propiedad 'days' que es un array
@@ -399,7 +399,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
         </div>
         
         {/* Selected day's meals */}
-        <div>
+        <div className='flex flex-col'>
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-medium">
               Plan para {days.find(day => day.id === selectedDay)?.name || 'Día seleccionado'}:
@@ -414,7 +414,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
             )}
           </div>
           
-          <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto">
+          <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto flex-grow">
             {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 ? (
               <ul className="space-y-4">
                 {structuredWeekPlan[selectedDay].map((meal, index) => (
