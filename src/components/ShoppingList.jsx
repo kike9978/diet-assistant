@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import html2pdf from 'html2pdf.js';
 import ingredientPrices from '../data/ingredientPrices';
+import ShoppingListItem from './ui/ShoppingListItem';
 
 function ShoppingList({ weekPlan }) {
   const [shoppingList, setShoppingList] = useState({});
@@ -1074,7 +1075,7 @@ function ShoppingList({ weekPlan }) {
         {/* Fondo oscuro cuando la barra lateral está abierta en móvil */}
         {sidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-0"
+            className="fixed inset-0 bg-black opacity-30 z-0"
             onClick={() => setSidebarOpen(false)}
           ></div>
         )}
@@ -1102,15 +1103,15 @@ function ShoppingList({ weekPlan }) {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setShowPrices(!showPrices)}
-                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    className="px-3 py-1 text-sm bg-gray-200 text-sm text-gray-700 rounded-md hover:bg-gray-300"
                   >
                     {showPrices ? 'Ocultar precios' : 'Mostrar precios'}
                   </button>
                   <button
                     onClick={() => setShowFullScreenChecklist(true)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
-                    Ver como checklist
+                    Checklist view
                   </button>
                 </div>
               </div>
@@ -1126,29 +1127,12 @@ function ShoppingList({ weekPlan }) {
                         const priceEstimate = estimatePrice(item);
                         return (
                           <li key={index} className="py-3">
-                            <div className="flex justify-between">
-                              <div>
-                                <span className="font-medium">{item.name}</span>
-                                {item.variations && item.variations.length > 1 && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Incluye: {item.variations.join(', ')}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <span className="text-gray-600">
-                                  {formatQuantity(item)}
-                                </span>
-                                {showPrices && priceEstimate.price && (
-                                  <div className="text-xs text-green-600 mt-1">
-                                    ${priceEstimate.price} MXN
-                                    <span className="text-gray-400 ml-1 hidden md:inline">
-                                      ({priceEstimate.explanation})
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                            <ShoppingListItem 
+                              item={item} 
+                              showPrices={showPrices} 
+                              priceEstimate={priceEstimate}  
+                              formatQuantity={formatQuantity} 
+                            />
                           </li>
                         );
                       })}

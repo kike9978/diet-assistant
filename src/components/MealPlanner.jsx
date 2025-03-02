@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { PlusIcon, DuplicateIcon } from './Icons';
 import ToolsSidebar from './ToolsSidebar';
+import FullDayPlanMealAccordion from './ui/FullDayPlanMealAccordion';
 
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   const [selectedDay, setSelectedDay] = useState('monday');
@@ -28,20 +29,20 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
     'Aceites y grasas (sin proteína)': ['aceite de oliva', 'aceite vegetal', 'mantequilla'],
     'Aceites y grasas (con proteína)': ['almendra', 'nuez', 'cacahuate', 'avellana', 'pistacho']
   };
-  
+
   const otherCategoryName = 'Otros ingredientes';
 
   // Initialize weekPlan with empty arrays for each day if not already set
   const ensureWeekPlanStructure = () => {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const initializedWeekPlan = { ...weekPlan };
-    
+
     days.forEach(day => {
       if (!initializedWeekPlan[day]) {
         initializedWeekPlan[day] = [];
       }
     });
-    
+
     return initializedWeekPlan;
   };
 
@@ -122,43 +123,43 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   // Función para determinar la categoría de un ingrediente
   const getIngredientCategory = (ingredientName) => {
     const lowerName = ingredientName.toLowerCase();
-    
+
     for (const [category, keywords] of Object.entries(categories)) {
       if (keywords.some(keyword => lowerName.includes(keyword.toLowerCase()))) {
         return category;
       }
     }
-    
+
     return otherCategoryName;
   };
 
   // Función para manejar la sustitución de un ingrediente
   const handleSubstituteIngredient = (substitution) => {
     const { day, mealIndex, ingredientIndex, replacement } = substitution;
-    
+
     // Extraer el nombre y la cantidad del ingrediente del texto de reemplazo
     const parts = replacement.split(' de ');
     const quantity = parts[0];
     const name = parts.slice(1).join(' de '); // Por si hay más de un "de" en el nombre
-    
+
     // Actualizar el weekPlan directamente
     const updatedWeekPlan = JSON.parse(JSON.stringify(structuredWeekPlan));
-    
+
     // Buscar si algún día del weekPlan está usando el plan que estamos modificando
     Object.keys(updatedWeekPlan).forEach(weekDay => {
       // Si el día tiene comidas y la comida que estamos modificando existe
-      if (updatedWeekPlan[weekDay] && 
-          updatedWeekPlan[weekDay][mealIndex] && 
-          updatedWeekPlan[weekDay][mealIndex].ingredients && 
-          updatedWeekPlan[weekDay][mealIndex].ingredients[ingredientIndex]) {
-        
+      if (updatedWeekPlan[weekDay] &&
+        updatedWeekPlan[weekDay][mealIndex] &&
+        updatedWeekPlan[weekDay][mealIndex].ingredients &&
+        updatedWeekPlan[weekDay][mealIndex].ingredients[ingredientIndex]) {
+
         // Verificar si este día está usando el plan que estamos modificando
         // Comparamos el nombre del ingrediente y la cantidad para identificarlo
         const currentIngredient = updatedWeekPlan[weekDay][mealIndex].ingredients[ingredientIndex];
-        
-        if (currentIngredient.name === substitutionModal.ingredientName && 
-            currentIngredient.quantity === substitutionModal.ingredientQuantity) {
-          
+
+        if (currentIngredient.name === substitutionModal.ingredientName &&
+          currentIngredient.quantity === substitutionModal.ingredientQuantity) {
+
           // Actualizar el ingrediente en el weekPlan
           updatedWeekPlan[weekDay][mealIndex].ingredients[ingredientIndex] = {
             name: name,
@@ -167,13 +168,13 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
         }
       }
     });
-    
+
     // Actualizar el estado del weekPlan
     setWeekPlan(updatedWeekPlan);
-    
+
     // Cerrar el modal
     closeSubstitutionModal();
-    
+
     // Mostrar un mensaje de éxito
     alert(`Ingrediente sustituido: ${substitutionModal.ingredientName} por ${name}`);
   };
@@ -241,22 +242,21 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
             <button
               key={day.id}
               onClick={() => setSelectedDay(day.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
-                selectedDay === day.id
+              className={`px-4 py-2 text-sm font-medium rounded-md ${selectedDay === day.id
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               {day.name}
             </button>
           ))}
         </div>
       </div>
-      
+
       {/* Meal selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
         {/* Available day plans */}
-        <div>
+        <div className='flex flex-col'>
           <h3 className="text-lg font-medium mb-3">Planes de Comida Disponibles:</h3>
           <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto flex-grow">
             {/* Verificar la estructura del dietPlan */}
@@ -264,7 +264,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
               // Si dietPlan tiene una propiedad 'days' que es un array
               dietPlan.days.map((day) => (
                 <div key={day.id} className="mb-4 bg-white rounded-md shadow-sm overflow-hidden">
-                  <div 
+                  <div
                     className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
                     onClick={() => toggleDayExpansion(day.id)}
                   >
@@ -279,17 +279,17 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                       >
                         Usar este plan
                       </button>
-                      <svg 
-                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''}`} 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
+                      <svg
+                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </div>
-                  
+
                   {expandedDayId === day.id && (
                     <div className="p-4 border-t border-gray-100">
                       <ul className="space-y-3">
@@ -302,10 +302,10 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                                   <span>{ingredient.name} ({ingredient.quantity})</span>
                                   <button
                                     onClick={() => openSubstitutionModal(
-                                      day.id, 
-                                      mealIndex, 
-                                      ingredientIndex, 
-                                      ingredient.name, 
+                                      day.id,
+                                      mealIndex,
+                                      ingredientIndex,
+                                      ingredient.name,
                                       ingredient.quantity,
                                       meal.name
                                     )}
@@ -328,7 +328,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
               // Si dietPlan es directamente un array
               dietPlan.map((day) => (
                 <div key={day.id} className="mb-4 bg-white rounded-md shadow-sm overflow-hidden">
-                  <div 
+                  <div
                     className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
                     onClick={() => toggleDayExpansion(day.id)}
                   >
@@ -343,17 +343,17 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                       >
                         Usar este plan
                       </button>
-                      <svg 
-                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''}`} 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
+                      <svg
+                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
                   </div>
-                  
+
                   {expandedDayId === day.id && (
                     <div className="p-4 border-t border-gray-100">
                       <ul className="space-y-3">
@@ -366,10 +366,10 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                                   <span>{ingredient.name} ({ingredient.quantity})</span>
                                   <button
                                     onClick={() => openSubstitutionModal(
-                                      day.id, 
-                                      mealIndex, 
-                                      ingredientIndex, 
-                                      ingredient.name, 
+                                      day.id,
+                                      mealIndex,
+                                      ingredientIndex,
+                                      ingredient.name,
                                       ingredient.quantity,
                                       meal.name
                                     )}
@@ -397,7 +397,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
             )}
           </div>
         </div>
-        
+
         {/* Selected day's meals */}
         <div className='flex flex-col'>
           <div className="flex justify-between items-center mb-3">
@@ -413,7 +413,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
               </button>
             )}
           </div>
-          
+
           <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto flex-grow">
             {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 ? (
               <ul className="space-y-4">
@@ -450,7 +450,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              <div className="absolute inset-0 bg-black opacity-30"></div>
             </div>
 
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
@@ -466,7 +466,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                       <p className="text-sm text-gray-500 mb-4">
                         Estás sustituyendo <span className="font-medium">{substitutionModal.ingredientName} ({substitutionModal.ingredientQuantity})</span> de la comida <span className="font-medium">{substitutionModal.mealName}</span>.
                       </p>
-                      
+
                       <div className="mb-4">
                         <label htmlFor="substitute-replacement" className="block text-sm font-medium text-gray-700 mb-1">
                           Reemplazar con
@@ -484,7 +484,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                           {(() => {
                             // Determinar la categoría del ingrediente
                             const category = getIngredientCategory(substitutionModal.ingredientName);
-                            
+
                             // Si tenemos equivalentes para esta categoría, mostrarlos
                             if (equivalentsByCategory[category]) {
                               return equivalentsByCategory[category].map((equivalent, index) => (
@@ -552,7 +552,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
         otherCategoryName={otherCategoryName}
         weekPlan={structuredWeekPlan}
       />
-      
+
       {/* Botón flotante para abrir la barra lateral */}
       <button
         onClick={() => setSidebarOpen(true)}

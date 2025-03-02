@@ -424,7 +424,7 @@ function ToolsSidebar({ isOpen, onClose, onAddIngredient, onSubstituteIngredient
       {/* Fondo oscuro cuando la barra lateral está abierta */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-0"
+          className="fixed inset-0 bg-black opacity-30 z-0"
           onClick={onClose}
         ></div>
       )}
