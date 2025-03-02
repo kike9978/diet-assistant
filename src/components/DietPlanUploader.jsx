@@ -188,6 +188,7 @@ function DietPlanUploader({ onUpload }) {
           >
             {showExample ? "Hide Example" : "Show Example"}
           </button>
+          <a href="https://chat.deepseek.com/a/chat/s/46cbbfea-1c52-4511-97c9-8ede6a60d959" target='_blank' className="text-sm text-indigo-600 hover:text-indigo-800">JSON Generator</a>
         </div>
         
         {showExample && (
