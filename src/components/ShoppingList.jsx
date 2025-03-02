@@ -191,99 +191,120 @@ function ShoppingList({ weekPlan }) {
     return processedList;
   };
 
-  // Función para formatear la cantidad de un ingrediente
-  const formatQuantity = (item) => {
-    // Verificar si hay cantidades especiales
-    const specialCases = ['c.s.', 'c.c.', 'al gusto', 'pizca', 'pizcas'];
-    if (item.quantities && item.quantities.some(q => 
-      specialCases.some(special => q.toLowerCase().includes(special))
-    )) {
-      return item.quantities.join(', ');
+  // Add this helper function to parse and combine fractions
+  const parseFraction = (fractionStr) => {
+    if (!fractionStr) return 0;
+    
+    // Handle whole numbers
+    if (!fractionStr.includes('/')) {
+      return parseFloat(fractionStr);
     }
     
-    // Si hay cantidades, procesarlas y sumarlas cuando sea posible
-    if (item.quantities && item.quantities.length > 0) {
-      // Primero, limpiar todas las cantidades y eliminar los '0' al final de las unidades
-      const cleanedQuantities = item.quantities.map(q => {
-        return q.replace(/(\d+(?:\/\d+)?)\s*([a-zA-Z]+)0/i, '$1 $2');
-      });
-      
-      // Intentar agrupar y sumar cantidades del mismo tipo
-      const quantityGroups = {};
-      
-      cleanedQuantities.forEach(quantity => {
-        // Extraer valor numérico y unidad
-        const match = quantity.match(/(\d+(?:\/\d+)?)\s*([a-zA-Z]+)/i);
-        if (match) {
-          let value = match[1];
-          const unit = match[2].toLowerCase();
-          
-          // Convertir fracciones a decimales
-          if (value.includes('/')) {
-            const [numerator, denominator] = value.split('/');
-            value = parseFloat(numerator) / parseFloat(denominator);
-          } else {
-            value = parseFloat(value);
-          }
-          
-          // Normalizar unidades para agruparlas correctamente
-          let normalizedUnit = unit;
-          
-          // Normalizar unidades similares
-          if (['lata', 'latas'].includes(unit)) normalizedUnit = 'lata';
-          if (['g', 'gr', 'grs', 'gramos'].includes(unit)) normalizedUnit = 'g';
-          if (['kg', 'kilo', 'kilos'].includes(unit)) normalizedUnit = 'kg';
-          if (['ml', 'mililitro', 'mililitros'].includes(unit)) normalizedUnit = 'ml';
-          if (['l', 'litro', 'litros'].includes(unit)) normalizedUnit = 'l';
-          if (['pza', 'pzas', 'pieza', 'piezas'].includes(unit)) normalizedUnit = 'pza';
-          if (['tza', 'tzas', 'taza', 'tazas'].includes(unit)) normalizedUnit = 'tza';
-          if (['cda', 'cdas', 'cucharada', 'cucharadas'].includes(unit)) normalizedUnit = 'cda';
-          if (['cdita', 'cditas', 'cucharadita', 'cucharaditas'].includes(unit)) normalizedUnit = 'cdita';
-          
-          // Agrupar por unidad normalizada
-          if (!quantityGroups[normalizedUnit]) {
-            quantityGroups[normalizedUnit] = 0;
-          }
-          
-          quantityGroups[normalizedUnit] += value;
+    // Handle mixed numbers (e.g., "1 1/2")
+    if (fractionStr.includes(' ')) {
+      const [whole, fraction] = fractionStr.split(' ');
+      const [numerator, denominator] = fraction.split('/');
+      return parseFloat(whole) + (parseFloat(numerator) / parseFloat(denominator));
+    }
+    
+    // Handle simple fractions (e.g., "1/2")
+    const [numerator, denominator] = fractionStr.split('/');
+    return parseFloat(numerator) / parseFloat(denominator);
+  };
+
+  // Function to convert decimal back to fraction string
+  const decimalToFraction = (decimal) => {
+    if (decimal === 0) return "0";
+    if (Number.isInteger(decimal)) return decimal.toString();
+    
+    // Handle common fractions
+    const tolerance = 0.001;
+    const fractions = [
+      { decimal: 0.25, fraction: "1/4" },
+      { decimal: 0.5, fraction: "1/2" },
+      { decimal: 0.75, fraction: "3/4" },
+      { decimal: 0.33, fraction: "1/3" },
+      { decimal: 0.67, fraction: "2/3" },
+      { decimal: 0.2, fraction: "1/5" },
+      { decimal: 0.4, fraction: "2/5" },
+      { decimal: 0.6, fraction: "3/5" },
+      { decimal: 0.8, fraction: "4/5" }
+    ];
+    
+    // Check for common fractions
+    for (const f of fractions) {
+      if (Math.abs(decimal - f.decimal) < tolerance) {
+        return f.fraction;
+      }
+    }
+    
+    // Handle mixed numbers
+    const wholePart = Math.floor(decimal);
+    const fractionalPart = decimal - wholePart;
+    
+    if (fractionalPart > 0) {
+      // Try to find a close match for the fractional part
+      for (const f of fractions) {
+        if (Math.abs(fractionalPart - f.decimal) < tolerance) {
+          return wholePart > 0 ? `${wholePart} ${f.fraction}` : f.fraction;
         }
-      });
-      
-      // Si pudimos agrupar cantidades, mostrarlas agrupadas
-      if (Object.keys(quantityGroups).length > 0) {
-        return Object.entries(quantityGroups)
-          .map(([unit, value]) => {
-            // Formatear el valor para que sea legible
-            const formattedValue = Number.isInteger(value) ? value : value.toFixed(1).replace(/\.0$/, '');
-            
-            // Pluralizar unidades si es necesario
-            let displayUnit = unit;
-            if (value > 1) {
-              if (unit === 'lata') displayUnit = 'latas';
-              if (unit === 'pza') displayUnit = 'pzas';
-              if (unit === 'tza') displayUnit = 'tzas';
-              if (unit === 'cda') displayUnit = 'cdas';
-              if (unit === 'cdita') displayUnit = 'cditas';
-            }
-            
-            return `${formattedValue} ${displayUnit}`;
-          })
-          .join(', ');
       }
       
-      // Si no pudimos agrupar, mostrar las cantidades limpias
-      return cleanedQuantities.join(', ');
+      // If no close match, use a simple approximation
+      const gcd = (a, b) => b ? gcd(b, a % b) : a;
+      const denominator = 16; // Use a reasonable denominator
+      const numerator = Math.round(fractionalPart * denominator);
+      const divisor = gcd(numerator, denominator);
+      
+      const simplifiedNumerator = numerator / divisor;
+      const simplifiedDenominator = denominator / divisor;
+      
+      const fractionStr = `${simplifiedNumerator}/${simplifiedDenominator}`;
+      return wholePart > 0 ? `${wholePart} ${fractionStr}` : fractionStr;
     }
     
-    // Si hay totalQuantity, usarla con formato corregido
-    if (item.totalQuantity) {
-      const value = item.totalQuantity.value;
-      const unit = item.totalQuantity.unit.replace(/0$/, ''); // Eliminar el '0' al final
-      return `${value} ${unit}`;
+    return wholePart.toString();
+  };
+
+  // Improved formatQuantity function
+  const formatQuantity = (item) => {
+    if (!item.quantities || item.quantities.length === 0) {
+      return item.quantity;
     }
     
-    // Si no hay cantidad, mostrar mensaje
-    return 'Cantidad no especificada';
+    // Group quantities by unit
+    const quantitiesByUnit = {};
+    
+    item.quantities.forEach(q => {
+      const parts = q.trim().split(' ');
+      let quantity = parts[0];
+      let unit = parts.slice(1).join(' ');
+      
+      // Handle special case where unit might be embedded with the quantity
+      if (quantity.includes('pza') || quantity.includes('tza') || quantity.includes('cda')) {
+        const matches = quantity.match(/^([\d\/]+)(\s*pza|\s*tza|\s*cda)/);
+        if (matches) {
+          quantity = matches[1];
+          unit = (matches[2] + ' ' + unit).trim();
+        }
+      }
+      
+      // Initialize the unit if it doesn't exist
+      if (!quantitiesByUnit[unit]) {
+        quantitiesByUnit[unit] = 0;
+      }
+      
+      // Add the parsed quantity
+      quantitiesByUnit[unit] += parseFraction(quantity);
+    });
+    
+    // Format the combined quantities
+    return Object.entries(quantitiesByUnit)
+      .map(([unit, total]) => {
+        const formattedTotal = decimalToFraction(total);
+        return unit ? `${formattedTotal} ${unit}` : formattedTotal;
+      })
+      .join(', ');
   };
 
   useEffect(() => {
