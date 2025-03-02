@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import html2pdf from 'html2pdf.js';
+import ingredientPrices from '../data/ingredientPrices';
 
 function ShoppingList({ weekPlan }) {
   const [shoppingList, setShoppingList] = useState({});
@@ -11,6 +12,8 @@ function ShoppingList({ weekPlan }) {
   });
   const [showFullScreenChecklist, setShowFullScreenChecklist] = useState(false);
   const [checkedItems, setCheckedItems] = useState({});
+  const [totalBudget, setTotalBudget] = useState(0);
+  const [showPrices, setShowPrices] = useState(true);
   
   // Create a ref for the PDF content
   const pdfContentRef = useRef(null);
@@ -580,6 +583,178 @@ function ShoppingList({ weekPlan }) {
     setCheckedItems(allChecked);
   };
 
+  // Función para estimar el precio de un ingrediente
+  const estimatePrice = (item) => {
+    const normalizedName = item.name.toLowerCase();
+    
+    // Ignorar ingredientes con cantidades especiales como "c.s."
+    const specialCases = ['c.s.', 'c.c.', 'al gusto', 'pizca', 'pizcas'];
+    if (item.quantities.some(q => 
+      specialCases.some(special => q.toLowerCase().includes(special))
+    )) {
+      return { price: null, explanation: "Cantidad no cuantificable" };
+    }
+    
+    // Buscar el ingrediente en nuestra base de datos de precios
+    let priceInfo = null;
+    
+    // Primero buscar coincidencia exacta
+    if (ingredientPrices[normalizedName]) {
+      priceInfo = ingredientPrices[normalizedName];
+    } else {
+      // Si no hay coincidencia exacta, buscar coincidencia parcial
+      for (const [key, value] of Object.entries(ingredientPrices)) {
+        if (normalizedName.includes(key) || key.includes(normalizedName)) {
+          priceInfo = value;
+          break;
+        }
+      }
+    }
+    
+    if (!priceInfo) {
+      return { price: null, explanation: "Precio no disponible" };
+    }
+    
+    // Intentar extraer la cantidad numérica y la unidad de la cantidad del ingrediente
+    let estimatedPrice = priceInfo.price;
+    let explanation = `${priceInfo.price} MXN/${priceInfo.unit}`;
+    
+    // Intentar calcular el precio basado en la cantidad
+    if (item.totalQuantity && item.totalQuantity.value && item.totalQuantity.unit) {
+      const value = item.totalQuantity.value;
+      const unit = item.totalQuantity.unit.toLowerCase();
+      
+      // Convertir unidades comunes
+      if (unit === 'gr' && priceInfo.unit === 'kg') {
+        estimatedPrice = (priceInfo.price / 1000) * value;
+        explanation = `${value} gr × ${priceInfo.price} MXN/kg ÷ 1000`;
+      } else if (unit === 'kg' && priceInfo.unit === 'kg') {
+        estimatedPrice = priceInfo.price * value;
+        explanation = `${value} kg × ${priceInfo.price} MXN/kg`;
+      } else if (unit === 'pza' && priceInfo.unit === 'pieza') {
+        estimatedPrice = priceInfo.price * value;
+        explanation = `${value} pza × ${priceInfo.price} MXN/pieza`;
+      } else if (unit === 'ml' && priceInfo.unit === 'litro') {
+        estimatedPrice = (priceInfo.price / 1000) * value;
+        explanation = `${value} ml × ${priceInfo.price} MXN/litro ÷ 1000`;
+      } else if (unit === 'l' && priceInfo.unit === 'litro') {
+        estimatedPrice = priceInfo.price * value;
+        explanation = `${value} l × ${priceInfo.price} MXN/litro`;
+      } else if (unit === 'tza' && priceInfo.unit === 'kg') {
+        // Aproximadamente 1 taza = 250g para la mayoría de los ingredientes
+        estimatedPrice = (priceInfo.price / 4) * value;
+        explanation = `${value} tza ≈ 250g × ${priceInfo.price} MXN/kg ÷ 4`;
+      } else if ((unit === 'cdas' || unit === 'cda') && priceInfo.unit === 'kg') {
+        // Aproximadamente 1 cucharada = 15g para ingredientes secos
+        estimatedPrice = (priceInfo.price / 1000) * 15 * value;
+        explanation = `${value} cdas × 15g × ${priceInfo.price} MXN/kg ÷ 1000`;
+      } else if ((unit === 'cdas' || unit === 'cda') && priceInfo.unit === 'litro') {
+        // Aproximadamente 1 cucharada = 15ml para líquidos
+        estimatedPrice = (priceInfo.price / 1000) * 15 * value;
+        explanation = `${value} cdas × 15ml × ${priceInfo.price} MXN/litro ÷ 1000`;
+      } else if ((unit === 'cditas' || unit === 'cdita') && priceInfo.unit === 'kg') {
+        // Aproximadamente 1 cucharadita = 5g para ingredientes secos
+        estimatedPrice = (priceInfo.price / 1000) * 5 * value;
+        explanation = `${value} cditas × 5g × ${priceInfo.price} MXN/kg ÷ 1000`;
+      } else if ((unit === 'cditas' || unit === 'cdita') && priceInfo.unit === 'litro') {
+        // Aproximadamente 1 cucharadita = 5ml para líquidos
+        estimatedPrice = (priceInfo.price / 1000) * 5 * value;
+        explanation = `${value} cditas × 5ml × ${priceInfo.price} MXN/litro ÷ 1000`;
+      } else if (unit === 'pza' && priceInfo.unit === 'kg') {
+        // Convertir piezas a kg según el tipo de ingrediente
+        let piezaToKg = 0;
+        
+        // Definir conversiones aproximadas para diferentes tipos de ingredientes
+        if (normalizedName.includes('almendra') || normalizedName.includes('almendras')) {
+          // Una almendra pesa aproximadamente 1g
+          piezaToKg = 0.001;
+          explanation = `${value} pza × 1g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('nuez') || normalizedName.includes('nueces')) {
+          // Una nuez pesa aproximadamente 5g
+          piezaToKg = 0.005;
+          explanation = `${value} pza × 5g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('avellana') || normalizedName.includes('avellanas')) {
+          // Una avellana pesa aproximadamente 1g
+          piezaToKg = 0.001;
+          explanation = `${value} pza × 1g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('pistacho') || normalizedName.includes('pistachos')) {
+          // Un pistacho pesa aproximadamente 0.7g
+          piezaToKg = 0.0007;
+          explanation = `${value} pza × 0.7g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('cacahuate') || normalizedName.includes('cacahuates')) {
+          // Un cacahuate pesa aproximadamente 0.5g
+          piezaToKg = 0.0005;
+          explanation = `${value} pza × 0.5g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('tomate') || normalizedName.includes('jitomate')) {
+          piezaToKg = 0.15; // Un tomate pesa aproximadamente 150g
+          explanation = `${value} pza × 150g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('cebolla')) {
+          piezaToKg = 0.2; // Una cebolla pesa aproximadamente 200g
+          explanation = `${value} pza × 200g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('papa') || normalizedName.includes('patata')) {
+          piezaToKg = 0.2; // Una papa pesa aproximadamente 200g
+          explanation = `${value} pza × 200g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('zanahoria')) {
+          piezaToKg = 0.1; // Una zanahoria pesa aproximadamente 100g
+          explanation = `${value} pza × 100g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('ajo')) {
+          piezaToKg = 0.005; // Un diente de ajo pesa aproximadamente 5g
+          explanation = `${value} pza × 5g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('limón')) {
+          piezaToKg = 0.08; // Un limón pesa aproximadamente 80g
+          explanation = `${value} pza × 80g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('manzana')) {
+          piezaToKg = 0.2; // Una manzana pesa aproximadamente 200g
+          explanation = `${value} pza × 200g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('plátano') || normalizedName.includes('banana')) {
+          piezaToKg = 0.15; // Un plátano pesa aproximadamente 150g
+          explanation = `${value} pza × 150g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('naranja')) {
+          piezaToKg = 0.2; // Una naranja pesa aproximadamente 200g
+          explanation = `${value} pza × 200g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else if (normalizedName.includes('pimiento') || normalizedName.includes('chile')) {
+          piezaToKg = 0.15; // Un pimiento pesa aproximadamente 150g
+          explanation = `${value} pza × 150g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        } else {
+          // Valor predeterminado para otros ingredientes
+          piezaToKg = 0.1; // Asumimos 100g por pieza como valor predeterminado
+          explanation = `${value} pza × 100g × ${priceInfo.price} MXN/kg ÷ 1000`;
+        }
+        
+        estimatedPrice = priceInfo.price * piezaToKg * value;
+      }
+    }
+    
+    return {
+      price: Math.round(estimatedPrice * 100) / 100, // Redondear a 2 decimales
+      explanation: explanation
+    };
+  };
+
+  // Calcular el presupuesto total
+  const calculateTotalBudget = (items) => {
+    let total = 0;
+    
+    Object.values(items).forEach(category => {
+      category.forEach(item => {
+        const priceEstimate = estimatePrice(item);
+        if (priceEstimate.price) {
+          total += priceEstimate.price;
+        }
+      });
+    });
+    
+    return Math.round(total * 100) / 100; // Redondear a 2 decimales
+  };
+
+  // Actualizar el presupuesto total cuando cambie la lista de compras
+  useEffect(() => {
+    if (Object.keys(groupedShoppingList).length > 0) {
+      const total = calculateTotalBudget(groupedShoppingList);
+      setTotalBudget(total);
+    }
+  }, [groupedShoppingList]);
+
   return (
     <div className="flex flex-col md:flex-row gap-6 relative">
       <div className="bg-white p-6 rounded-lg shadow-md relative">
@@ -884,15 +1059,30 @@ function ShoppingList({ weekPlan }) {
           ) : (
             <>
               <div className="mb-6 flex justify-between items-center">
-                <p className="text-gray-600">
-                  Total de ingredientes: <span className="font-medium">{Object.keys(shoppingList).length}</span>
-                </p>
-                <button
-                  onClick={() => setShowFullScreenChecklist(true)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Ver como checklist
-                </button>
+                <div>
+                  <p className="text-gray-600">
+                    Total de ingredientes: <span className="font-medium">{Object.keys(shoppingList).length}</span>
+                  </p>
+                  {totalBudget > 0 && (
+                    <p className="text-gray-600 mt-1">
+                      Presupuesto estimado: <span className="font-medium text-green-600">${totalBudget} MXN</span>
+                    </p>
+                  )}
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setShowPrices(!showPrices)}
+                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                  >
+                    {showPrices ? 'Ocultar precios' : 'Mostrar precios'}
+                  </button>
+                  <button
+                    onClick={() => setShowFullScreenChecklist(true)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    Ver como checklist
+                  </button>
+                </div>
               </div>
               
               <div className="mb-6 max-h-[calc(100vh-300px)] overflow-y-auto pr-2" ref={pdfContentRef}>
@@ -902,23 +1092,36 @@ function ShoppingList({ weekPlan }) {
                       {category} <span className="text-gray-500 text-sm">({items.length})</span>
                     </h3>
                     <ul className="space-y-1">
-                      {items.map((item, index) => (
-                        <li key={index} className="py-3">
-                          <div className="flex justify-between">
-                            <div>
-                              <span className="font-medium">{item.name}</span>
-                              {item.variations && item.variations.length > 1 && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  Incluye: {item.variations.join(', ')}
-                                </div>
-                              )}
+                      {items.map((item, index) => {
+                        const priceEstimate = estimatePrice(item);
+                        return (
+                          <li key={index} className="py-3">
+                            <div className="flex justify-between">
+                              <div>
+                                <span className="font-medium">{item.name}</span>
+                                {item.variations && item.variations.length > 1 && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Incluye: {item.variations.join(', ')}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="text-right">
+                                <span className="text-gray-600">
+                                  {formatQuantity(item)}
+                                </span>
+                                {showPrices && priceEstimate.price && (
+                                  <div className="text-xs text-green-600 mt-1">
+                                    ${priceEstimate.price} MXN
+                                    <span className="text-gray-400 ml-1 hidden md:inline">
+                                      ({priceEstimate.explanation})
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <span className="text-gray-600">
-                              {formatQuantity(item)}
-                            </span>
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))}
@@ -963,7 +1166,14 @@ function ShoppingList({ weekPlan }) {
         <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
           <div className="container mx-auto px-4 py-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-indigo-600">Lista de compras</h2>
+              <div>
+                <h2 className="text-2xl font-bold text-indigo-600">Lista de compras</h2>
+                {totalBudget > 0 && (
+                  <p className="text-gray-600 mt-1">
+                    Presupuesto estimado: <span className="font-medium text-green-600">${totalBudget} MXN</span>
+                  </p>
+                )}
+              </div>
               <button
                 onClick={() => setShowFullScreenChecklist(false)}
                 className="p-2 rounded-md hover:bg-gray-100"
@@ -980,6 +1190,12 @@ function ShoppingList({ weekPlan }) {
                   Total de ingredientes: <span className="font-medium">{Object.keys(shoppingList).length}</span>
                 </p>
                 <div className="flex space-x-2">
+                  <button
+                    onClick={() => setShowPrices(!showPrices)}
+                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                  >
+                    {showPrices ? 'Ocultar precios' : 'Mostrar precios'}
+                  </button>
                   <button
                     onClick={handleCheckAll}
                     className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
@@ -1013,49 +1229,65 @@ function ShoppingList({ weekPlan }) {
                   {category} <span className="text-gray-500 text-sm">({items.length})</span>
                 </h3>
                 <ul className="space-y-2">
-                  {items.map((item, index) => (
-                    <li key={index} className="py-2">
-                      <label className="flex items-start cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="mt-1 h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                          checked={!!checkedItems[item.name]}
-                          onChange={() => handleCheckItem(item.name)}
-                        />
-                        <div className="ml-3 flex-1">
-                          <span className={`font-medium ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
-                            {item.name}
-                          </span>
-                          <span className={`ml-2 text-gray-600 ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
-                            {formatQuantity(item)}
-                          </span>
-                          {item.variations && item.variations.length > 1 && (
-                            <div className={`text-xs text-gray-500 mt-1 ${checkedItems[item.name] ? 'line-through' : ''}`}>
-                              Incluye: {item.variations.join(', ')}
+                  {items.map((item, index) => {
+                    const priceEstimate = estimatePrice(item);
+                    return (
+                      <li key={index} className="py-2">
+                        <label className="flex items-start cursor-pointer">
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                            checked={!!checkedItems[item.name]}
+                            onChange={() => handleCheckItem(item.name)}
+                          />
+                          <div className="ml-3 flex-1">
+                            <div className="flex justify-between">
+                              <span className={`font-medium ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
+                                {item.name}
+                              </span>
+                              <span className={`ml-2 text-gray-600 ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
+                                {formatQuantity(item)}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      </label>
-                    </li>
-                  ))}
+                            {showPrices && priceEstimate.price && (
+                              <div className={`text-xs text-green-600 mt-1 ${checkedItems[item.name] ? 'line-through text-gray-400' : ''}`}>
+                                ${priceEstimate.price} MXN
+                              </div>
+                            )}
+                            {item.variations && item.variations.length > 1 && (
+                              <div className={`text-xs text-gray-500 mt-1 ${checkedItems[item.name] ? 'line-through' : ''}`}>
+                                Incluye: {item.variations.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </label>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))}
             
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-              <div className="container mx-auto flex justify-between">
-                <button
-                  onClick={() => setShowFullScreenChecklist(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Volver
-                </button>
-                <button
-                  onClick={exportToPDF}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                  Exportar a PDF
-                </button>
+              <div className="container mx-auto flex justify-between items-center">
+                <div>
+                  <span className="text-gray-700">Presupuesto total: </span>
+                  <span className="font-medium text-green-600">${totalBudget} MXN</span>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setShowFullScreenChecklist(false)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    onClick={exportToPDF}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    Exportar a PDF
+                  </button>
+                </div>
               </div>
             </div>
           </div>
