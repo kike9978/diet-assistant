@@ -4,6 +4,7 @@ import viteLogo from '/vite.svg'
 import DietPlanUploader from './components/DietPlanUploader'
 import MealPlanner from './components/MealPlanner'
 import ShoppingList from './components/ShoppingList'
+import PinnedPlanCard from './components/PinnedPlanCard'
 import { ToastProvider } from './components/Toast'
 
 function App() {
@@ -11,6 +12,11 @@ function App() {
   const [weekPlan, setWeekPlan] = useState({})
   const [showLanding, setShowLanding] = useState(true)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [pinnedPlans, setPinnedPlans] = useState(() => {
+    // Try to load pinned plans from localStorage
+    const savedPinnedPlans = localStorage.getItem('pinnedPlans')
+    return savedPinnedPlans ? JSON.parse(savedPinnedPlans) : []
+  })
   const [planId, setPlanId] = useState(() => {
     // Intentar recuperar el ID del plan actual del localStorage
     return localStorage.getItem('currentPlanId') || null;
@@ -59,6 +65,13 @@ function App() {
     }
   }, [planId])
 
+  // Save pinned plans to localStorage whenever they change
+  useEffect(() => {
+    if (pinnedPlans.length > 0) {
+      localStorage.setItem('pinnedPlans', JSON.stringify(pinnedPlans))
+    }
+  }, [pinnedPlans])
+
   const handleDietPlanUpload = (plan) => {
     // Generar un nuevo ID único para este plan
     const newPlanId = `plan_${Date.now()}`
@@ -77,6 +90,62 @@ function App() {
     // Limpiar los elementos marcados del plan anterior
     localStorage.removeItem('checkedItems')
   }
+
+  const handlePinCurrentPlan = () => {
+    if (!dietPlan || !planId) return;
+    
+    // Create a new pinned plan object
+    const newPinnedPlan = {
+      id: `pinned_${Date.now()}`,
+      name: `Plan ${pinnedPlans.length + 1}`,
+      planId: planId,
+      dietPlan: dietPlan,
+      weekPlan: weekPlan,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Add to pinned plans
+    setPinnedPlans([...pinnedPlans, newPinnedPlan]);
+  };
+
+  const handleRemovePinnedPlan = (pinnedPlanId) => {
+    setPinnedPlans(pinnedPlans.filter(plan => plan.id !== pinnedPlanId));
+  };
+
+  const handleLoadPinnedPlan = (pinnedPlan) => {
+    // Load the diet plan data
+    setDietPlan(pinnedPlan.dietPlan);
+    
+    // Create a clean week plan with empty arrays for each day
+    const cleanWeekPlan = {
+      monday: [],
+      tuesday: [],
+      wednesday: [],
+      thursday: [],
+      friday: [],
+      saturday: [],
+      sunday: []
+    };
+    
+    // Set the clean week plan
+    setWeekPlan(cleanWeekPlan);
+    setPlanId(pinnedPlan.planId);
+    setShowLanding(false);
+    
+    // Save to localStorage
+    localStorage.setItem('dietPlan', JSON.stringify(pinnedPlan.dietPlan));
+    localStorage.setItem('weekPlan', JSON.stringify(cleanWeekPlan));
+    localStorage.setItem('currentPlanId', pinnedPlan.planId);
+    
+    // Clear checked items from shopping list
+    localStorage.removeItem('checkedItems');
+  };
+
+  const handleRenamePinnedPlan = (pinnedPlanId, newName) => {
+    setPinnedPlans(pinnedPlans.map(plan => 
+      plan.id === pinnedPlanId ? {...plan, name: newName} : plan
+    ));
+  };
 
   const handleClearAndReset = () => {
     setShowResetConfirmation(true)
@@ -113,12 +182,20 @@ function App() {
             <h1 className="text-2xl font-bold">Plan Alimenticio</h1>
             
             {!showLanding && (
-              <button
-                onClick={handleClearAndReset}
-                className="px-4 py-2 bg-white text-indigo-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600"
-              >
-                Reiniciar Plan
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={handlePinCurrentPlan}
+                  className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600"
+                >
+                  Guardar Plan
+                </button>
+                <button
+                  onClick={handleClearAndReset}
+                  className="px-4 py-2 bg-white text-indigo-600 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600"
+                >
+                  Reiniciar Plan
+                </button>
+              </div>
             )}
           </div>
         </header>
@@ -134,6 +211,24 @@ function App() {
                 
                 <DietPlanUploader onUpload={handleDietPlanUpload} />
               </div>
+              
+              {/* Pinned Plans Section */}
+              {pinnedPlans.length > 0 && (
+                <div className="bg-white p-8 rounded-lg shadow-md">
+                  <h2 className="text-xl font-bold mb-6">Planes Guardados</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {pinnedPlans.map((plan) => (
+                      <PinnedPlanCard 
+                        key={plan.id}
+                        plan={plan}
+                        onLoad={handleLoadPinnedPlan}
+                        onRemove={handleRemovePinnedPlan}
+                        onRename={handleRenamePinnedPlan}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
