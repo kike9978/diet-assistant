@@ -8,6 +8,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   const toast = useToast();
   const [selectedDay, setSelectedDay] = useState('monday');
   const [expandedDayId, setExpandedDayId] = useState(null);
+  const [isDayPlanCollapsed, setIsDayPlanCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [substitutionModal, setSubstitutionModal] = useState({
     isOpen: false,
@@ -236,7 +237,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   };
 
   return (
-    <div className="p-6 h-full flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Day selection tabs */}
       <div className="mb-6 overflow-x-auto">
         <div className="flex space-x-1 min-w-max">
@@ -245,8 +246,8 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
               key={day.id}
               onClick={() => setSelectedDay(day.id)}
               className={`px-4 py-2 text-sm font-medium rounded-md ${selectedDay === day.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               {day.name}
@@ -256,15 +257,24 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
       </div>
 
       {/* Meal selection */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
+      <div className="md:grid grid-cols-1 md:grid-cols-2 flex flex-col gap-6 flex-grow">
         {/* Available day plans */}
         <div className='flex flex-col'>
           <h3 className="text-lg font-medium mb-3">Planes de Comida Disponibles:</h3>
-          <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto flex-grow">
-            {/* Verificar la estructura del dietPlan */}
-            {dietPlan && Array.isArray(dietPlan.days) ? (
-              // Si dietPlan tiene una propiedad 'days' que es un array
-              dietPlan.days.map((day) => (
+          <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
+            {(() => {
+              // Get the days array - handle both dietPlan.days and direct array
+              const days = dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
+
+              if (!days?.length) {
+                return (
+                  <div className="text-center py-10">
+                    <p className="text-gray-500">No hay planes de comida disponibles.</p>
+                  </div>
+                );
+              }
+
+              return days.map((day) => (
                 <div key={day.id} className="mb-4 bg-white rounded-md shadow-sm overflow-hidden">
                   <div
                     className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
@@ -282,7 +292,8 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                         Usar este plan
                       </button>
                       <svg
-                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''}`}
+                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''
+                          }`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -325,90 +336,37 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
                     </div>
                   )}
                 </div>
-              ))
-            ) : Array.isArray(dietPlan) ? (
-              // Si dietPlan es directamente un array
-              dietPlan.map((day) => (
-                <div key={day.id} className="mb-4 bg-white rounded-md shadow-sm overflow-hidden">
-                  <div
-                    className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
-                    onClick={() => toggleDayExpansion(day.id)}
-                  >
-                    <h4 className="font-medium text-indigo-600">{day.name}</h4>
-                    <div className="flex items-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddDayPlan(day);
-                        }}
-                        className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 text-sm font-medium mr-3"
-                      >
-                        Usar este plan
-                      </button>
-                      <svg
-                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''}`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {expandedDayId === day.id && (
-                    <div className="p-4 border-t border-gray-100">
-                      <ul className="space-y-3">
-                        {day.meals.map((meal, mealIndex) => (
-                          <li key={meal.id} className="border-b border-gray-100 pb-2">
-                            <h5 className="font-medium">{meal.name}</h5>
-                            <ul className="text-sm text-gray-600 mt-1">
-                              {meal.ingredients.map((ingredient, ingredientIndex) => (
-                                <li key={ingredientIndex} className="flex justify-between items-center py-1">
-                                  <span>{ingredient.name} ({ingredient.quantity})</span>
-                                  <button
-                                    onClick={() => openSubstitutionModal(
-                                      day.id,
-                                      mealIndex,
-                                      ingredientIndex,
-                                      ingredient.name,
-                                      ingredient.quantity,
-                                      meal.name
-                                    )}
-                                    className="text-indigo-600 hover:text-indigo-800 text-xs"
-                                    title="Sustituir ingrediente"
-                                  >
-                                    Sustituir
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-gray-500">
-                  No hay planes de comida disponibles.
-                </p>
-              </div>
-            )}
+              ));
+            })()}
           </div>
         </div>
 
         {/* Selected day's meals */}
         <div className='flex flex-col'>
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-lg font-medium">
-              Plan para {days.find(day => day.id === selectedDay)?.name || 'Día seleccionado'}:
-            </h3>
+          <div
+            className="flex justify-between items-center mb-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md -mx-2"
+            onClick={() => setIsDayPlanCollapsed(!isDayPlanCollapsed)}
+          >
+            <div className="flex items-center">
+              <h3 className="text-lg font-medium mr-2">
+                Plan para {days.find(day => day.id === selectedDay)?.name || 'Día seleccionado'}:
+              </h3>
+              <svg
+                className={`w-5 h-5 text-gray-500 transition-transform ${isDayPlanCollapsed ? 'transform rotate-180' : ''
+                  }`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
             {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 && (
               <button
-                onClick={() => handleClearDay(selectedDay)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClearDay(selectedDay);
+                }}
                 className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm font-medium"
               >
                 Limpiar día
@@ -416,34 +374,36 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
             )}
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-md h-96 overflow-y-auto flex-grow">
-            {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 ? (
-              <ul className="space-y-4">
-                {structuredWeekPlan[selectedDay].map((meal, index) => (
-                  <li key={index} className="bg-white p-4 rounded-md shadow-sm">
-                    <h4 className="font-medium text-indigo-600 mb-2">{meal.name}</h4>
-                    <p className="text-sm text-gray-600 mb-2">Ingredientes:</p>
-                    <ul className="text-sm text-gray-600 list-disc list-inside">
-                      {meal.ingredients.map((ingredient, idx) => (
-                        <li key={idx}>
-                          {ingredient.name} ({ingredient.quantity})
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-center py-10">
-                <p className="text-gray-500 mb-4">
-                  No hay plan de comidas para este día.
-                </p>
-                <p className="text-gray-500 text-sm">
-                  Selecciona un plan de comida de la lista de disponibles.
-                </p>
-              </div>
-            )}
-          </div>
+          {!isDayPlanCollapsed && (
+            <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
+              {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 ? (
+                <ul className="space-y-4">
+                  {structuredWeekPlan[selectedDay].map((meal, index) => (
+                    <li key={index} className="bg-white p-4 rounded-md shadow-sm">
+                      <h4 className="font-medium text-indigo-600 mb-2">{meal.name}</h4>
+                      <p className="text-sm text-gray-600 mb-2">Ingredientes:</p>
+                      <ul className="text-sm text-gray-600 list-disc list-inside">
+                        {meal.ingredients.map((ingredient, idx) => (
+                          <li key={idx}>
+                            {ingredient.name} ({ingredient.quantity})
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-gray-500 mb-4">
+                    No hay plan de comidas para este día.
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Selecciona un plan de comida de la lista de disponibles.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

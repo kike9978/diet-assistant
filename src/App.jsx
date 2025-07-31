@@ -27,7 +27,7 @@ function App() {
     const savedDietPlan = localStorage.getItem('dietPlan')
     const savedWeekPlan = localStorage.getItem('weekPlan')
     const savedPlanId = localStorage.getItem('currentPlanId')
-    
+
     if (savedDietPlan && savedWeekPlan && savedPlanId) {
       try {
         setDietPlan(JSON.parse(savedDietPlan))
@@ -75,25 +75,25 @@ function App() {
   const handleDietPlanUpload = (plan) => {
     // Generar un nuevo ID único para este plan
     const newPlanId = `plan_${Date.now()}`
-    
+
     // Actualizar el estado
     setDietPlan(plan)
     setWeekPlan({})
     setPlanId(newPlanId)
     setShowLanding(false)
-    
+
     // Guardar inmediatamente en localStorage
     localStorage.setItem('dietPlan', JSON.stringify(plan))
     localStorage.setItem('weekPlan', JSON.stringify({}))
     localStorage.setItem('currentPlanId', newPlanId)
-    
+
     // Limpiar los elementos marcados del plan anterior
     localStorage.removeItem('checkedItems')
   }
 
   const handlePinCurrentPlan = () => {
     if (!dietPlan || !planId) return;
-    
+
     // Create a new pinned plan object
     const newPinnedPlan = {
       id: `pinned_${Date.now()}`,
@@ -103,7 +103,7 @@ function App() {
       weekPlan: weekPlan,
       createdAt: new Date().toISOString()
     };
-    
+
     // Add to pinned plans
     setPinnedPlans([...pinnedPlans, newPinnedPlan]);
   };
@@ -115,7 +115,7 @@ function App() {
   const handleLoadPinnedPlan = (pinnedPlan) => {
     // Load the diet plan data
     setDietPlan(pinnedPlan.dietPlan);
-    
+
     // Create a clean week plan with empty arrays for each day
     const cleanWeekPlan = {
       monday: [],
@@ -126,24 +126,24 @@ function App() {
       saturday: [],
       sunday: []
     };
-    
+
     // Set the clean week plan
     setWeekPlan(cleanWeekPlan);
     setPlanId(pinnedPlan.planId);
     setShowLanding(false);
-    
+
     // Save to localStorage
     localStorage.setItem('dietPlan', JSON.stringify(pinnedPlan.dietPlan));
     localStorage.setItem('weekPlan', JSON.stringify(cleanWeekPlan));
     localStorage.setItem('currentPlanId', pinnedPlan.planId);
-    
+
     // Clear checked items from shopping list
     localStorage.removeItem('checkedItems');
   };
 
   const handleRenamePinnedPlan = (pinnedPlanId, newName) => {
-    setPinnedPlans(pinnedPlans.map(plan => 
-      plan.id === pinnedPlanId ? {...plan, name: newName} : plan
+    setPinnedPlans(pinnedPlans.map(plan =>
+      plan.id === pinnedPlanId ? { ...plan, name: newName } : plan
     ));
   };
 
@@ -157,7 +157,7 @@ function App() {
     localStorage.removeItem('weekPlan')
     localStorage.removeItem('currentPlanId')
     localStorage.removeItem('checkedItems')
-    
+
     // Reset state
     setDietPlan(null)
     setWeekPlan({})
@@ -180,7 +180,7 @@ function App() {
         <header className="bg-indigo-600 text-white p-4 shadow-md">
           <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-2xl font-bold">Plan Alimenticio</h1>
-            
+
             {!showLanding && (
               <div className="flex space-x-2">
                 <button
@@ -199,7 +199,7 @@ function App() {
             )}
           </div>
         </header>
-        
+
         <main className="container mx-auto py-8 px-4">
           {showLanding ? (
             <div className="max-w-3xl mx-auto">
@@ -208,17 +208,17 @@ function App() {
                 <p className="text-gray-600 mb-8 text-center">
                   Sube tu plan alimenticio en formato JSON para comenzar a planificar tus comidas semanales.
                 </p>
-                
+
                 <DietPlanUploader onUpload={handleDietPlanUpload} />
               </div>
-              
+
               {/* Pinned Plans Section */}
               {pinnedPlans.length > 0 && (
                 <div className="bg-white p-8 rounded-lg shadow-md">
                   <h2 className="text-xl font-bold mb-6">Planes Guardados</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {pinnedPlans.map((plan) => (
-                      <PinnedPlanCard 
+                      <PinnedPlanCard
                         key={plan.id}
                         plan={plan}
                         onLoad={handleLoadPinnedPlan}
@@ -231,28 +231,24 @@ function App() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               <div className="lg:col-span-2">
-                <MealPlanner 
-                  dietPlan={dietPlan} 
-                  weekPlan={weekPlan} 
-                  setWeekPlan={setWeekPlan} 
-                  setDietPlan={updateDietPlan} 
+                <MealPlanner
+                  dietPlan={dietPlan}
+                  weekPlan={weekPlan}
+                  setWeekPlan={setWeekPlan}
+                  setDietPlan={updateDietPlan}
                 />
               </div>
-              
+
               <div>
                 <ShoppingList weekPlan={weekPlan} />
               </div>
             </div>
           )}
         </main>
-        
-        <footer className="bg-gray-800 text-white p-4 mt-auto">
-          <div className="container mx-auto text-center">
-            <p>&copy; {new Date().getFullYear()} Plan Alimenticio. Todos los derechos reservados.</p>
-          </div>
-        </footer>
+
+
 
         {/* Modal de confirmación para reiniciar el plan */}
         {showResetConfirmation && (
