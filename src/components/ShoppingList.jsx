@@ -1107,7 +1107,7 @@ function ShoppingList({ weekPlan }) {
       {/* Modal de checklist en pantalla completa */}
       {showFullScreenChecklist && (
         <div className="fixed inset-0 z-50 bg-white overflow-y-auto p-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto flex flex-col max-h-full overflow-hidden">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Lista de Compras - Checklist</h2>
               <button
@@ -1120,7 +1120,7 @@ function ShoppingList({ weekPlan }) {
               </button>
             </div>
 
-            <div className="mb-4 flex justify-between items-center">
+            <div className="mb-4 flex flex-col items-start justify-between">
               <div>
                 <p className="text-gray-600">
                   Total de ingredientes: <span className="font-medium">{Object.keys(shoppingList).length}</span>
@@ -1171,124 +1171,125 @@ function ShoppingList({ weekPlan }) {
                 </button>
               </div>
             </div>
+            <div className='flex flex-col overflow-y-auto'>
+              {Object.entries(groupedShoppingList).map(([category, items]) => (
+                <div key={category} >
+                  <h3 className="text-lg font-medium text-indigo-600 mb-3 border-b pb-2">
+                    {category} <span className="text-gray-500 text-sm">({items.length})</span>
+                  </h3>
+                  <ul className="space-y-3">
+                    {items.map((item, index) => {
+                      // Use normalizedName for consistent key generation
+                      const itemKey = generateItemKey(category, item.normalizedName || item.name.toLowerCase());
+                      const isChecked = checkedItems[itemKey] || false;
 
-            {Object.entries(groupedShoppingList).map(([category, items]) => (
-              <div key={category} className="mb-6">
-                <h3 className="text-lg font-medium text-indigo-600 mb-3 border-b pb-2">
-                  {category} <span className="text-gray-500 text-sm">({items.length})</span>
-                </h3>
-                <ul className="space-y-3">
-                  {items.map((item, index) => {
-                    // Use normalizedName for consistent key generation
-                    const itemKey = generateItemKey(category, item.normalizedName || item.name.toLowerCase());
-                    const isChecked = checkedItems[itemKey] || false;
+                      // Find sources for this item
+                      const findSources = () => {
+                        const sources = [];
 
-                    // Find sources for this item
-                    const findSources = () => {
-                      const sources = [];
+                        if (!weekPlan) return sources;
 
-                      if (!weekPlan) return sources;
+                        // Normalize the ingredient name for comparison
+                        const normalizedName = item.name.toLowerCase();
 
-                      // Normalize the ingredient name for comparison
-                      const normalizedName = item.name.toLowerCase();
+                        // Check each day in the week plan
+                        Object.entries(weekPlan).forEach(([day, meals]) => {
+                          // Map day IDs to readable names
+                          const dayName =
+                            day === 'monday' ? 'Lunes' :
+                              day === 'tuesday' ? 'Martes' :
+                                day === 'wednesday' ? 'Miércoles' :
+                                  day === 'thursday' ? 'Jueves' :
+                                    day === 'friday' ? 'Viernes' :
+                                      day === 'saturday' ? 'Sábado' : 'Domingo';
 
-                      // Check each day in the week plan
-                      Object.entries(weekPlan).forEach(([day, meals]) => {
-                        // Map day IDs to readable names
-                        const dayName =
-                          day === 'monday' ? 'Lunes' :
-                            day === 'tuesday' ? 'Martes' :
-                              day === 'wednesday' ? 'Miércoles' :
-                                day === 'thursday' ? 'Jueves' :
-                                  day === 'friday' ? 'Viernes' :
-                                    day === 'saturday' ? 'Sábado' : 'Domingo';
+                          // Check each meal in the day
+                          meals.forEach(meal => {
+                            // Check if any ingredient in the meal matches our item
+                            const matchingIngredients = meal.ingredients.filter(ing =>
+                              ing.name.toLowerCase() === normalizedName ||
+                              item.variations.includes(ing.name.toLowerCase())
+                            );
 
-                        // Check each meal in the day
-                        meals.forEach(meal => {
-                          // Check if any ingredient in the meal matches our item
-                          const matchingIngredients = meal.ingredients.filter(ing =>
-                            ing.name.toLowerCase() === normalizedName ||
-                            item.variations.includes(ing.name.toLowerCase())
-                          );
-
-                          if (matchingIngredients.length > 0) {
-                            sources.push({
-                              day: dayName,
-                              meal: meal.name,
-                              ingredients: matchingIngredients
-                            });
-                          }
-                        });
-                      });
-
-                      return sources;
-                    };
-
-                    const sources = findSources();
-                    const hasSources = sources.length > 0;
-
-                    return (
-                      <li key={itemKey} className={`py-2 px-3 rounded-md ${isChecked ? 'bg-green-50' : 'bg-gray-50'}`}>
-                        <div className="flex items-start">
-                          <input
-                            type="checkbox"
-                            id={itemKey}
-                            checked={isChecked}
-                            onChange={() => {
-                              setCheckedItems({
-                                ...checkedItems,
-                                [itemKey]: !isChecked
+                            if (matchingIngredients.length > 0) {
+                              sources.push({
+                                day: dayName,
+                                meal: meal.name,
+                                ingredients: matchingIngredients
                               });
-                            }}
-                            className="mt-1 h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500"
-                          />
-                          <div className="ml-3 flex-grow">
-                            <label
-                              htmlFor={itemKey}
-                              className={`font-medium cursor-pointer ${isChecked ? 'line-through text-gray-500' : ''}`}
-                            >
-                              {item.name}
-                            </label>
-                            <div className="text-sm text-gray-600 mt-1">
-                              {formatQuantity(item)}
+                            }
+                          });
+                        });
+
+                        return sources;
+                      };
+
+                      const sources = findSources();
+                      const hasSources = sources.length > 0;
+
+                      return (
+                        <li key={itemKey} className={`py-2 px-3 rounded-md ${isChecked ? 'bg-green-50' : 'bg-gray-50'}`}>
+                          <div className="flex items-start">
+                            <input
+                              type="checkbox"
+                              id={itemKey}
+                              checked={isChecked}
+                              onChange={() => {
+                                setCheckedItems({
+                                  ...checkedItems,
+                                  [itemKey]: !isChecked
+                                });
+                              }}
+                              className="mt-1 h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500"
+                            />
+                            <div className="ml-3 flex-grow">
+                              <label
+                                htmlFor={itemKey}
+                                className={`font-medium cursor-pointer ${isChecked ? 'line-through text-gray-500' : ''}`}
+                              >
+                                {item.name}
+                              </label>
+                              <div className="text-sm text-gray-600 mt-1">
+                                {formatQuantity(item)}
+                              </div>
+
+                              {item.variations && item.variations.length > 1 && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Incluye: {item.variations.join(', ')}
+                                </div>
+                              )}
+
+                              {/* Show sources in checklist view */}
+                              {hasSources && showSources && (
+                                <div className="mt-2 text-xs text-gray-600">
+                                  <details className="cursor-pointer">
+                                    <summary className="text-indigo-600 hover:text-indigo-800">
+                                      Ver detalles
+                                    </summary>
+                                    <div className="mt-2 pl-3 border-l-2 border-indigo-100">
+                                      {sources.map((source, idx) => (
+                                        <div key={idx} className="mb-1">
+                                          <span className="font-medium">{source.day}</span> - {source.meal}:
+                                          <ul className="pl-4 mt-1">
+                                            {source.ingredients.map((ing, ingIdx) => (
+                                              <li key={ingIdx}>{ing.quantity} {ing.name}</li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                </div>
+                              )}
                             </div>
-
-                            {item.variations && item.variations.length > 1 && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                Incluye: {item.variations.join(', ')}
-                              </div>
-                            )}
-
-                            {/* Show sources in checklist view */}
-                            {hasSources && showSources && (
-                              <div className="mt-2 text-xs text-gray-600">
-                                <details className="cursor-pointer">
-                                  <summary className="text-indigo-600 hover:text-indigo-800">
-                                    Ver detalles
-                                  </summary>
-                                  <div className="mt-2 pl-3 border-l-2 border-indigo-100">
-                                    {sources.map((source, idx) => (
-                                      <div key={idx} className="mb-1">
-                                        <span className="font-medium">{source.day}</span> - {source.meal}:
-                                        <ul className="pl-4 mt-1">
-                                          {source.ingredients.map((ing, ingIdx) => (
-                                            <li key={ingIdx}>{ing.quantity} {ing.name}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </details>
-                              </div>
-                            )}
                           </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
