@@ -3,6 +3,10 @@ import { PlusIcon, DuplicateIcon } from './Icons';
 import ToolsSidebar from './ToolsSidebar';
 import FullDayPlanMealAccordion from './ui/FullDayPlanMealAccordion';
 import { useToast } from './Toast';
+import ExpandableDayCard from './ui/meal-planner/ExpandableDayCard';
+import Tab from './ui/base/Tab';
+import MealCard from './ui/meal-planner/MealCard';
+import Modal from './ui/base/Modal';
 
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   const toast = useToast();
@@ -242,16 +246,11 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
       <div className="mb-6 overflow-x-auto">
         <div className="flex space-x-1 min-w-max">
           {days.map((day) => (
-            <button
+            <Tab
               key={day.id}
-              onClick={() => setSelectedDay(day.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${selectedDay === day.id
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              {day.name}
-            </button>
+              day={day}
+              selectedDay={selectedDay}
+              setSelectedDay={setSelectedDay} />
           ))}
         </div>
       </div>
@@ -275,67 +274,14 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
               }
 
               return days.map((day) => (
-                <div key={day.id} className="mb-4 bg-white rounded-md shadow-sm overflow-hidden">
-                  <div
-                    className="flex justify-between items-center p-4 cursor-pointer hover:bg-gray-50"
-                    onClick={() => toggleDayExpansion(day.id)}
-                  >
-                    <h4 className="font-medium text-indigo-600">{day.name}</h4>
-                    <div className="flex items-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddDayPlan(day);
-                        }}
-                        className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 text-sm font-medium mr-3"
-                      >
-                        Usar este plan
-                      </button>
-                      <svg
-                        className={`w-5 h-5 text-gray-500 transition-transform ${expandedDayId === day.id ? 'transform rotate-180' : ''
-                          }`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
-
-                  {expandedDayId === day.id && (
-                    <div className="p-4 border-t border-gray-100">
-                      <ul className="space-y-3">
-                        {day.meals.map((meal, mealIndex) => (
-                          <li key={meal.id} className="border-b border-gray-100 pb-2">
-                            <h5 className="font-medium">{meal.name}</h5>
-                            <ul className="text-sm text-gray-600 mt-1">
-                              {meal.ingredients.map((ingredient, ingredientIndex) => (
-                                <li key={ingredientIndex} className="flex justify-between items-center py-1">
-                                  <span>{ingredient.name} ({ingredient.quantity})</span>
-                                  <button
-                                    onClick={() => openSubstitutionModal(
-                                      day.id,
-                                      mealIndex,
-                                      ingredientIndex,
-                                      ingredient.name,
-                                      ingredient.quantity,
-                                      meal.name
-                                    )}
-                                    className="text-indigo-600 hover:text-indigo-800 text-xs"
-                                    title="Sustituir ingrediente"
-                                  >
-                                    Sustituir
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                <ExpandableDayCard
+                  key={day.id}
+                  day={day}
+                  expandedDayId={expandedDayId}
+                  toggleDayExpansion={toggleDayExpansion}
+                  handleAddDayPlan={handleAddDayPlan}
+                  openSubstitutionModal={openSubstitutionModal}
+                />
               ));
             })()}
           </div>
@@ -379,17 +325,10 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
               {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 ? (
                 <ul className="space-y-4">
                   {structuredWeekPlan[selectedDay].map((meal, index) => (
-                    <li key={index} className="bg-white p-4 rounded-md shadow-sm">
-                      <h4 className="font-medium text-indigo-600 mb-2">{meal.name}</h4>
-                      <p className="text-sm text-gray-600 mb-2">Ingredientes:</p>
-                      <ul className="text-sm text-gray-600 list-disc list-inside">
-                        {meal.ingredients.map((ingredient, idx) => (
-                          <li key={idx}>
-                            {ingredient.name} ({ingredient.quantity})
-                          </li>
-                        ))}
-                      </ul>
-                    </li>
+                    <MealCard
+                      key={index}
+                      index={index}
+                      meal={meal} />
                   ))}
                 </ul>
               ) : (
@@ -409,99 +348,57 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
 
       {/* Modal de sustitución */}
       {substitutionModal.isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-              <div className="absolute inset-0 bg-black opacity-30"></div>
-            </div>
+        <Modal
+          closeSubstitutionModal={closeSubstitutionModal}
+          substitutionModal={substitutionModal}
+          handleSubstituteIngredient={handleSubstituteIngredient}
+          heading={"Sustituir ingrediente"}>
 
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          <p className="text-sm text-gray-500 mb-4">
+            Estás sustituyendo <span className="font-medium">{substitutionModal.ingredientName} ({substitutionModal.ingredientQuantity})</span> de la comida <span className="font-medium">{substitutionModal.mealName}</span>.
+          </p>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                      Sustituir ingrediente
-                    </h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500 mb-4">
-                        Estás sustituyendo <span className="font-medium">{substitutionModal.ingredientName} ({substitutionModal.ingredientQuantity})</span> de la comida <span className="font-medium">{substitutionModal.mealName}</span>.
-                      </p>
+          <div className="mb-4">
+            <label htmlFor="substitute-replacement" className="block text-sm font-medium text-gray-700 mb-1">
+              Reemplazar con
+            </label>
+            <select
+              id="substitute-replacement"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              value={substitutionModal.selectedReplacement}
+              onChange={(e) => setSubstitutionModal({
+                ...substitutionModal,
+                selectedReplacement: e.target.value
+              })}
+            >
+              <option value="">Selecciona un equivalente</option>
+              {(() => {
+                // Determinar la categoría del ingrediente
+                const category = getIngredientCategory(substitutionModal.ingredientName);
 
-                      <div className="mb-4">
-                        <label htmlFor="substitute-replacement" className="block text-sm font-medium text-gray-700 mb-1">
-                          Reemplazar con
-                        </label>
-                        <select
-                          id="substitute-replacement"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                          value={substitutionModal.selectedReplacement}
-                          onChange={(e) => setSubstitutionModal({
-                            ...substitutionModal,
-                            selectedReplacement: e.target.value
-                          })}
-                        >
-                          <option value="">Selecciona un equivalente</option>
-                          {(() => {
-                            // Determinar la categoría del ingrediente
-                            const category = getIngredientCategory(substitutionModal.ingredientName);
-
-                            // Si tenemos equivalentes para esta categoría, mostrarlos
-                            if (equivalentsByCategory[category]) {
-                              return equivalentsByCategory[category].map((equivalent, index) => (
-                                <option key={index} value={equivalent}>
-                                  {equivalent}
-                                </option>
-                              ));
-                            } else {
-                              // Si no hay equivalentes específicos, mostrar todas las opciones
-                              return Object.entries(equivalentsByCategory).map(([catName, equivalents]) => (
-                                <optgroup key={catName} label={catName}>
-                                  {equivalents.map((equivalent, index) => (
-                                    <option key={`${catName}-${index}`} value={equivalent}>
-                                      {equivalent}
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              ));
-                            }
-                          })()}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button
-                  type="button"
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={() => {
-                    if (substitutionModal.selectedReplacement) {
-                      handleSubstituteIngredient({
-                        day: substitutionModal.dayPlanId,
-                        mealIndex: substitutionModal.mealIndex,
-                        ingredientIndex: substitutionModal.ingredientIndex,
-                        replacement: substitutionModal.selectedReplacement
-                      });
-                    }
-                  }}
-                  disabled={!substitutionModal.selectedReplacement}
-                >
-                  Confirmar
-                </button>
-                <button
-                  type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  onClick={closeSubstitutionModal}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
+                // Si tenemos equivalentes para esta categoría, mostrarlos
+                if (equivalentsByCategory[category]) {
+                  return equivalentsByCategory[category].map((equivalent, index) => (
+                    <option key={index} value={equivalent}>
+                      {equivalent}
+                    </option>
+                  ));
+                } else {
+                  // Si no hay equivalentes específicos, mostrar todas las opciones
+                  return Object.entries(equivalentsByCategory).map(([catName, equivalents]) => (
+                    <optgroup key={catName} label={catName}>
+                      {equivalents.map((equivalent, index) => (
+                        <option key={`${catName}-${index}`} value={equivalent}>
+                          {equivalent}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ));
+                }
+              })()}
+            </select>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Barra lateral de herramientas */}

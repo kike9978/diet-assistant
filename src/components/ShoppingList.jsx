@@ -20,12 +20,9 @@ function ShoppingList({ weekPlan }) {
   const pdfContentRef = useRef(null);
 
   // Add these new state variables at the top of the component
-  const [showEquivalents, setShowEquivalents] = useState(false);
   const [newIngredient, setNewIngredient] = useState({ name: '', quantity: '', category: 'Verduras' });
-  const [showAddForm, setShowAddForm] = useState(false);
 
-  // Modificar el estado de la barra lateral para que esté cerrada por defecto
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
   // Add a new state variable for source visibility
   const [showSources, setShowSources] = useState(false);
