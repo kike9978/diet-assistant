@@ -9,9 +9,6 @@ function App() {
   const [dietPlan, setDietPlan] = useState(null)
   const [weekPlan, setWeekPlan] = useState({})
   const [pageContent, setPageContent] = useState('landing')
-  const [showLanding, setShowLanding] = useState(true)
-  const [showPlan, setShowPlan] = useState(false)
-  const [showMealPrep, setShowMealPrep] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [pinnedPlans, setPinnedPlans] = useState(() => {
     // Try to load pinned plans from localStorage
@@ -34,7 +31,7 @@ function App() {
         setDietPlan(JSON.parse(savedDietPlan))
         setWeekPlan(JSON.parse(savedWeekPlan))
         setPlanId(savedPlanId)
-        setShowLanding(false)
+        setPageContent('plan')
       } catch (error) {
         console.error('Error loading saved data:', error)
         // Clear potentially corrupted data
@@ -81,7 +78,7 @@ function App() {
     setDietPlan(plan)
     setWeekPlan({})
     setPlanId(newPlanId)
-    setShowLanding(false)
+    setPageContent('plan')
 
     // Guardar inmediatamente en localStorage
     localStorage.setItem('dietPlan', JSON.stringify(plan))
@@ -131,7 +128,7 @@ function App() {
     // Set the clean week plan
     setWeekPlan(cleanWeekPlan);
     setPlanId(pinnedPlan.planId);
-    setShowLanding(false);
+    setPageContent('plan')
 
     // Save to localStorage
     localStorage.setItem('dietPlan', JSON.stringify(pinnedPlan.dietPlan));
@@ -163,7 +160,7 @@ function App() {
     setDietPlan(null)
     setWeekPlan({})
     setPlanId(null)
-    setShowLanding(true)
+    setPageContent('landing')
     setShowResetConfirmation(false)
   }
 
@@ -182,7 +179,7 @@ function App() {
           <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-2xl font-bold">Plan Alimenticio</h1>
 
-            {!showLanding && (
+            {pageContent !== 'landing' && (
               <div className="flex space-x-2">
                 <button
                   onClick={handlePinCurrentPlan}
@@ -202,7 +199,7 @@ function App() {
         </header>
 
         <main className="container mx-auto py-8 px-4 flex-1 overflow-y-auto">
-          {showLanding ? (
+          {pageContent === 'landing' ? (
             <div className="max-w-3xl mx-auto">
               <div className="bg-white p-8 rounded-lg shadow-md mb-8">
                 <h2 className="text-2xl font-bold mb-6 text-center">Bienvenido a tu Planificador de Comidas</h2>
@@ -231,7 +228,7 @@ function App() {
                 </div>
               )}
             </div>
-          ) : (
+          ) : pageContent === 'plan' ? (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
               <div className="lg:col-span-2">
                 <MealPlanner
@@ -246,16 +243,20 @@ function App() {
                 <ShoppingList weekPlan={weekPlan} />
               </div>
             </div>
-          )}
+          ) : pageContent === 'mealPrep' ? (
+            <div>
+              hola
+            </div>
+          ) : null}
         </main>
 
-        {!showLanding &&
+        {pageContent !== 'landing' &&
 
           <footer className='bg-indigo-600 text-white p-4 shadow-md'>
             <ul className='flex justify-between items-center'>
               <li><button className='cursor-pointer' onClick={handleClearAndReset}>Home</button></li>
-              <li><button className='cursor-pointer' onClick={() => setShowLanding(false)}>About</button></li>
-              <li><button className='cursor-pointer' onClick={() => setShowLanding(false)}>Contact</button></li>
+              <li><button className='cursor-pointer' onClick={() => setPageContent('plan')}>Meal Planning</button></li>
+              <li><button className='cursor-pointer' onClick={() => setPageContent('mealPrep')}>Meal Prep</button></li>
             </ul>
           </footer>
         }
