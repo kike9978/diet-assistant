@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import DietPlanUploader from './components/DietPlanUploader'
 import MealPlanner from './components/MealPlanner'
 import ShoppingList from './components/ShoppingList'
@@ -10,7 +8,10 @@ import { ToastProvider } from './components/Toast'
 function App() {
   const [dietPlan, setDietPlan] = useState(null)
   const [weekPlan, setWeekPlan] = useState({})
+  const [pageContent, setPageContent] = useState('landing')
   const [showLanding, setShowLanding] = useState(true)
+  const [showPlan, setShowPlan] = useState(false)
+  const [showMealPrep, setShowMealPrep] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [pinnedPlans, setPinnedPlans] = useState(() => {
     // Try to load pinned plans from localStorage
@@ -176,7 +177,7 @@ function App() {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gray-100">
+      <div className="h-screen max-h-screen bg-gray-100 flex flex-col overflow-hidden">
         <header className="bg-indigo-600 text-white p-4 shadow-md">
           <div className="container mx-auto flex justify-between items-center">
             <h1 className="text-2xl font-bold">Plan Alimenticio</h1>
@@ -200,7 +201,7 @@ function App() {
           </div>
         </header>
 
-        <main className="container mx-auto py-8 px-4">
+        <main className="container mx-auto py-8 px-4 flex-1 overflow-y-auto">
           {showLanding ? (
             <div className="max-w-3xl mx-auto">
               <div className="bg-white p-8 rounded-lg shadow-md mb-8">
@@ -247,6 +248,17 @@ function App() {
             </div>
           )}
         </main>
+
+        {!showLanding &&
+
+          <footer className='bg-indigo-600 text-white p-4 shadow-md'>
+            <ul className='flex justify-between items-center'>
+              <li><button className='cursor-pointer' onClick={handleClearAndReset}>Home</button></li>
+              <li><button className='cursor-pointer' onClick={() => setShowLanding(false)}>About</button></li>
+              <li><button className='cursor-pointer' onClick={() => setShowLanding(false)}>Contact</button></li>
+            </ul>
+          </footer>
+        }
 
 
 

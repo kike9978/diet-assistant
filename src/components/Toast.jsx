@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, createContext, useContext } from 'react';
 
 // Create a context for the toast
 const ToastContext = createContext();
@@ -10,12 +10,12 @@ export function ToastProvider({ children }) {
   const addToast = (message, type = 'success', duration = 3000) => {
     const id = Date.now();
     setToasts(prevToasts => [...prevToasts, { id, message, type, duration }]);
-    
+
     // Auto remove toast after duration
     setTimeout(() => {
       removeToast(id);
     }, duration);
-    
+
     return id;
   };
 
@@ -34,21 +34,20 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      
+
       {/* Toast container */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map(toast => (
-          <div 
+          <div
             key={toast.id}
-            className={`px-4 py-3 rounded-md shadow-md flex items-center justify-between max-w-xs animate-fade-in ${
-              toast.type === 'success' ? 'bg-green-200 text-green-800' :
-              toast.type === 'error' ? 'bg-red-200 text-red-800' :
-              toast.type === 'info' ? 'bg-blue-200 text-blue-800' :
-              'bg-yellow-500 text-white'
-            }`}
+            className={`px-4 py-3 rounded-md shadow-md flex items-center justify-between max-w-xs animate-fade-in ${toast.type === 'success' ? 'bg-green-200 text-green-800' :
+                toast.type === 'error' ? 'bg-red-200 text-red-800' :
+                  toast.type === 'info' ? 'bg-blue-200 text-blue-800' :
+                    'bg-yellow-500 text-white'
+              }`}
           >
             <p>{toast.message}</p>
-            <button 
+            <button
               onClick={() => removeToast(toast.id)}
               className="ml-3 text-slate-800 hover:text-gray-200"
             >
