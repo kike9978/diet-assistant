@@ -4,26 +4,47 @@ import { sumIngredients, formatQuantities } from "../utils/ingredientUtils";
 
 
 function MealCard({ meal, hasAnySelection, isSelected, onToggleSelect, isUnselectedVisible }) {
+    const [showIngredients, setShowIngredients] = useState(false);
+
     return (
         <div
             className={`bg-gray-100 cursor-pointer rounded-2xl flex flex-col p-4 ${hasAnySelection && !isSelected ? "opacity-40" : ""
                 } ${isUnselectedVisible && !isSelected ? "hidden" : ""}`}
             onClick={onToggleSelect}
         >
-            <h3 className="text-lg font-semibold">{meal.name}</h3>
-            {/* {meal.ingredients.map(ingredient => (
-                <div
-                    key={ingredient.name}
-
-                    className="flex justify-between gap-2 cursor-pointer"
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">{meal.name}</h3>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowIngredients(!showIngredients);
+                    }}
+                    className="text-indigo-600 hover:text-indigo-800 text-sm px-2 py-1 rounded"
                 >
-                    <p>{ingredient.name}</p>
-                    <p className="text-right">{ingredient.quantity}</p>
+                    {showIngredients ? "Ocultar" : "Mostrar"}
+                </button>
+            </div>
+
+
+            {showIngredients && (
+                <div className="mt-2">
+                    {meal.ingredients.map(ingredient => (
+                        <div
+                            key={ingredient.name}
+                            onClick={onToggleSelect}
+                            className="flex justify-between gap-2 py-1 hover:bg-gray-200 rounded px-2 cursor-pointer"
+                        >
+                            <p>{ingredient.name}</p>
+                            <p className="text-right">{ingredient.quantity}</p>
+                        </div>
+                    ))}
                 </div>
-            ))} */}
+            )}
         </div>
     );
 }
+
+
 
 
 function MealPrepPage({ weekPlan }) {
