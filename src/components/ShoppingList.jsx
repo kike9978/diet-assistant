@@ -169,7 +169,8 @@ function ShoppingList({ weekPlan }) {
     'frijol': ['frijol', 'frijoles', 'frijoles negros', 'frijoles pintos'],
     'queso panela': ['queso panela', 'queso panela en cubos', 'queso panela para espolvorear', 'queso panela rebanado', 'queso panela rallado'],
     'queso mozzarella': ['queso mozzarella', 'queso mozzarella rallado', 'queso mozzarella fresco', 'mozzarella'],
-    'queso': ['queso', 'queso fresco', 'queso oaxaca', 'queso manchego']
+    'queso': ['queso', 'queso fresco', 'queso oaxaca', 'queso manchego'],
+    "nopal": ["nopal", "nopales"]
   };
 
   // Create a more sophisticated normalization function
