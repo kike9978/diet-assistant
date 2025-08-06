@@ -10,7 +10,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   const toast = useToast();
   const [selectedDay, setSelectedDay] = useState('monday');
   const [expandedDayId, setExpandedDayId] = useState(null);
-  const [isDayPlanCollapsed, setIsDayPlanCollapsed] = useState(false);
+  const [arePlansColapsed, setArePlansColapsed] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [substitutionModal, setSubstitutionModal] = useState({
     isOpen: false,
@@ -185,13 +185,13 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   };
 
   const days = [
+    { id: 'sunday', name: 'Domingo' },
     { id: 'monday', name: 'Lunes' },
     { id: 'tuesday', name: 'Martes' },
     { id: 'wednesday', name: 'Miércoles' },
     { id: 'thursday', name: 'Jueves' },
     { id: 'friday', name: 'Viernes' },
     { id: 'saturday', name: 'Sábado' },
-    { id: 'sunday', name: 'Domingo' },
   ];
 
   // Mapa de equivalencias por categoría
@@ -256,54 +256,62 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
       {/* Meal selection */}
       <div className="md:grid grid-cols-1 md:grid-cols-2 flex flex-col gap-6 flex-grow">
         {/* Available day plans */}
-        <div className='flex flex-col'>
-          <h3 className="text-lg font-medium mb-3">Planes de Comida Disponibles:</h3>
-          <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
-            {(() => {
-              // Get the days array - handle both dietPlan.days and direct array
-              const days = dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
-
-              if (!days?.length) {
-                return (
-                  <div className="text-center py-10">
-                    <p className="text-gray-500">No hay planes de comida disponibles.</p>
-                  </div>
-                );
-              }
-
-              return days.map((day) => (
-                <ExpandableDayCard
-                  key={day.id}
-                  day={day}
-                  expandedDayId={expandedDayId}
-                  toggleDayExpansion={toggleDayExpansion}
-                  handleAddDayPlan={handleAddDayPlan}
-                  openSubstitutionModal={openSubstitutionModal}
-                />
-              ));
-            })()}
+        <div className='flex flex-col' onClick={() => setArePlansColapsed(!arePlansColapsed)}>
+          <div className="flex items-center">
+            <h3 className="text-lg font-medium mb-3">Planes de Comida Disponibles:</h3>
+            <svg
+              className={`w-5 h-5 text-gray-500 transition-transform ${arePlansColapsed ? 'transform rotate-180' : ''
+                }`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
+          {!arePlansColapsed && (
+            <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
+              <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
+
+                {(() => {
+                  // Get the days array - handle both dietPlan.days and direct array
+                  const days = dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
+
+                  if (!days?.length) {
+                    return (
+                      <div className="text-center py-10">
+                        <p className="text-gray-500">No hay planes de comida disponibles.</p>
+                      </div>
+                    );
+                  }
+
+                  return days.map((day) => (
+                    <ExpandableDayCard
+                      key={day.id}
+                      day={day}
+                      expandedDayId={expandedDayId}
+                      toggleDayExpansion={toggleDayExpansion}
+                      handleAddDayPlan={handleAddDayPlan}
+                      openSubstitutionModal={openSubstitutionModal}
+                    />
+                  ));
+                })()}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Selected day's meals */}
         <div className='flex flex-col p-2'>
           <div
-            className="flex justify-between items-center mb-3 cursor-pointer bg-gray-100 hover:bg-gray-50 p-2 rounded-md -mx-2 sticky top-3 "
-            onClick={() => setIsDayPlanCollapsed(!isDayPlanCollapsed)}
+            className="flex justify-between items-center mb-3 cursor-pointer bg-gray-100 hover:bg-gray-50 p-2 rounded-md -mx-2  "
+
           >
             <div className="flex items-center">
               <h3 className="text-lg font-medium mr-2">
                 Plan para {days.find(day => day.id === selectedDay)?.name || 'Día seleccionado'}:
               </h3>
-              <svg
-                className={`w-5 h-5 text-gray-500 transition-transform ${isDayPlanCollapsed ? 'transform rotate-180' : ''
-                  }`}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+
             </div>
             {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 && (
               <button
@@ -318,29 +326,27 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
             )}
           </div>
 
-          {!isDayPlanCollapsed && (
-            <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
-              {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 ? (
-                <ul className="space-y-4">
-                  {structuredWeekPlan[selectedDay].map((meal, index) => (
-                    <MealCard
-                      key={index}
-                      index={index}
-                      meal={meal} />
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-center py-10">
-                  <p className="text-gray-500 mb-4">
-                    No hay plan de comidas para este día.
-                  </p>
-                  <p className="text-gray-500 text-sm">
-                    Selecciona un plan de comida de la lista de disponibles.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
+            {structuredWeekPlan[selectedDay] && structuredWeekPlan[selectedDay].length > 0 ? (
+              <ul className="space-y-4">
+                {structuredWeekPlan[selectedDay].map((meal, index) => (
+                  <MealCard
+                    key={index}
+                    index={index}
+                    meal={meal} />
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-gray-500 mb-4">
+                  No hay plan de comidas para este día.
+                </p>
+                <p className="text-gray-500 text-sm">
+                  Selecciona un plan de comida de la lista de disponibles.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
