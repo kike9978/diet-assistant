@@ -259,7 +259,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
       <div className="md:grid grid-cols-1 md:grid-cols-2 flex flex-col gap-6 flex-grow">
         {/* Available day plans */}
         <div className='flex flex-col' onClick={() => setArePlansColapsed(!arePlansColapsed)}>
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium mb-3">Planes de Comida Disponibles:</h3>
             <svg
               className={`w-5 h-5 text-gray-500 transition-transform ${arePlansColapsed ? 'transform rotate-180' : ''
@@ -272,33 +272,33 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
             </svg>
           </div>
           {!arePlansColapsed && (
-            <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
-              <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
+            <div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow"
+              onClick={(e) => e.stopPropagation()}
+            >
 
-                {(() => {
-                  // Get the days array - handle both dietPlan.days and direct array
-                  const days = dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
+              {(() => {
+                // Get the days array - handle both dietPlan.days and direct array
+                const days = dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
 
-                  if (!days?.length) {
-                    return (
-                      <div className="text-center py-10">
-                        <p className="text-gray-500">No hay planes de comida disponibles.</p>
-                      </div>
-                    );
-                  }
+                if (!days?.length) {
+                  return (
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">No hay planes de comida disponibles.</p>
+                    </div>
+                  );
+                }
 
-                  return days.map((day) => (
-                    <ExpandableDayCard
-                      key={day.id}
-                      day={day}
-                      expandedDayId={expandedDayId}
-                      toggleDayExpansion={toggleDayExpansion}
-                      handleAddDayPlan={handleAddDayPlan}
-                      openSubstitutionModal={openSubstitutionModal}
-                    />
-                  ));
-                })()}
-              </div>
+                return days.map((day) => (
+                  <ExpandableDayCard
+                    key={day.id}
+                    day={day}
+                    expandedDayId={expandedDayId}
+                    toggleDayExpansion={toggleDayExpansion}
+                    handleAddDayPlan={handleAddDayPlan}
+                    openSubstitutionModal={openSubstitutionModal}
+                  />
+                ));
+              })()}
             </div>
           )}
         </div>
