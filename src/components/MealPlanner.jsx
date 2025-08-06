@@ -6,9 +6,11 @@ import Tab from './ui/base/Tab';
 import MealCard from './ui/meal-planner/MealCard';
 import Modal from './ui/base/Modal';
 
+const now = new Date()
+const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
   const toast = useToast();
-  const [selectedDay, setSelectedDay] = useState('monday');
+  const [selectedDay, setSelectedDay] = useState(weekDays[now.getDay()]);
   const [expandedDayId, setExpandedDayId] = useState(null);
   const [arePlansColapsed, setArePlansColapsed] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,7 +41,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan, setDietPlan }) {
 
   // Initialize weekPlan with empty arrays for each day if not already set
   const ensureWeekPlanStructure = () => {
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const initializedWeekPlan = { ...weekPlan };
 
     days.forEach(day => {
