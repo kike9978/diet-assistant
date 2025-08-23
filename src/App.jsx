@@ -120,58 +120,129 @@ function App() {
 		const savedPinnedPlans = localStorage.getItem("pinnedPlans");
 		return savedPinnedPlans ? JSON.parse(savedPinnedPlans) : [];
 	});
-	const [planId, setPlanId] = useState(() => localStorage.getItem("currentPlanId") || null);
+	const [planId, setPlanId] = useState(null);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [user, setUser] = useState(null);
+	const [isLoading, setIsLoading] = useState(true);
 
-	// 🔐 Verify token on initial load
+	// Load saved data from localStorage
+	const loadSavedData = () => {
+		try {
+			const savedDietPlan = localStorage.getItem("dietPlan");
+			const savedWeekPlan = localStorage.getItem("weekPlan");
+			const savedPlanId = localStorage.getItem("currentPlanId");
+
+			if (savedDietPlan && savedWeekPlan && savedPlanId) {
+				setDietPlan(JSON.parse(savedDietPlan));
+				setWeekPlan(JSON.parse(savedWeekPlan));
+				setPlanId(savedPlanId);
+				setPageContent("plan");
+			}
+		} catch (error) {
+			console.error("Error loading saved data:", error);
+			// Clear corrupted data
+			localStorage.removeItem("dietPlan");
+			localStorage.removeItem("weekPlan");
+			localStorage.removeItem("currentPlanId");
+			localStorage.removeItem("checkedItems");
+		}
+	};
+
+	// Fetch active diet plan from backend
+	const fetchActiveDietPlan = async (userData) => {
+		const token = localStorage.getItem("token");
+		if (!token) return;
+
+		try {
+			const res = await fetch(`http://localhost:3000/api/users/${userData.id}/active-diet-plan`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			});
+
+			if (!res.ok) throw new Error("No active diet plan found on server");
+
+			const serverPlan = await res.json();
+			setDietPlan(serverPlan);
+			localStorage.setItem("dietPlan", JSON.stringify(serverPlan));
+
+			// Reset weekPlan to empty on loading new dietPlan
+			const emptyWeekPlan = {
+				monday: [],
+				tuesday: [],
+				wednesday: [],
+				thursday: [],
+				friday: [],
+				saturday: [],
+				sunday: [],
+			};
+			setWeekPlan(emptyWeekPlan);
+			localStorage.setItem("weekPlan", JSON.stringify(emptyWeekPlan));
+			
+			// Set planId
+			if (serverPlan.id) {
+				setPlanId(serverPlan.id);
+				localStorage.setItem("currentPlanId", serverPlan.id);
+			} else {
+				const newId = `plan_${Date.now()}`;
+				setPlanId(newId);
+				localStorage.setItem("currentPlanId", newId);
+			}
+
+			setPageContent("plan");
+		} catch (err) {
+			console.warn("Failed to fetch diet plan from server, loading from localStorage", err);
+			// Fallback to localStorage if server fails
+			loadSavedData();
+		}
+	};
+
+	// FIXED: Single useEffect for authentication and data loading
 	useEffect(() => {
-		const verifyToken = async () => {
+		const initializeApp = async () => {
 			const token = localStorage.getItem("token");
-			if (!token) return;
+			if (!token) {
+				setIsLoading(false);
+				return;
+			}
 
 			try {
-				const res = await fetch("http://localhost:3000/verify", {
-					headers: {
-						Authorization: `Bearer ${token}`,
-					},
+				// Verify token
+				const res = await fetch("http://localhost:3000/api/auth/verify", {
+					headers: { Authorization: `Bearer ${token}` },
 				});
+
 				if (!res.ok) throw new Error("Token invalid");
 
 				const data = await res.json();
 				setUser(data.user);
 				setIsAuthenticated(true);
+
+				// After successful authentication, load the user's data
+				await fetchActiveDietPlan(data.user);
+
 			} catch (err) {
 				console.warn("Auth failed:", err.message);
 				localStorage.removeItem("token");
+				setIsAuthenticated(false);
+				setUser(null);
+			} finally {
+				setIsLoading(false);
 			}
 		};
 
-		verifyToken();
+		initializeApp();
 	}, []);
 
-	// Load saved data from localStorage on initial render
-	useEffect(() => {
-		const savedDietPlan = localStorage.getItem("dietPlan");
-		const savedWeekPlan = localStorage.getItem("weekPlan");
-		const savedPlanId = localStorage.getItem("currentPlanId");
+	// Called on login success from LoginPage
+	const onLoginSuccess = async (loggedInUser) => {
+		setUser(loggedInUser);
+		setIsAuthenticated(true);
+		await fetchActiveDietPlan(loggedInUser);
+		setIsLoading(false);
+	};
 
-		if (savedDietPlan && savedWeekPlan && savedPlanId) {
-			try {
-				setDietPlan(JSON.parse(savedDietPlan));
-				setWeekPlan(JSON.parse(savedWeekPlan));
-				setPlanId(savedPlanId);
-				setPageContent("plan");
-			} catch (error) {
-				console.error("Error loading saved data:", error);
-				localStorage.removeItem("dietPlan");
-				localStorage.removeItem("weekPlan");
-				localStorage.removeItem("currentPlanId");
-				localStorage.removeItem("checkedItems");
-			}
-		}
-	}, []);
-
+	// Save data to localStorage when state changes
 	useEffect(() => {
 		if (dietPlan) {
 			localStorage.setItem("dietPlan", JSON.stringify(dietPlan));
@@ -311,12 +382,10 @@ function App() {
 		setPageContent("landing");
 	};
 
-	// 👇 Conditional render: show login if not authenticated
+	if (isLoading) return <div className="p-4">Cargando...</div>;
+
 	if (!isAuthenticated) {
-		return <LoginPage onLoginSuccess={(user) => {
-			setUser(user);
-			setIsAuthenticated(true);
-		}} />;
+		return <LoginPage onLoginSuccess={onLoginSuccess} />;
 	}
 
 	// 👇 Main App Content
@@ -355,13 +424,13 @@ function App() {
 				<main className="container mx-auto py-8 px-4 flex-1 overflow-y-auto">
 					{pageContent === "landing" ? (
 						<LandingPage
-						handleDietPlanUpload={handleDietPlanUpload}
-						handleRemovePinnedPlan={handleRemovePinnedPlan}
-						pinnedPlans={pinnedPlans}
-						handleLoadPinnedPlan={handleLoadPinnedPlan}
-						handleRenamePinnedPlan={handleRenamePinnedPlan}
-						handleLogout={handleLogout} // 👈 added
-					/>
+							handleDietPlanUpload={handleDietPlanUpload}
+							handleRemovePinnedPlan={handleRemovePinnedPlan}
+							pinnedPlans={pinnedPlans}
+							handleLoadPinnedPlan={handleLoadPinnedPlan}
+							handleRenamePinnedPlan={handleRenamePinnedPlan}
+							handleLogout={handleLogout}
+						/>
 					) : pageContent === "plan" ? (
 						<MealPlannerPage
 							dietPlan={dietPlan}
@@ -378,7 +447,7 @@ function App() {
 					<footer className="bg-indigo-600 text-white p-4 shadow-md">
 						<ul className="flex justify-between items-center">
 							<li>
-								<button className="cursor-pointer" onClick={handleClearAndReset}>
+								<button className="cursor-pointer" onClick={() => setPageContent("landing")}>
 									Home
 								</button>
 							</li>
