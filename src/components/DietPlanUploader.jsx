@@ -198,7 +198,6 @@ function DietPlanUploader({ onUpload }) {
         )}
         
         <textarea
-          id="jsonInput"
           value={jsonInput}
           onChange={(e) => setJsonInput(e.target.value)}
           className="w-full h-64 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -214,6 +213,7 @@ function DietPlanUploader({ onUpload }) {
       
       <div className="flex justify-between">
         <button
+        type='button'
           onClick={handleSampleData}
           className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
         >
@@ -221,6 +221,7 @@ function DietPlanUploader({ onUpload }) {
         </button>
         
         <button
+        type='button'
           onClick={handleJsonSubmit}
           className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         >
