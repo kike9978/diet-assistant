@@ -4,7 +4,7 @@ import LandingPage from "./components/LandingPage";
 import LoadingSpinner from "./components/LoadingSpinner";
 import LoginPage from "./components/LoginPage";
 import MealPlannerPage from "./components/MealPlannerPage";
-import MealPrepPage from "./components/MealPrepPage";
+import MealPrepPage, { clearMealPrepLocalStorage } from "./components/MealPrepPage";
 import { ToastProvider } from "./components/Toast";
 import ResetConfirmationModal from "./components/ui/base/ResetConfirmationModal";
 import { useApi } from "./hooks/useApi";
@@ -49,7 +49,7 @@ function App() {
 			if (savedDietPlan && savedPlanId) {
 				setDietPlan(savedDietPlan);
 				setPlanId(savedPlanId);
-				
+
 				// Set week plan if available, otherwise use empty
 				if (savedWeekPlan && Object.keys(savedWeekPlan).length > 0) {
 					setWeekPlan(savedWeekPlan);
@@ -58,7 +58,7 @@ function App() {
 					setWeekPlan(emptyWeekPlan);
 					setItem(STORAGE_KEYS.weekPlan, emptyWeekPlan);
 				}
-				
+
 				setPageContent("plan");
 			}
 		} catch {
@@ -216,10 +216,10 @@ function App() {
 			// 3. We're still on landing page (meaning fetch failed during login)
 			// 4. No plan data in current state
 			if (
-				isAuthenticated && 
-				user?.activeDietPlanId && 
-				pageContent === "landing" && 
-				!dietPlan && 
+				isAuthenticated &&
+				user?.activeDietPlanId &&
+				pageContent === "landing" &&
+				!dietPlan &&
 				!planId
 			) {
 				try {
@@ -248,7 +248,7 @@ function App() {
 					// Only update if the data is different to avoid unnecessary re-renders
 					const currentWeekPlanString = JSON.stringify(weekPlan);
 					const newWeekPlanString = JSON.stringify(latestWeekPlan.days);
-					
+
 					if (currentWeekPlanString !== newWeekPlanString) {
 						console.log('Syncing week plan with latest server data');
 						setWeekPlan(latestWeekPlan.days);
@@ -263,7 +263,7 @@ function App() {
 
 		// Sync every 30 seconds
 		const syncInterval = setInterval(syncWeekPlan, 30000);
-		
+
 		return () => clearInterval(syncInterval);
 	}, [isAuthenticated, user?.activeWeekPlanId, pageContent, weekPlan, fetchWeekPlan, setItem]);
 
@@ -271,7 +271,7 @@ function App() {
 	const onLoginSuccess = async (loggedInUser) => {
 		setUser(loggedInUser);
 		setIsAuthenticated(true);
-		
+
 		// Check if user has an active diet plan
 		if (!loggedInUser.activeDietPlanId || loggedInUser.activeDietPlanId === "null") {
 			// User has no active plan - clear all data and go to landing
@@ -288,14 +288,14 @@ function App() {
 				// If API fails, fall back to localStorage for existing clients
 				const savedDietPlan = getItem(STORAGE_KEYS.dietPlan);
 				const savedPlanId = getItem(STORAGE_KEYS.currentPlanId);
-				
+
 				if (savedDietPlan && savedPlanId) {
 					loadSavedData();
 				}
 				// If both API and localStorage fail, will be retried by the useEffect hook
 			}
 		}
-		
+
 		setIsLoading(false);
 	};
 
@@ -306,7 +306,7 @@ function App() {
 
 			try {
 				let weekPlanId = user.activeWeekPlanId;
-				
+
 				// If user has an active week plan, always update it (don't create new ones)
 				if (weekPlanId) {
 					await updateWeekPlan(weekPlanId, { days: weekPlanData });
@@ -314,10 +314,10 @@ function App() {
 					// Only create a new week plan if user doesn't have one yet
 					const newWeekPlan = await saveWeekPlan({ days: weekPlanData });
 					weekPlanId = newWeekPlan.id;
-					
+
 					// Update user's activeWeekPlanId to point to this shared week plan
 					await updateUser(user.id, { activeWeekPlanId: weekPlanId });
-					
+
 					// Update local user state
 					setUser((prevUser) => ({
 						...prevUser,
@@ -379,7 +379,7 @@ function App() {
 
 	const handleDietPlanUpload = async (plan) => {
 		const newPlanId = `plan_${Date.now()}`;
-		
+
 		setDietPlan(plan);
 		setWeekPlan({});
 		setPlanId(newPlanId);
@@ -454,6 +454,7 @@ function App() {
 
 	const confirmReset = async () => {
 		clearUserData();
+		clearMealPrepLocalStorage();
 
 		setDietPlan(null);
 		setWeekPlan({});
