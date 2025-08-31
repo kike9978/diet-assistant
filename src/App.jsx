@@ -30,6 +30,7 @@ function App() {
 		fetchDietPlan,
 		fetchWeekPlan,
 		saveWeekPlan,
+		updateWeekPlan,
 		saveDietPlan,
 		updateUser,
 	} = useApi();
@@ -38,7 +39,7 @@ function App() {
 		return getItem(STORAGE_KEYS.pinnedPlans) || [];
 	});
 
-	// Load saved data from localStorage
+	// Load saved data from localStorage (fallback when API is unavailable)
 	const loadSavedData = useCallback(() => {
 		try {
 			const savedDietPlan = getItem(STORAGE_KEYS.dietPlan);
@@ -108,26 +109,36 @@ function App() {
 					setItem(STORAGE_KEYS.currentPlanId, serverPlan.id);
 				}
 
-				// Try to fetch saved weekPlan for this user and plan
+				// Always try to fetch the latest weekPlan from server first (to ensure sync across clients)
 				try {
-					const savedWeekPlan = await fetchWeekPlan(
-						userData.id,
-						userData.activeDietPlanId,
-					);
-					if (savedWeekPlan.weekPlan) {
-						setWeekPlan(savedWeekPlan.weekPlan);
-						setItem(STORAGE_KEYS.weekPlan, savedWeekPlan.weekPlan);
+					if (userData.activeWeekPlanId) {
+						const savedWeekPlan = await fetchWeekPlan(userData.activeWeekPlanId);
+						if (savedWeekPlan && savedWeekPlan.days) {
+							setWeekPlan(savedWeekPlan.days);
+							setItem(STORAGE_KEYS.weekPlan, savedWeekPlan.days);
+						} else {
+							// Week plan exists but no data, start with empty
+							const emptyWeekPlan = createEmptyWeekPlan();
+							setWeekPlan(emptyWeekPlan);
+							setItem(STORAGE_KEYS.weekPlan, emptyWeekPlan);
+						}
 					} else {
-						// No saved week plan, start with empty
+						// No active week plan ID, start with empty
 						const emptyWeekPlan = createEmptyWeekPlan();
 						setWeekPlan(emptyWeekPlan);
 						setItem(STORAGE_KEYS.weekPlan, emptyWeekPlan);
 					}
-				} catch {
-					// Reset weekPlan to empty on loading new dietPlan
-					const emptyWeekPlan = createEmptyWeekPlan();
-					setWeekPlan(emptyWeekPlan);
-					setItem(STORAGE_KEYS.weekPlan, emptyWeekPlan);
+				} catch (error) {
+					console.warn('Failed to fetch week plan from server, falling back to localStorage:', error);
+					// Fallback to localStorage only if server fetch fails
+					const savedWeekPlan = getItem(STORAGE_KEYS.weekPlan);
+					if (savedWeekPlan && Object.keys(savedWeekPlan).length > 0) {
+						setWeekPlan(savedWeekPlan);
+					} else {
+						const emptyWeekPlan = createEmptyWeekPlan();
+						setWeekPlan(emptyWeekPlan);
+						setItem(STORAGE_KEYS.weekPlan, emptyWeekPlan);
+					}
 				}
 
 				// Always navigate to plan page when we have a valid diet plan
@@ -224,6 +235,38 @@ function App() {
 		return () => clearTimeout(timeoutId);
 	}, [isAuthenticated, user, pageContent, dietPlan, planId, fetchActiveDietPlan]);
 
+	// Periodic sync to keep week plans synchronized across clients
+	useEffect(() => {
+		if (!isAuthenticated || !user?.activeWeekPlanId || pageContent !== "plan") {
+			return;
+		}
+
+		const syncWeekPlan = async () => {
+			try {
+				const latestWeekPlan = await fetchWeekPlan(user.activeWeekPlanId);
+				if (latestWeekPlan && latestWeekPlan.days) {
+					// Only update if the data is different to avoid unnecessary re-renders
+					const currentWeekPlanString = JSON.stringify(weekPlan);
+					const newWeekPlanString = JSON.stringify(latestWeekPlan.days);
+					
+					if (currentWeekPlanString !== newWeekPlanString) {
+						console.log('Syncing week plan with latest server data');
+						setWeekPlan(latestWeekPlan.days);
+						setItem(STORAGE_KEYS.weekPlan, latestWeekPlan.days);
+					}
+				}
+			} catch (error) {
+				// Silent fail - don't interrupt user experience
+				console.warn('Failed to sync week plan:', error);
+			}
+		};
+
+		// Sync every 30 seconds
+		const syncInterval = setInterval(syncWeekPlan, 30000);
+		
+		return () => clearInterval(syncInterval);
+	}, [isAuthenticated, user?.activeWeekPlanId, pageContent, weekPlan, fetchWeekPlan, setItem]);
+
 	// Called on login success from LoginPage
 	const onLoginSuccess = async (loggedInUser) => {
 		setUser(loggedInUser);
@@ -238,19 +281,18 @@ function App() {
 			setPlanId(null);
 			setPageContent("landing");
 		} else {
-			// First try localStorage (for existing clients)
-			const savedDietPlan = getItem(STORAGE_KEYS.dietPlan);
-			const savedPlanId = getItem(STORAGE_KEYS.currentPlanId);
-			
-			if (savedDietPlan && savedPlanId) {
-				loadSavedData();
-			} else {
-				// For new clients: Try to fetch immediately, but handle token issues gracefully
-				try {
-					await fetchActiveDietPlan(loggedInUser, true); // Skip token check for now
-				} catch {
-					// Will be retried by the useEffect hook
+			// Always try to fetch from API first to ensure sync across clients
+			try {
+				await fetchActiveDietPlan(loggedInUser, true); // Skip token check for now
+			} catch {
+				// If API fails, fall back to localStorage for existing clients
+				const savedDietPlan = getItem(STORAGE_KEYS.dietPlan);
+				const savedPlanId = getItem(STORAGE_KEYS.currentPlanId);
+				
+				if (savedDietPlan && savedPlanId) {
+					loadSavedData();
 				}
+				// If both API and localStorage fail, will be retried by the useEffect hook
 			}
 		}
 		
@@ -260,15 +302,34 @@ function App() {
 	// Save weekPlan to backend when it changes
 	const saveWeekPlanToServer = useCallback(
 		async (weekPlanData) => {
-			if (!user?.id || !planId) return;
+			if (!user?.id) return;
 
 			try {
-				await saveWeekPlan(user.id, planId, weekPlanData);
-			} catch {
+				let weekPlanId = user.activeWeekPlanId;
+				
+				// If user has an active week plan, always update it (don't create new ones)
+				if (weekPlanId) {
+					await updateWeekPlan(weekPlanId, { days: weekPlanData });
+				} else {
+					// Only create a new week plan if user doesn't have one yet
+					const newWeekPlan = await saveWeekPlan({ days: weekPlanData });
+					weekPlanId = newWeekPlan.id;
+					
+					// Update user's activeWeekPlanId to point to this shared week plan
+					await updateUser(user.id, { activeWeekPlanId: weekPlanId });
+					
+					// Update local user state
+					setUser((prevUser) => ({
+						...prevUser,
+						activeWeekPlanId: weekPlanId,
+					}));
+				}
+			} catch (error) {
+				console.warn('Failed to save week plan to server:', error);
 				// Silent fail - week plan will be saved locally
 			}
 		},
-		[user?.id, planId, saveWeekPlan],
+		[user?.id, user?.activeWeekPlanId, saveWeekPlan, updateWeekPlan, updateUser],
 	);
 
 	// Save data to localStorage when state changes

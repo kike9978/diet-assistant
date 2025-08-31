@@ -38,14 +38,21 @@ export function useApi() {
 		return apiCall(`/dietplans/${planId}`);
 	}, [apiCall]);
 
-	const fetchWeekPlan = useCallback(async (userId, planId) => {
-		return apiCall(`/users/${userId}/week-plan/${planId}`);
+	const fetchWeekPlan = useCallback(async (planId) => {
+		return apiCall(`/weekplans/${planId}`);
 	}, [apiCall]);
 
-	const saveWeekPlan = useCallback(async (userId, planId, weekPlan) => {
-		return apiCall(`/users/${userId}/week-plan`, {
+	const saveWeekPlan = useCallback(async (weekPlan) => {
+		return apiCall('/weekplans', {
+			method: 'POST',
+			body: JSON.stringify(weekPlan),
+		});
+	}, [apiCall]);
+
+	const updateWeekPlan = useCallback(async (planId, weekPlan) => {
+		return apiCall(`/weekplans/${planId}`, {
 			method: 'PUT',
-			body: JSON.stringify({ planId, weekPlan }),
+			body: JSON.stringify(weekPlan),
 		});
 	}, [apiCall]);
 
@@ -63,12 +70,86 @@ export function useApi() {
 		});
 	}, [apiCall]);
 
+	// Additional API methods matching backend routes
+	const fetchAllUsers = useCallback(async () => {
+		return apiCall('/users');
+	}, [apiCall]);
+
+	const fetchUser = useCallback(async (userId, include = []) => {
+		const queryParams = include.length > 0 ? `?include=${include.join(',')}` : '';
+		return apiCall(`/users/${userId}${queryParams}`);
+	}, [apiCall]);
+
+	const createUser = useCallback(async (userData) => {
+		return apiCall('/users', {
+			method: 'POST',
+			body: JSON.stringify(userData),
+		});
+	}, [apiCall]);
+
+	const deleteUser = useCallback(async (userId) => {
+		return apiCall(`/users/${userId}`, {
+			method: 'DELETE',
+		});
+	}, [apiCall]);
+
+	const fetchAllWeekPlans = useCallback(async () => {
+		return apiCall('/weekplans');
+	}, [apiCall]);
+
+	const deleteWeekPlan = useCallback(async (planId) => {
+		return apiCall(`/weekplans/${planId}`, {
+			method: 'DELETE',
+		});
+	}, [apiCall]);
+
+	const fetchAllDietPlans = useCallback(async () => {
+		return apiCall('/dietplans');
+	}, [apiCall]);
+
+	const updateDietPlan = useCallback(async (planId, plan) => {
+		return apiCall(`/dietplans/${planId}`, {
+			method: 'PUT',
+			body: JSON.stringify(plan),
+		});
+	}, [apiCall]);
+
+	const deleteDietPlan = useCallback(async (planId) => {
+		return apiCall(`/dietplans/${planId}`, {
+			method: 'DELETE',
+		});
+	}, [apiCall]);
+
+	const fetchUserActiveDietPlan = useCallback(async (userId) => {
+		return apiCall(`/users/${userId}/active-diet-plan`);
+	}, [apiCall]);
+
+	const fetchUserActiveWeekPlan = useCallback(async (userId) => {
+		return apiCall(`/users/${userId}/active-week-plan`);
+	}, [apiCall]);
+
 	return {
 		verifyToken,
+		// Diet Plans
 		fetchDietPlan,
-		fetchWeekPlan,
-		saveWeekPlan,
+		fetchAllDietPlans,
 		saveDietPlan,
+		updateDietPlan,
+		deleteDietPlan,
+		// Week Plans
+		fetchWeekPlan,
+		fetchAllWeekPlans,
+		saveWeekPlan,
+		updateWeekPlan,
+		deleteWeekPlan,
+		// Users
+		fetchUser,
+		fetchAllUsers,
+		createUser,
 		updateUser,
+		deleteUser,
+		// User Active Plans
+		fetchUserActiveDietPlan,
+		fetchUserActiveWeekPlan,
 	};
 }
