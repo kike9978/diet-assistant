@@ -1,9 +1,7 @@
 import { useId, useState } from "react";
+import { useLocalStorage, STORAGE_KEYS } from "../hooks/useLocalStorage";
 
 const API_BASE_URL = "http://localhost:3000/api";
-const STORAGE_KEYS = {
-	token: "token",
-};
 
 // Login form component
 export default function LoginPage({ onLoginSuccess }) {
@@ -14,6 +12,7 @@ export default function LoginPage({ onLoginSuccess }) {
 	const [error, setError] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const headingId = useId();
+	const { setItem } = useLocalStorage();
 
 	const toggleMode = () => {
 		setIsRegistering((prev) => !prev);
@@ -42,7 +41,7 @@ export default function LoginPage({ onLoginSuccess }) {
 			}
 
 			const data = await res.json();
-			localStorage.setItem(STORAGE_KEYS.token, data.token);
+			setItem(STORAGE_KEYS.token, data.token);
 			onLoginSuccess(data.user);
 		} catch (err) {
 			setError(err.message || "Something went wrong");

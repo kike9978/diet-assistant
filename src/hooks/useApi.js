@@ -1,13 +1,15 @@
 import { useCallback } from 'react';
-import { STORAGE_KEYS } from './useLocalStorage';
+import { STORAGE_KEYS, useLocalStorage } from './useLocalStorage';
 
 const API_BASE_URL = "http://localhost:3000/api";
 
 export function useApi() {
+	const { getItem } = useLocalStorage();
+	
 	const getAuthHeaders = useCallback(() => {
-		const token = localStorage.getItem(STORAGE_KEYS.token);
+		const token = getItem(STORAGE_KEYS.token);
 		return token ? { Authorization: `Bearer ${token}` } : {};
-	}, []);
+	}, [getItem]);
 
 	const apiCall = useCallback(async (endpoint, options = {}) => {
 		const url = `${API_BASE_URL}${endpoint}`;
