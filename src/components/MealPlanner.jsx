@@ -17,8 +17,6 @@ import MealCard from "./ui/meal-planner/MealCard";
 const now = new Date();
 
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
-	console.log('🔍 MealPlanner received dietPlan:', dietPlan);
-	console.log('🔍 MealPlanner received weekPlan:', weekPlan);
 	const toast = useToast();
 	const selectId = useId();
 	const [selectedDay, setSelectedDay] = useState(WEEK_DAYS[now.getDay()]);
@@ -54,10 +52,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 	const structuredWeekPlan = ensureWeekPlanStructure();
 
 	const handleAddDayPlan = (dayPlan) => {
-		console.log('🔍 handleAddDayPlan called with:', dayPlan);
-		console.log('🔍 selectedDay:', selectedDay);
-		console.log('🔍 current weekPlan:', structuredWeekPlan);
-
 		// Check if dayPlan has meals or if we need to use a different structure
 		let mealsToAdd = [];
 
@@ -77,12 +71,9 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 			return;
 		}
 
-		console.log('🔍 mealsToAdd:', mealsToAdd);
-
 		// Replace the selected day's meals with the selected day plan
 		const updatedWeekPlan = { ...structuredWeekPlan };
 		updatedWeekPlan[selectedDay] = mealsToAdd;
-		console.log('🔍 updated weekPlan:', updatedWeekPlan);
 		setWeekPlan(updatedWeekPlan);
 
 		// Show success message

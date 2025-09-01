@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import LandingPage from "./components/LandingPage";
+import HomePage from "./components/HomePage";
 import LoadingSpinner from "./components/LoadingSpinner";
 import LoginPage from "./components/LoginPage";
 import MealPlannerPage from "./components/MealPlannerPage";
@@ -9,6 +10,9 @@ import { ToastProvider } from "./components/Toast";
 import ResetConfirmationModal from "./components/ui/base/ResetConfirmationModal";
 import { useApi } from "./hooks/useApi";
 import { STORAGE_KEYS, useLocalStorage } from "./hooks/useLocalStorage";
+import { useToast } from "./components/Toast";
+import DietPlanManager from "./components/DietPlanManager";
+import SimilarPlansModal from "./components/SimilarPlansModal";
 
 // Constants
 const DEBOUNCE_DELAY = 1000;
@@ -16,12 +20,19 @@ const DEBOUNCE_DELAY = 1000;
 function App() {
 	const [dietPlan, setDietPlan] = useState(null);
 	const [weekPlan, setWeekPlan] = useState({});
-	const [pageContent, setPageContent] = useState("landing");
+	const [pageContent, setPageContent] = useState("home");
 	const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 	const [planId, setPlanId] = useState(null);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [user, setUser] = useState(null);
 	const [isLoading, setIsLoading] = useState(true);
+
+	// New state for diet plan management
+	const [showDietPlanManager, setShowDietPlanManager] = useState(false);
+	const [showSimilarPlansModal, setShowSimilarPlansModal] = useState(false);
+	const [similarPlans, setSimilarPlans] = useState([]);
+	const [pendingDietPlan, setPendingDietPlan] = useState(null);
+	const [dietPlansRefreshTrigger, setDietPlansRefreshTrigger] = useState(0);
 
 	// Custom hooks
 	const { getItem, setItem, removeItem, clearUserData } = useLocalStorage();
@@ -80,9 +91,6 @@ function App() {
 	// Fetch active diet plan from backend using activeDietPlanId
 	const fetchActiveDietPlan = useCallback(
 		async (userData, skipTokenCheck = false) => {
-			console.log('🔍 fetchActiveDietPlan called with userData:', userData);
-			console.log('🔍 activeDietPlanId:', userData.activeDietPlanId);
-
 			const token = getItem(STORAGE_KEYS.token);
 			if (!token && !skipTokenCheck) {
 				return;
@@ -90,20 +98,18 @@ function App() {
 
 			// Check if user has an activeDietPlanId
 			if (!userData.activeDietPlanId || userData.activeDietPlanId === "null") {
-				// No active plan - always clear local data and go to landing
+				// No active plan - always clear local data and go to home
 				clearUserData();
 				setDietPlan(null);
 				setWeekPlan({});
 				setPlanId(null);
-				setPageContent("landing");
+				setPageContent("home");
 				return;
 			}
 
 			try {
 				// Fetch the specific diet plan using the activeDietPlanId
-				console.log('🔍 Fetching diet plan with ID:', userData.activeDietPlanId);
 				const serverPlan = await fetchDietPlan(userData.activeDietPlanId);
-				console.log('🔍 Successfully fetched diet plan:', serverPlan);
 				setDietPlan(serverPlan);
 				setItem(STORAGE_KEYS.dietPlan, serverPlan);
 
@@ -179,8 +185,6 @@ function App() {
 				const data = await verifyToken();
 
 				// Store the complete user data including activeDietPlanId
-				console.log('🔍 User data from server:', data.user);
-				console.log('🔍 Active Diet Plan ID:', data.user.activeDietPlanId);
 				setUser(data.user);
 				setIsAuthenticated(true);
 
@@ -279,12 +283,12 @@ function App() {
 
 		// Check if user has an active diet plan
 		if (!loggedInUser.activeDietPlanId || loggedInUser.activeDietPlanId === "null") {
-			// User has no active plan - clear all data and go to landing
+			// User has no active plan - clear all data and go to home
 			clearUserData();
 			setDietPlan(null);
 			setWeekPlan({});
 			setPlanId(null);
-			setPageContent("landing");
+			setPageContent("home");
 		} else {
 			// Always try to fetch from API first to ensure sync across clients
 			try {
@@ -391,11 +395,9 @@ function App() {
 		try {
 			// First, save the diet plan to the backend
 			const savedPlan = await postDietPlan(plan);
-			console.log('🔍 Saved diet plan:', savedPlan);
 
 			// Then, update the user's activeDietPlanId to point to this plan
 			if (user && savedPlan.id) {
-				console.log('🔍 Updating user activeDietPlanId to:', savedPlan.id);
 				await updateUser(user.id, { activeDietPlanId: savedPlan.id });
 
 				// Update local user state with the new activeDietPlanId
@@ -404,12 +406,46 @@ function App() {
 						...prevUser,
 						activeDietPlanId: savedPlan.id,
 					};
-					console.log('🔍 Updated local user state:', updatedUser);
 					return updatedUser;
 				});
+
+				// Trigger refresh of diet plans list
+				setDietPlansRefreshTrigger(prev => prev + 1);
+				toast.success('Plan de dieta guardado exitosamente!');
 			}
 		} catch (error) {
 			console.error('❌ Error in handleDietPlanUpload:', error);
+
+			// Handle exact duplicate diet plan case
+			if (error.message.includes('Exact duplicate diet plan detected')) {
+				// Extract the existing plan ID from the error message
+				const match = error.message.match(/ID: (\d+)/);
+				if (match) {
+					const existingPlanId = match[1];
+
+					// Update user's activeDietPlanId to the existing plan
+					await updateUser(user.id, { activeDietPlanId: existingPlanId });
+
+					// Update local user state
+					setUser((prevUser) => ({
+						...prevUser,
+						activeDietPlanId: existingPlanId,
+					}));
+
+					// Show success message
+					toast.success('Diet plan already exists! Using existing plan.');
+					return;
+				}
+			}
+
+			// Handle similar plans case
+			if (error.message.includes('Similar diet plans detected')) {
+				setSimilarPlans(error.similarPlans || []);
+				setPendingDietPlan(plan);
+				setShowSimilarPlansModal(true);
+				return;
+			}
+
 			// Handle error silently - plan is still saved locally
 		}
 	};
@@ -445,6 +481,105 @@ function App() {
 		removeItem(STORAGE_KEYS.checkedItems);
 	};
 
+	// Diet plan management handlers
+	const handlePlanSelect = async (plan) => {
+		try {
+			await updateUser(user.id, { activeDietPlanId: plan.id });
+			setUser((prevUser) => ({
+				...prevUser,
+				activeDietPlanId: plan.id,
+			}));
+			toast.success(`Plan "${plan.name}" activado`);
+			setShowDietPlanManager(false);
+
+			// Navigate to the plan page
+			setPageContent("plan");
+		} catch (error) {
+			console.error('Error selecting plan:', error);
+			toast.error('Error al activar el plan');
+		}
+	};
+
+	const handlePlanEdit = (plan) => {
+		// TODO: Implement plan editing functionality
+		console.log('Edit plan:', plan);
+		toast.info('Funcionalidad de edición en desarrollo');
+	};
+
+	const handlePlanDelete = async (plan) => {
+		// If the deleted plan was the active one, clear it
+		if (user?.activeDietPlanId === plan.id) {
+			setUser((prevUser) => ({
+				...prevUser,
+				activeDietPlanId: null,
+			}));
+		}
+
+		// Trigger refresh of diet plans list
+		setDietPlansRefreshTrigger(prev => prev + 1);
+	};
+
+	const handlePlanDuplicate = async (plan, newPlanId) => {
+		// Optionally set the duplicated plan as active
+		// await handlePlanSelect({ ...plan, id: newPlanId });
+
+		// Trigger refresh of diet plans list
+		setDietPlansRefreshTrigger(prev => prev + 1);
+	};
+
+	// Similar plans modal handlers
+	const handleUseExistingPlan = async (existingPlan) => {
+		try {
+			await updateUser(user.id, { activeDietPlanId: existingPlan.id });
+			setUser((prevUser) => ({
+				...prevUser,
+				activeDietPlanId: existingPlan.id,
+			}));
+			toast.success(`Usando plan existente: ${existingPlan.name}`);
+			setShowSimilarPlansModal(false);
+			setPendingDietPlan(null);
+
+			// Navigate to the plan page
+			setPageContent("plan");
+		} catch (error) {
+			console.error('Error using existing plan:', error);
+			toast.error('Error al usar plan existente');
+		}
+	};
+
+	const handleCreateNewPlan = async () => {
+		try {
+			// Force create the new plan by adding a timestamp to the name
+			const planWithTimestamp = {
+				...pendingDietPlan,
+				name: `${pendingDietPlan.name} (${new Date().toISOString()})`
+			};
+
+			const savedPlan = await postDietPlan(planWithTimestamp);
+
+			if (user && savedPlan.id) {
+				await updateUser(user.id, { activeDietPlanId: savedPlan.id });
+				setUser((prevUser) => ({
+					...prevUser,
+					activeDietPlanId: savedPlan.id,
+				}));
+				toast.success('Nuevo plan creado exitosamente');
+			}
+
+			setShowSimilarPlansModal(false);
+			setPendingDietPlan(null);
+
+			// Trigger refresh of diet plans list
+			setDietPlansRefreshTrigger(prev => prev + 1);
+
+			// Navigate to the plan page
+			setPageContent("plan");
+		} catch (error) {
+			console.error('Error creating new plan:', error);
+			toast.error('Error al crear nuevo plan');
+		}
+	};
+
 	const handleRenamePinnedPlan = (pinnedPlanId, newName) => {
 		setPinnedPlans(
 			pinnedPlans.map((plan) =>
@@ -464,7 +599,7 @@ function App() {
 		setDietPlan(null);
 		setWeekPlan({});
 		setPlanId(null);
-		setPageContent("landing");
+		setPageContent("home");
 		setShowResetConfirmation(false);
 
 		// Also clear the user's active plans from the backend
@@ -502,7 +637,7 @@ function App() {
 		setDietPlan(null);
 		setWeekPlan({});
 		setPlanId(null);
-		setPageContent("landing");
+		setPageContent("home");
 	};
 
 	// Loading state
@@ -531,12 +666,20 @@ function App() {
 								</div>
 							</div>
 
-							{pageContent !== "landing" && (
+							{pageContent !== "home" && (
 								<div
 									className="flex space-x-2"
 									role="toolbar"
 									aria-label="Acciones del plan"
 								>
+									<button
+										type="button"
+										onClick={() => setShowDietPlanManager(true)}
+										className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors"
+										aria-label="Gestionar planes de dieta"
+									>
+										Mis Planes
+									</button>
 									<button
 										type="button"
 										onClick={handlePinCurrentPlan}
@@ -547,11 +690,11 @@ function App() {
 									</button>
 									<button
 										type="button"
-										onClick={handleClearAndReset}
+										onClick={() => setPageContent("home")}
 										className="px-4 py-2 bg-white text-indigo-600 rounded-md hover:bg-gray-50 transition-colors"
-										aria-label="Reiniciar el plan actual y volver a la página principal"
+										aria-label="Ir al inicio"
 									>
-										Reiniciar Plan
+										Home
 									</button>
 									<button
 										type="button"
@@ -567,14 +710,19 @@ function App() {
 					</header>
 
 					<main className="container mx-auto py-8 px-4 flex-1 overflow-y-auto">
-						{pageContent === "landing" ? (
-							<LandingPage
+						{pageContent === "home" ? (
+							<HomePage
 								handleDietPlanUpload={handleDietPlanUpload}
 								handleRemovePinnedPlan={handleRemovePinnedPlan}
 								pinnedPlans={pinnedPlans}
 								handleLoadPinnedPlan={handleLoadPinnedPlan}
 								handleRenamePinnedPlan={handleRenamePinnedPlan}
 								handleLogout={handleLogout}
+								onPlanSelect={handlePlanSelect}
+								onPlanEdit={handlePlanEdit}
+								onPlanDelete={handlePlanDelete}
+								onPlanDuplicate={handlePlanDuplicate}
+								dietPlansRefreshTrigger={dietPlansRefreshTrigger}
 							/>
 						) : pageContent === "plan" ? (
 							<MealPlannerPage
@@ -588,7 +736,7 @@ function App() {
 						) : null}
 					</main>
 
-					{pageContent !== "landing" && (
+					{pageContent !== "home" && (
 						<footer className="bg-indigo-600 text-white p-4 shadow-md">
 							<nav aria-label="Navegación principal">
 								<ul className="flex justify-between items-center">
@@ -596,9 +744,9 @@ function App() {
 										<button
 											type="button"
 											className="cursor-pointer hover:underline transition-all"
-											onClick={() => setPageContent("landing")}
+											onClick={() => setPageContent("home")}
 											aria-current={
-												pageContent === "landing" ? "page" : undefined
+												pageContent === "home" ? "page" : undefined
 											}
 										>
 											Home
@@ -637,6 +785,43 @@ function App() {
 							cancelReset={cancelReset}
 						/>
 					)}
+
+					{/* Diet Plan Manager Modal */}
+					{showDietPlanManager && (
+						<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+							<div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+								<div className="flex justify-between items-center mb-4">
+									<h2 className="text-xl font-bold text-gray-800">
+										Gestionar Planes de Dieta
+									</h2>
+									<button
+										onClick={() => setShowDietPlanManager(false)}
+										className="text-gray-400 hover:text-gray-600 text-2xl"
+									>
+										×
+									</button>
+								</div>
+								<DietPlanManager
+									onPlanSelect={handlePlanSelect}
+									onPlanEdit={handlePlanEdit}
+									onPlanDelete={handlePlanDelete}
+									onPlanDuplicate={handlePlanDuplicate}
+								/>
+							</div>
+						</div>
+					)}
+
+					{/* Similar Plans Modal */}
+					<SimilarPlansModal
+						isOpen={showSimilarPlansModal}
+						similarPlans={similarPlans}
+						onClose={() => {
+							setShowSimilarPlansModal(false);
+							setPendingDietPlan(null);
+						}}
+						onUseExisting={handleUseExistingPlan}
+						onCreateNew={handleCreateNewPlan}
+					/>
 				</div>
 			</ToastProvider>
 		</ErrorBoundary>

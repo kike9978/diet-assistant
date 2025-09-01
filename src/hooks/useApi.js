@@ -5,7 +5,7 @@ const API_BASE_URL = "http://localhost:3000/api";
 
 export function useApi() {
 	const { getItem } = useLocalStorage();
-	
+
 	const getAuthHeaders = useCallback(() => {
 		const token = getItem(STORAGE_KEYS.token);
 		return token ? { Authorization: `Bearer ${token}` } : {};
@@ -122,6 +122,12 @@ export function useApi() {
 		});
 	}, [apiCall]);
 
+	const duplicateDietPlan = useCallback(async (planId) => {
+		return apiCall(`/dietplans/${planId}/duplicate`, {
+			method: 'POST',
+		});
+	}, [apiCall]);
+
 	const fetchUserActiveDietPlan = useCallback(async (userId) => {
 		return apiCall(`/users/${userId}/active-diet-plan`);
 	}, [apiCall]);
@@ -138,6 +144,7 @@ export function useApi() {
 		saveDietPlan,
 		updateDietPlan,
 		deleteDietPlan,
+		duplicateDietPlan,
 		// Week Plans
 		fetchWeekPlan,
 		fetchAllWeekPlans,
