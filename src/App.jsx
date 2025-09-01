@@ -44,11 +44,10 @@ function App() {
 		try {
 			const savedDietPlan = getItem(STORAGE_KEYS.dietPlan);
 			const savedWeekPlan = getItem(STORAGE_KEYS.weekPlan);
-			const savedPlanId = getItem(STORAGE_KEYS.currentPlanId);
 
-			if (savedDietPlan && savedPlanId) {
+			if (savedDietPlan && savedDietPlan.id) {
 				setDietPlan(savedDietPlan);
-				setPlanId(savedPlanId);
+				setPlanId(savedDietPlan.id); // Use the diet plan's actual ID, not cached planId
 
 				// Set week plan if available, otherwise use empty
 				if (savedWeekPlan && Object.keys(savedWeekPlan).length > 0) {
@@ -81,6 +80,9 @@ function App() {
 	// Fetch active diet plan from backend using activeDietPlanId
 	const fetchActiveDietPlan = useCallback(
 		async (userData, skipTokenCheck = false) => {
+			console.log('🔍 fetchActiveDietPlan called with userData:', userData);
+			console.log('🔍 activeDietPlanId:', userData.activeDietPlanId);
+
 			const token = getItem(STORAGE_KEYS.token);
 			if (!token && !skipTokenCheck) {
 				return;
@@ -99,14 +101,15 @@ function App() {
 
 			try {
 				// Fetch the specific diet plan using the activeDietPlanId
+				console.log('🔍 Fetching diet plan with ID:', userData.activeDietPlanId);
 				const serverPlan = await fetchDietPlan(userData.activeDietPlanId);
+				console.log('🔍 Successfully fetched diet plan:', serverPlan);
 				setDietPlan(serverPlan);
 				setItem(STORAGE_KEYS.dietPlan, serverPlan);
 
 				// Set planId from the fetched plan
 				if (serverPlan.id) {
 					setPlanId(serverPlan.id);
-					setItem(STORAGE_KEYS.currentPlanId, serverPlan.id);
 				}
 
 				// Always try to fetch the latest weekPlan from server first (to ensure sync across clients)
@@ -176,6 +179,8 @@ function App() {
 				const data = await verifyToken();
 
 				// Store the complete user data including activeDietPlanId
+				console.log('🔍 User data from server:', data.user);
+				console.log('🔍 Active Diet Plan ID:', data.user.activeDietPlanId);
 				setUser(data.user);
 				setIsAuthenticated(true);
 
@@ -287,9 +292,8 @@ function App() {
 			} catch {
 				// If API fails, fall back to localStorage for existing clients
 				const savedDietPlan = getItem(STORAGE_KEYS.dietPlan);
-				const savedPlanId = getItem(STORAGE_KEYS.currentPlanId);
 
-				if (savedDietPlan && savedPlanId) {
+				if (savedDietPlan && savedDietPlan.id) {
 					loadSavedData();
 				}
 				// If both API and localStorage fail, will be retried by the useEffect hook
@@ -351,11 +355,7 @@ function App() {
 		}
 	}, [weekPlan, saveWeekPlanToServer, setItem]);
 
-	useEffect(() => {
-		if (planId) {
-			setItem(STORAGE_KEYS.currentPlanId, planId);
-		}
-	}, [planId, setItem]);
+	// Removed localStorage caching of planId - always use server's activeDietPlanId
 
 	useEffect(() => {
 		if (pinnedPlans.length > 0) {
@@ -386,24 +386,30 @@ function App() {
 		setPageContent("plan");
 
 		setItem(STORAGE_KEYS.weekPlan, {});
-		setItem(STORAGE_KEYS.currentPlanId, newPlanId);
 		removeItem(STORAGE_KEYS.checkedItems);
 
 		try {
 			// First, save the diet plan to the backend
 			const savedPlan = await postDietPlan(plan);
+			console.log('🔍 Saved diet plan:', savedPlan);
 
 			// Then, update the user's activeDietPlanId to point to this plan
 			if (user && savedPlan.id) {
+				console.log('🔍 Updating user activeDietPlanId to:', savedPlan.id);
 				await updateUser(user.id, { activeDietPlanId: savedPlan.id });
 
 				// Update local user state with the new activeDietPlanId
-				setUser((prevUser) => ({
-					...prevUser,
-					activeDietPlanId: savedPlan.id,
-				}));
+				setUser((prevUser) => {
+					const updatedUser = {
+						...prevUser,
+						activeDietPlanId: savedPlan.id,
+					};
+					console.log('🔍 Updated local user state:', updatedUser);
+					return updatedUser;
+				});
 			}
-		} catch {
+		} catch (error) {
+			console.error('❌ Error in handleDietPlanUpload:', error);
 			// Handle error silently - plan is still saved locally
 		}
 	};
@@ -436,7 +442,6 @@ function App() {
 
 		setItem(STORAGE_KEYS.dietPlan, pinnedPlan.dietPlan);
 		setItem(STORAGE_KEYS.weekPlan, cleanWeekPlan);
-		setItem(STORAGE_KEYS.currentPlanId, pinnedPlan.planId);
 		removeItem(STORAGE_KEYS.checkedItems);
 	};
 
@@ -522,6 +527,7 @@ function App() {
 								<div className="text-sm">
 									<div>Usuario: {user?.name}</div>
 									<div>Plan ID: {user?.activeDietPlanId || "Ninguno"}</div>
+									<div>User ID: {user?.id}</div>
 								</div>
 							</div>
 

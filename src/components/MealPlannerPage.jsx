@@ -14,7 +14,6 @@ export default function MealPlannerPage({
                     dietPlan={dietPlan}
                     weekPlan={weekPlan}
                     setWeekPlan={setWeekPlan}
-                    setDietPlan={updateDietPlan}
                 />
             </div>
 

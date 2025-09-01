@@ -17,6 +17,8 @@ import MealCard from "./ui/meal-planner/MealCard";
 const now = new Date();
 
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
+	console.log('🔍 MealPlanner received dietPlan:', dietPlan);
+	console.log('🔍 MealPlanner received weekPlan:', weekPlan);
 	const toast = useToast();
 	const selectId = useId();
 	const [selectedDay, setSelectedDay] = useState(WEEK_DAYS[now.getDay()]);
@@ -52,10 +54,39 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 	const structuredWeekPlan = ensureWeekPlanStructure();
 
 	const handleAddDayPlan = (dayPlan) => {
+		console.log('🔍 handleAddDayPlan called with:', dayPlan);
+		console.log('🔍 selectedDay:', selectedDay);
+		console.log('🔍 current weekPlan:', structuredWeekPlan);
+
+		// Check if dayPlan has meals or if we need to use a different structure
+		let mealsToAdd = [];
+
+		if (dayPlan.meals && dayPlan.meals.length > 0) {
+			// Use the meals array directly
+			mealsToAdd = dayPlan.meals;
+		} else if (dayPlan.ingredients && dayPlan.ingredients.length > 0) {
+			// If it has ingredients but no meals, create a meal from the ingredients
+			mealsToAdd = [{
+				id: `meal_${Date.now()}`,
+				name: dayPlan.name || 'Comida personalizada',
+				ingredients: dayPlan.ingredients
+			}];
+		} else {
+			// If no meals or ingredients, show error
+			toast.error('Este plan no tiene comidas disponibles');
+			return;
+		}
+
+		console.log('🔍 mealsToAdd:', mealsToAdd);
+
 		// Replace the selected day's meals with the selected day plan
 		const updatedWeekPlan = { ...structuredWeekPlan };
-		updatedWeekPlan[selectedDay] = dayPlan.meals;
+		updatedWeekPlan[selectedDay] = mealsToAdd;
+		console.log('🔍 updated weekPlan:', updatedWeekPlan);
 		setWeekPlan(updatedWeekPlan);
+
+		// Show success message
+		toast.success(`Plan "${dayPlan.name}" agregado a ${WEEK_DAYS_SPANISH.find(day => day.id === selectedDay)?.name}`);
 	};
 
 	const handleClearDay = (dayId) => {
@@ -215,9 +246,8 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 							Planes de Comida Disponibles:
 						</h3>
 						<svg
-							className={`w-5 h-5 text-gray-500 transition-transform ${
-								arePlansColapsed ? "transform rotate-180" : ""
-							}`}
+							className={`w-5 h-5 text-gray-500 transition-transform ${arePlansColapsed ? "transform rotate-180" : ""
+								}`}
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -238,6 +268,8 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 								const days =
 									dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
 
+								console.log('🔍 Available days:', days);
+
 								if (!days?.length) {
 									return (
 										<div className="text-center py-10">
@@ -248,16 +280,19 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 									);
 								}
 
-								return days.map((day) => (
-									<ExpandableDayCard
-										key={day.id}
-										day={day}
-										expandedDayId={expandedDayId}
-										toggleDayExpansion={toggleDayExpansion}
-										handleAddDayPlan={handleAddDayPlan}
-										openSubstitutionModal={openSubstitutionModal}
-									/>
-								));
+								return days.map((day) => {
+									console.log('🔍 Rendering day:', day);
+									return (
+										<ExpandableDayCard
+											key={day.id}
+											day={day}
+											expandedDayId={expandedDayId}
+											toggleDayExpansion={toggleDayExpansion}
+											handleAddDayPlan={handleAddDayPlan}
+											openSubstitutionModal={openSubstitutionModal}
+										/>
+									);
+								});
 							})()}
 						</ul>
 					)}
@@ -291,7 +326,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 
 					<div className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow">
 						{structuredWeekPlan[selectedDay] &&
-						structuredWeekPlan[selectedDay].length > 0 ? (
+							structuredWeekPlan[selectedDay].length > 0 ? (
 							<ul className="space-y-4">
 								{structuredWeekPlan[selectedDay].map((meal, index) => (
 									<MealCard

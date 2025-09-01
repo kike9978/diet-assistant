@@ -4,7 +4,6 @@ const STORAGE_KEYS = {
 	token: "token",
 	dietPlan: "dietPlan",
 	weekPlan: "weekPlan",
-	currentPlanId: "currentPlanId",
 	checkedItems: "checkedItems",
 	pinnedPlans: "pinnedPlans",
 };
@@ -40,7 +39,6 @@ export function useLocalStorage() {
 	const clearUserData = useCallback(() => {
 		removeItem(STORAGE_KEYS.dietPlan);
 		removeItem(STORAGE_KEYS.weekPlan);
-		removeItem(STORAGE_KEYS.currentPlanId);
 		removeItem(STORAGE_KEYS.checkedItems);
 	}, [removeItem]);
 
