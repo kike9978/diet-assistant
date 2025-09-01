@@ -505,9 +505,24 @@ function App() {
 	// Keep the old function name for compatibility
 	const handlePlanSelect = activateDietPlan;
 
-	const handlePlanEdit = (plan) => {
-		setEditingDietPlan(plan);
-		setShowEditDietPlanModal(true);
+	const handlePlanEdit = async (plan) => {
+		try {
+			console.log('🔍 EDIT DEBUG - handlePlanEdit called with plan:', plan);
+			console.log('🔍 EDIT DEBUG - Plan structure:', JSON.stringify(plan, null, 2));
+
+			// Fetch the complete diet plan data with meals and ingredients
+			console.log('🔍 EDIT DEBUG - Fetching detailed diet plan data for ID:', plan.id);
+			const detailedPlan = await fetchDietPlan(plan.id);
+			console.log('🔍 EDIT DEBUG - Detailed plan data:', detailedPlan);
+			console.log('🔍 EDIT DEBUG - Detailed plan days:', detailedPlan?.days);
+			console.log('🔍 EDIT DEBUG - Detailed plan durationDays:', detailedPlan?.durationDays);
+
+			setEditingDietPlan(detailedPlan);
+			setShowEditDietPlanModal(true);
+		} catch (error) {
+			console.error('Error fetching detailed diet plan:', error);
+			toast.error('Error al cargar el plan de dieta');
+		}
 	};
 
 	const handleSaveEditedDietPlan = async (editedPlan) => {
