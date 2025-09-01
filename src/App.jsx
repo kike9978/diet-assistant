@@ -462,15 +462,19 @@ function App() {
 		setPageContent("landing");
 		setShowResetConfirmation(false);
 
-		// Also clear the user's active diet plan from the backend
+		// Also clear the user's active plans from the backend
 		try {
 			if (user) {
-				await updateUser(user.id, { activeDietPlanId: null });
+				await updateUser(user.id, {
+					activeDietPlanId: null,
+					activeWeekPlanId: null
+				});
 
 				// Update local user state
 				setUser((prevUser) => ({
 					...prevUser,
 					activeDietPlanId: null,
+					activeWeekPlanId: null,
 				}));
 			}
 		} catch {
