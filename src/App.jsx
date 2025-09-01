@@ -45,6 +45,7 @@ function App() {
 		saveDietPlan,
 		updateUser,
 	} = useApi();
+	const toast = useToast();
 
 	const [pinnedPlans, setPinnedPlans] = useState(() => {
 		return getItem(STORAGE_KEYS.pinnedPlans) || [];
@@ -152,7 +153,8 @@ function App() {
 
 				// Always navigate to plan page when we have a valid diet plan
 				setPageContent("plan");
-			} catch {
+			} catch (error) {
+				console.error('Error fetching active diet plan:', error);
 				// If this was called with skipTokenCheck, we're in login flow
 				if (!skipTokenCheck) {
 					// Fallback to localStorage if server fails
@@ -324,13 +326,10 @@ function App() {
 					weekPlanId = newWeekPlan.id;
 
 					// Update user's activeWeekPlanId to point to this shared week plan
-					await updateUser(user.id, { activeWeekPlanId: weekPlanId });
+					const updatedUser = await updateUser(user.id, { activeWeekPlanId: weekPlanId });
 
 					// Update local user state
-					setUser((prevUser) => ({
-						...prevUser,
-						activeWeekPlanId: weekPlanId,
-					}));
+					setUser(updatedUser);
 				}
 			} catch (error) {
 				console.warn('Failed to save week plan to server:', error);
@@ -398,16 +397,10 @@ function App() {
 
 			// Then, update the user's activeDietPlanId to point to this plan
 			if (user && savedPlan.id) {
-				await updateUser(user.id, { activeDietPlanId: savedPlan.id });
+				const updatedUser = await updateUser(user.id, { activeDietPlanId: savedPlan.id });
 
 				// Update local user state with the new activeDietPlanId
-				setUser((prevUser) => {
-					const updatedUser = {
-						...prevUser,
-						activeDietPlanId: savedPlan.id,
-					};
-					return updatedUser;
-				});
+				setUser(updatedUser);
 
 				// Trigger refresh of diet plans list
 				setDietPlansRefreshTrigger(prev => prev + 1);
@@ -424,13 +417,10 @@ function App() {
 					const existingPlanId = match[1];
 
 					// Update user's activeDietPlanId to the existing plan
-					await updateUser(user.id, { activeDietPlanId: existingPlanId });
+					const updatedUser = await updateUser(user.id, { activeDietPlanId: existingPlanId });
 
 					// Update local user state
-					setUser((prevUser) => ({
-						...prevUser,
-						activeDietPlanId: existingPlanId,
-					}));
+					setUser(updatedUser);
 
 					// Show success message
 					toast.success('Diet plan already exists! Using existing plan.');
@@ -481,24 +471,32 @@ function App() {
 		removeItem(STORAGE_KEYS.checkedItems);
 	};
 
-	// Diet plan management handlers
-	const handlePlanSelect = async (plan) => {
+	// Diet plan activation function
+	const activateDietPlan = async (plan) => {
 		try {
-			await updateUser(user.id, { activeDietPlanId: plan.id });
-			setUser((prevUser) => ({
-				...prevUser,
-				activeDietPlanId: plan.id,
-			}));
-			toast.success(`Plan "${plan.name}" activado`);
+			const updatedUser = await updateUser(user.id, { activeDietPlanId: plan.id });
+			setUser(updatedUser);
+			// toast.success(`Plan "${plan.name}" activado`); // Commented out due to old cached code issue
 			setShowDietPlanManager(false);
-
-			// Navigate to the plan page
-			setPageContent("plan");
+			await fetchActiveDietPlan(updatedUser);
 		} catch (error) {
 			console.error('Error selecting plan:', error);
 			toast.error('Error al activar el plan');
 		}
 	};
+
+	const handleLogout = () => {
+		removeItem(STORAGE_KEYS.token);
+		setIsAuthenticated(false);
+		setUser(null);
+		setDietPlan(null);
+		setWeekPlan({});
+		setPlanId(null);
+		setPageContent("home");
+	};
+
+	// Keep the old function name for compatibility
+	const handlePlanSelect = activateDietPlan;
 
 	const handlePlanEdit = (plan) => {
 		// TODO: Implement plan editing functionality
@@ -530,17 +528,14 @@ function App() {
 	// Similar plans modal handlers
 	const handleUseExistingPlan = async (existingPlan) => {
 		try {
-			await updateUser(user.id, { activeDietPlanId: existingPlan.id });
-			setUser((prevUser) => ({
-				...prevUser,
-				activeDietPlanId: existingPlan.id,
-			}));
+			const updatedUser = await updateUser(user.id, { activeDietPlanId: existingPlan.id });
+			setUser(updatedUser);
 			toast.success(`Usando plan existente: ${existingPlan.name}`);
 			setShowSimilarPlansModal(false);
 			setPendingDietPlan(null);
 
-			// Navigate to the plan page
-			setPageContent("plan");
+			// Fetch the diet plan data and navigate to the plan page using the updated user data
+			await fetchActiveDietPlan(updatedUser);
 		} catch (error) {
 			console.error('Error using existing plan:', error);
 			toast.error('Error al usar plan existente');
@@ -558,11 +553,8 @@ function App() {
 			const savedPlan = await postDietPlan(planWithTimestamp);
 
 			if (user && savedPlan.id) {
-				await updateUser(user.id, { activeDietPlanId: savedPlan.id });
-				setUser((prevUser) => ({
-					...prevUser,
-					activeDietPlanId: savedPlan.id,
-				}));
+				const updatedUser = await updateUser(user.id, { activeDietPlanId: savedPlan.id });
+				setUser(updatedUser);
 				toast.success('Nuevo plan creado exitosamente');
 			}
 
@@ -605,17 +597,13 @@ function App() {
 		// Also clear the user's active plans from the backend
 		try {
 			if (user) {
-				await updateUser(user.id, {
+				const updatedUser = await updateUser(user.id, {
 					activeDietPlanId: null,
 					activeWeekPlanId: null
 				});
 
 				// Update local user state
-				setUser((prevUser) => ({
-					...prevUser,
-					activeDietPlanId: null,
-					activeWeekPlanId: null,
-				}));
+				setUser(updatedUser);
 			}
 		} catch {
 			// Handle error silently
@@ -626,18 +614,31 @@ function App() {
 		setShowResetConfirmation(false);
 	};
 
-	const updateDietPlan = (updatedPlan) => {
-		setDietPlan(updatedPlan);
+	const handleGoHome = async () => {
+		try {
+			// Clear the active diet plan ID on the backend
+			if (user?.id) {
+				const updatedUser = await updateUser(user.id, { activeDietPlanId: null });
+				setUser(updatedUser);
+			}
+
+			// Clear local data
+			clearUserData();
+			setDietPlan(null);
+			setWeekPlan({});
+			setPlanId(null);
+
+			// Navigate to home
+			setPageContent("home");
+		} catch (error) {
+			console.error('Error going home:', error);
+			// Still navigate to home even if backend update fails
+			setPageContent("home");
+		}
 	};
 
-	const handleLogout = () => {
-		removeItem(STORAGE_KEYS.token);
-		setIsAuthenticated(false);
-		setUser(null);
-		setDietPlan(null);
-		setWeekPlan({});
-		setPlanId(null);
-		setPageContent("home");
+	const updateDietPlan = (updatedPlan) => {
+		setDietPlan(updatedPlan);
 	};
 
 	// Loading state
@@ -690,7 +691,7 @@ function App() {
 									</button>
 									<button
 										type="button"
-										onClick={() => setPageContent("home")}
+										onClick={handleGoHome}
 										className="px-4 py-2 bg-white text-indigo-600 rounded-md hover:bg-gray-50 transition-colors"
 										aria-label="Ir al inicio"
 									>
@@ -744,7 +745,7 @@ function App() {
 										<button
 											type="button"
 											className="cursor-pointer hover:underline transition-all"
-											onClick={() => setPageContent("home")}
+											onClick={handleGoHome}
 											aria-current={
 												pageContent === "home" ? "page" : undefined
 											}

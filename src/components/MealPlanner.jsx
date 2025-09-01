@@ -259,8 +259,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 								const days =
 									dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
 
-								console.log('🔍 Available days:', days);
-
 								if (!days?.length) {
 									return (
 										<div className="text-center py-10">
@@ -272,7 +270,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 								}
 
 								return days.map((day) => {
-									console.log('🔍 Rendering day:', day);
 									return (
 										<ExpandableDayCard
 											key={day.id}

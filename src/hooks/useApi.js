@@ -22,14 +22,19 @@ export function useApi() {
 			},
 		};
 
+		console.log('🔍 apiCall:', url, config);
 		const response = await fetch(url, config);
+		console.log('🔍 Response status:', response.status);
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({}));
+			console.log('🔍 Error response:', errorData);
 			throw new Error(errorData.error || errorData.message || `Request failed: ${response.status}`);
 		}
 
-		return response.json();
+		const data = await response.json();
+		console.log('🔍 Success response:', data);
+		return data;
 	}, [getAuthHeaders]);
 
 	const verifyToken = useCallback(async () => {
