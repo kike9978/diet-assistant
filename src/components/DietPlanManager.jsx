@@ -2,25 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useToast } from './Toast';
 
-const DietPlanManager = ({ onPlanSelect, onPlanEdit, onPlanDelete, onPlanDuplicate }) => {
+const DietPlanManager = ({ onPlanSelect, onPlanEdit, onPlanDelete, onPlanDuplicate, dietPlansRefreshTrigger }) => {
+    console.log('🔍 Debug - DietPlanManager rendered with props:', {
+        dietPlansRefreshTrigger,
+        hasOnPlanSelect: !!onPlanSelect,
+        hasOnPlanEdit: !!onPlanEdit,
+        hasOnPlanDelete: !!onPlanDelete,
+        hasOnPlanDuplicate: !!onPlanDuplicate
+    });
+
     const [dietPlans, setDietPlans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedPlan, setSelectedPlan] = useState(null);
-    const { fetchAllDietPlans, deleteDietPlan, duplicateDietPlan } = useApi();
+    const { fetchAllDietPlans, duplicateDietPlan } = useApi();
     const toast = useToast();
 
     useEffect(() => {
         loadDietPlans();
     }, []);
 
+    // Reload diet plans when refresh trigger changes
+    useEffect(() => {
+        console.log('🔍 Debug - DietPlanManager useEffect triggered, dietPlansRefreshTrigger:', dietPlansRefreshTrigger);
+        if (dietPlansRefreshTrigger > 0) {
+            console.log('🔍 Debug - Triggering loadDietPlans()');
+            loadDietPlans();
+        }
+    }, [dietPlansRefreshTrigger]);
+
     const loadDietPlans = async () => {
+        console.log('🔍 Debug - loadDietPlans() called');
         try {
             setLoading(true);
             const response = await fetchAllDietPlans();
+            console.log('🔍 Debug - fetchAllDietPlans response:', response);
 
             if (response && response.success && response.dietPlans) {
+                console.log('🔍 Debug - Setting diet plans:', response.dietPlans);
                 setDietPlans(response.dietPlans);
             } else {
+                console.log('🔍 Debug - No diet plans found, setting empty array');
                 setDietPlans([]);
             }
         } catch (error) {
@@ -42,15 +63,14 @@ const DietPlanManager = ({ onPlanSelect, onPlanEdit, onPlanDelete, onPlanDuplica
     };
 
     const handlePlanDelete = async (plan) => {
-        if (window.confirm(`Are you sure you want to delete "${plan.name}"?`)) {
+        if (window.confirm(`¿Estás seguro de que quieres eliminar "${plan.name}"?`)) {
             try {
-                await deleteDietPlan(plan.id);
-                toast.success('Diet plan deleted successfully');
-                loadDietPlans(); // Reload the list
-                onPlanDelete(plan);
+                // Call the parent's delete handler instead of doing API call here
+                await onPlanDelete(plan);
+                // The parent will handle the API call and refresh trigger
             } catch (error) {
                 console.error('Error deleting diet plan:', error);
-                toast.error('Error deleting diet plan');
+                toast.error('Error al eliminar el plan de dieta');
             }
         }
     };

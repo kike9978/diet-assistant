@@ -68,7 +68,7 @@ const HomePage = ({
                             onPlanEdit={onPlanEdit}
                             onPlanDelete={onPlanDelete}
                             onPlanDuplicate={onPlanDuplicate}
-                            refreshTrigger={dietPlansRefreshTrigger}
+                            dietPlansRefreshTrigger={dietPlansRefreshTrigger}
                         />
                     </div>
                 ) : (
