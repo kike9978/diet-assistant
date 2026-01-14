@@ -76,7 +76,7 @@ export const SIMILAR_INGREDIENTS = {
   'ajo': ['ajo', 'ajo picado', 'ajo molido', 'diente de ajo'],
   'zanahoria': ['zanahoria', 'zanahoria rallada', 'zanahoria picada'],
   'pimiento': ['pimiento', 'pimiento rojo', 'pimiento verde', 'pimiento amarillo'],
-  'chile': ['chile', 'chile serrano', 'chile jalapeño', 'chile poblano', 'chile habanero'],
+  'chile': ['chile', 'chile serrano', 'chile jalapeño', 'chile habanero'],
   'lechuga': ['lechuga', 'lechuga romana', 'lechuga iceberg', 'lechuga orejona'],
   'papa': ['papa', 'patata', 'papa cocida', 'papa hervida'],
   'pollo': ['pollo', 'pechuga de pollo', 'muslo de pollo', 'pollo desmenuzado'],
