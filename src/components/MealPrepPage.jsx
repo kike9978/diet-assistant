@@ -241,68 +241,70 @@ function MealPrepPage({ weekPlan }) {
 				<div className="bg-white p-4 rounded-lg shadow-md">
 					<h2 className="text-xl font-bold mb-4">Ingredientes Totales</h2>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-						{aggregatedIngredients.map((ingredient, index) => (
-							<div
-								key={index}
-								className="bg-gray-50 p-3 rounded-lg border group"
-							>
-								<div className="flex justify-between items-start">
-									<div>
-										<h3 className="font-semibold text-gray-800">
-											{ingredient.name}
-										</h3>
-										<p className="text-gray-600 mt-1">
-											{formatQuantities(ingredient.quantities)}
+	{aggregatedIngredients
+		.sort((a, b) => a.name.localeCompare(b.name))
+		.map((ingredient, index) => (
+			<div
+				key={index}
+				className="bg-gray-50 p-3 rounded-lg border group"
+			>
+				<div className="flex justify-between items-start">
+					<div>
+						<h3 className="font-semibold text-gray-800">
+							{ingredient.name}
+						</h3>
+						<p className="text-gray-600 mt-1">
+							{formatQuantities(ingredient.quantities)}
+						</p>
+					</div>
+
+					{/* Collapse button */}
+					{ingredient.sources.length > 0 && (
+						<button
+							className="text-indigo-600 hover:text-indigo-800 text-sm"
+							onClick={(e) => {
+								e.preventDefault();
+								const details =
+									e.currentTarget.parentElement.nextElementSibling;
+								details.classList.toggle("hidden");
+							}}
+						>
+							Detalles
+						</button>
+					)}
+				</div>
+
+				{/* Sources collapsible section */}
+				{ingredient.sources.length > 0 && (
+					<div className="hidden mt-2 text-sm text-gray-600 border-t pt-2">
+						<details>
+							<summary className="cursor-pointer text-indigo-600 hover:text-indigo-800">
+								Fuentes ({ingredient.sources.length})
+							</summary>
+							<div className="mt-2 pl-3 border-l-2 border-indigo-100">
+								{ingredient.sources.map((source, idx) => (
+									<div key={idx} className="mb-1">
+										<span className="font-medium">{source.day}</span> -{" "}
+										{source.meal}:
+										<p className="text-xs text-gray-500">
+											{source.quantity}
 										</p>
 									</div>
-
-									{/* Collapse button */}
-									{ingredient.sources.length > 0 && (
-										<button
-											className="text-indigo-600 hover:text-indigo-800 text-sm"
-											onClick={(e) => {
-												e.preventDefault();
-												const details =
-													e.currentTarget.parentElement.nextElementSibling;
-												details.classList.toggle("hidden");
-											}}
-										>
-											Detalles
-										</button>
-									)}
-								</div>
-
-								{/* Sources collapsible section */}
-								{ingredient.sources.length > 0 && (
-									<div className="hidden mt-2 text-sm text-gray-600 border-t pt-2">
-										<details>
-											<summary className="cursor-pointer text-indigo-600 hover:text-indigo-800">
-												Fuentes ({ingredient.sources.length})
-											</summary>
-											<div className="mt-2 pl-3 border-l-2 border-indigo-100">
-												{ingredient.sources.map((source, idx) => (
-													<div key={idx} className="mb-1">
-														<span className="font-medium">{source.day}</span> -{" "}
-														{source.meal}:
-														<p className="text-xs text-gray-500">
-															{source.quantity}
-														</p>
-													</div>
-												))}
-											</div>
-										</details>
-
-										{ingredient.variations.length > 1 && (
-											<div className="mt-2 text-xs text-gray-500">
-												<span className="font-medium">Variaciones:</span>{" "}
-												{ingredient.variations.join(", ")}
-											</div>
-										)}
-									</div>
-								)}
+								))}
 							</div>
-						))}
+						</details>
+
+						{ingredient.variations.length > 1 && (
+							<div className="mt-2 text-xs text-gray-500">
+								<span className="font-medium">Variaciones:</span>{" "}
+								{ingredient.variations.join(", ")}
+							</div>
+						)}
 					</div>
+				)}
+			</div>
+		))}
+</div>
 				</div>
 			)}
 		</div>

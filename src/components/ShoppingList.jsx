@@ -1384,7 +1384,7 @@ function ShoppingList({ weekPlan }) {
 										{/* UNCHECKED ITEMS */}
 										{uncheckedCategories.length > 0 && (
 											<>
-												<h2>Artítculos</h2>
+												<h2>Artículos</h2>
 												{uncheckedCategories.map(({ category, items }) => (
 													<div key={category}>
 														<h3 className="text-lg font-medium text-indigo-600 mb-3 border-b pb-2">
