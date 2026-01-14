@@ -22,26 +22,27 @@ export const INGREDIENT_CATEGORIES = {
     'calabacín', 'calabacita', 'brócoli', 'coliflor', 'ajo', 'champiñones', 'apio', 
     'berenjena', 'alcachofa', 'espárragos', 'rábano', 'col', 'acelga', 'puerro', 
     'calabaza', 'rúcula', 'jitomate', 'chile', 'chayote', 'nopales', 'elote', 
-    'ejotes', 'chícharos', 'jícama', 'betabel', 'champifión'
+    'ejotes', 'chícharos', 'jícama', 'betabel', 'champifión', "chipotle"
   ],
   'Alimentos de origen animal': [
     'pollo', 'res', 'cerdo', 'pescado', 'atún', 'salmón', 'huevo', 'camarones', 
     'leche', 'yogur', 'queso', 'requesón', 'jamón', 'pavo', 'salchicha', 'tocino', 
     'chorizo', 'sardinas', 'cabra', 'cordero', 'conejo', 'pato', 'ternera', 
-    'bacalao', 'trucha', 'pulpo', 'calamar', 'langosta', 'cangrejo', 'mejillones'
+    'bacalao', 'trucha', 'pulpo', 'calamar', 'langosta', 'cangrejo', 'mejillones', "crema"
   ],
   'Frutas': [
     'manzana', 'plátano', 'naranja', 'uva', 'fresa', 'fresas', 'piña', 'mango', 
     'sandía', 'melón', 'pera', 'durazno', 'kiwi', 'limón', 'lima', 'mandarina', 
     'ciruela', 'cereza', 'arándano', 'frambuesa', 'mora', 'coco', 'papaya', 
     'guayaba', 'granada', 'higo', 'maracuyá', 'lichi', 'aguacate', 'toronja', 
-    'banana', 'berries', 'guanábana', 'blueberries'
+    'banana', 'berries', 'guanábana', 'blueberries', "verduras"
   ],
   'Cereales y tubérculos': [
     'arroz', 'pasta', 'pan', 'avena', 'quinoa', 'maíz', 'trigo', 'cebada', 
     'centeno', 'amaranto', 'papa', 'camote', 'yuca', 'ñame', 'malanga', 
     'tapioca', 'harina', 'tortilla', 'cereal', 'galletas', 'bagel', 'muffin', 
-    'panecillo', 'cuscús', 'bulgur', 'palomitas', 'tostada', 'granola'
+    'panecillo', 'cuscús', 'bulgur', 'palomitas', 'tostada', 'granola', 
+    "salmas"
   ],
   'Leguminosas': [
     'frijol', 'lenteja', 'garbanzo', 'haba', 'soya', 'edamame', 'alubia', 
@@ -52,7 +53,7 @@ export const INGREDIENT_CATEGORIES = {
     'aceite de oliva', 'aceite vegetal', 'aceite de coco', 'aceite de girasol', 
     'aceite de canola', 'mantequilla', 'margarina', 'manteca', 'ghee', 
     'aceite de sésamo', 'aceite de aguacate', 'aceite de maíz', 'aceite de cacahuate', 
-    'aceite de linaza', 'aceite de palma', 'aceite'
+    'aceite de linaza', 'aceite de palma', 'aceite', "mayonesa"
   ],
   'Aceites y grasas (con proteína)': [
     'almendra', 'nuez', 'cacahuate', 'avellana', 'pistacho', 'anacardo', 
