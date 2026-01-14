@@ -22,7 +22,8 @@ export const INGREDIENT_CATEGORIES = {
     'calabacín', 'calabacita', 'brócoli', 'coliflor', 'ajo', 'champiñones', 'apio', 
     'berenjena', 'alcachofa', 'espárragos', 'rábano', 'col', 'acelga', 'puerro', 
     'calabaza', 'rúcula', 'jitomate', 'chile', 'chayote', 'nopales', 'elote', 
-    'ejotes', 'chícharos', 'jícama', 'betabel', 'champifión', "chipotle"
+    'ejotes', 'chícharos', 'jícama', 'betabel', 'champifión', "chipotle", "verduras"
+  ],
   ],
   'Alimentos de origen animal': [
     'pollo', 'res', 'cerdo', 'pescado', 'atún', 'salmón', 'huevo', 'camarones', 
@@ -35,8 +36,7 @@ export const INGREDIENT_CATEGORIES = {
     'sandía', 'melón', 'pera', 'durazno', 'kiwi', 'limón', 'lima', 'mandarina', 
     'ciruela', 'cereza', 'arándano', 'frambuesa', 'mora', 'coco', 'papaya', 
     'guayaba', 'granada', 'higo', 'maracuyá', 'lichi', 'aguacate', 'toronja', 
-    'banana', 'berries', 'guanábana', 'blueberries', "verduras"
-  ],
+    'banana', 'berries', 'guanábana', 'blueberries'
   'Cereales y tubérculos': [
     'arroz', 'pasta', 'pan', 'avena', 'quinoa', 'maíz', 'trigo', 'cebada', 
     'centeno', 'amaranto', 'papa', 'camote', 'yuca', 'ñame', 'malanga', 
