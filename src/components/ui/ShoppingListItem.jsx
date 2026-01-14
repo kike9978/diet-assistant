@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function ShoppingListItem({ item, showPrices, priceEstimate, formatQuantity, weekPlan, showSources }) {
+function ShoppingListItem({ item, priceEstimate, formatQuantity, weekPlan, showSources }) {
     const [expandedSources, setExpandedSources] = useState(false);
     
     // Function to find sources of this ingredient in the week plan
@@ -62,14 +62,7 @@ function ShoppingListItem({ item, showPrices, priceEstimate, formatQuantity, wee
                     <span className="text-gray-600">
                         {formatQuantity(item)}
                     </span>
-                    {showPrices && priceEstimate && priceEstimate.price && (
-                        <div className="text-xs text-green-600 mt-1">
-                            ${priceEstimate.price} MXN
-                            <span className="text-gray-400 ml-1 hidden md:inline">
-                                ({priceEstimate.explanation})
-                            </span>
-                        </div>
-                    )}
+                  
                 </div>
             </div>
             

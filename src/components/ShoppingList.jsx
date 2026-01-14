@@ -20,7 +20,6 @@ function ShoppingList({ weekPlan }) {
 	const [showFullScreenChecklist, setShowFullScreenChecklist] = useState(false);
 	const [checkedItems, setCheckedItems] = useState({});
 	const [totalBudget, setTotalBudget] = useState(0);
-	const [showPrices, setShowPrices] = useState(false);
 
 	// Create a ref for the PDF content
 	const pdfContentRef = useRef(null);
@@ -1007,8 +1006,6 @@ function ShoppingList({ weekPlan }) {
 		}
 	}, [groupedShoppingList]);
 
-
-
 	// Add this function to generate consistent item keys
 	const generateItemKey = (category, itemName) => {
 		// Normalize the name to lowercase and remove extra spaces
@@ -1053,12 +1050,7 @@ function ShoppingList({ weekPlan }) {
 									>
 										Ver como checklist
 									</button>
-									<button
-										onClick={() => setShowPrices(!showPrices)}
-										className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-									>
-										{showPrices ? "Ocultar precios" : "Mostrar precios"}
-									</button>
+
 									<button
 										onClick={() => setShowSources(!showSources)}
 										className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -1066,16 +1058,6 @@ function ShoppingList({ weekPlan }) {
 										{showSources ? "Ocultar fuentes" : "Mostrar fuentes"}
 									</button>
 								</div>
-								{totalBudget > 0 && (
-									<div className="text-right">
-										<p className="text-gray-600">
-											Presupuesto estimado:{" "}
-											<span className="font-medium text-green-600">
-												${totalBudget} MXN
-											</span>
-										</p>
-									</div>
-								)}
 							</div>
 
 							<div className="overflow-y-auto pr-2" ref={pdfContentRef}>
@@ -1095,7 +1077,6 @@ function ShoppingList({ weekPlan }) {
 														<li key={index}>
 															<ShoppingListItem
 																item={item}
-																showPrices={showPrices}
 																priceEstimate={priceEstimate}
 																formatQuantity={formatQuantity}
 																weekPlan={weekPlan}
@@ -1198,22 +1179,8 @@ function ShoppingList({ weekPlan }) {
 										{Object.keys(shoppingList).length}
 									</span>
 								</p>
-								{totalBudget > 0 && (
-									<p className="text-gray-600 mt-1">
-										Presupuesto estimado:{" "}
-										<span className="font-medium text-green-600">
-											${totalBudget} MXN
-										</span>
-									</p>
-								)}
 							</div>
 							<div className="flex space-x-2">
-								<button
-									onClick={() => setShowPrices(!showPrices)}
-									className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-								>
-									{showPrices ? "Ocultar precios" : "Mostrar precios"}
-								</button>
 								<button
 									onClick={() => setShowSources(!showSources)}
 									className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
@@ -1253,150 +1220,209 @@ function ShoppingList({ weekPlan }) {
 							</div>
 						</div>
 						<div className="flex flex-col overflow-y-auto">
-							{Object.entries(groupedShoppingList).map(([category, items]) => (
-								<div key={category}>
-									<h3 className="text-lg font-medium text-indigo-600 mb-3 border-b pb-2">
-										{category}{" "}
-										<span className="text-gray-500 text-sm">
-											({items.length})
-										</span>
-									</h3>
-									<ul className="space-y-3">
-										{items.map((item, index) => {
-											// Use normalizedName for consistent key generation
+							{(() => {
+								// Pre-calculate items for both sections in a single pass
+								const uncheckedCategories = [];
+								const checkedCategories = [];
+
+								// Helper to find sources (defined once)
+								const findSources = (item) => {
+									const sources = [];
+									if (!weekPlan) return sources;
+
+									const normalizedName = item.name.toLowerCase();
+									Object.entries(weekPlan).forEach(([day, meals]) => {
+										const dayName =
+											day === "monday"
+												? "Lunes"
+												: day === "tuesday"
+													? "Martes"
+													: day === "wednesday"
+														? "Miércoles"
+														: day === "thursday"
+															? "Jueves"
+															: day === "friday"
+																? "Viernes"
+																: day === "saturday"
+																	? "Sábado"
+																	: "Domingo";
+
+										meals.forEach((meal) => {
+											const matchingIngredients = meal.ingredients.filter(
+												(ing) =>
+													ing.name.toLowerCase() === normalizedName ||
+													item.variations?.includes(ing.name.toLowerCase()),
+											);
+
+											if (matchingIngredients.length > 0) {
+												sources.push({
+													day: dayName,
+													meal: meal.name,
+													ingredients: matchingIngredients,
+												});
+											}
+										});
+									});
+
+									return sources;
+								};
+
+								// Process all items once and sort into sections
+								Object.entries(groupedShoppingList).forEach(
+									([category, items]) => {
+										const uncheckedItems = [];
+										const checkedItemsList = [];
+
+										items.forEach((item) => {
 											const itemKey = generateItemKey(
 												category,
 												item.normalizedName || item.name.toLowerCase(),
 											);
 											const isChecked = checkedItems[itemKey] || false;
+											const sources = findSources(item);
 
-											// Find sources for this item
-											const findSources = () => {
-												const sources = [];
-
-												if (!weekPlan) return sources;
-
-												// Normalize the ingredient name for comparison
-												const normalizedName = item.name.toLowerCase();
-
-												// Check each day in the week plan
-												Object.entries(weekPlan).forEach(([day, meals]) => {
-													// Map day IDs to readable names
-													const dayName =
-														day === "monday"
-															? "Lunes"
-															: day === "tuesday"
-																? "Martes"
-																: day === "wednesday"
-																	? "Miércoles"
-																	: day === "thursday"
-																		? "Jueves"
-																		: day === "friday"
-																			? "Viernes"
-																			: day === "saturday"
-																				? "Sábado"
-																				: "Domingo";
-
-													// Check each meal in the day
-													meals.forEach((meal) => {
-														// Check if any ingredient in the meal matches our item
-														const matchingIngredients = meal.ingredients.filter(
-															(ing) =>
-																ing.name.toLowerCase() === normalizedName ||
-																item.variations.includes(
-																	ing.name.toLowerCase(),
-																),
-														);
-
-														if (matchingIngredients.length > 0) {
-															sources.push({
-																day: dayName,
-																meal: meal.name,
-																ingredients: matchingIngredients,
-															});
-														}
-													});
-												});
-
-												return sources;
+											const processedItem = {
+												...item,
+												itemKey,
+												isChecked,
+												sources,
+												hasSources: sources.length > 0,
 											};
 
-											const sources = findSources();
-											const hasSources = sources.length > 0;
+											if (isChecked) {
+												checkedItemsList.push(processedItem);
+											} else {
+												uncheckedItems.push(processedItem);
+											}
+										});
 
-											return (
-												<li
-													key={itemKey}
-													className={`py-2 px-3 rounded-md ${isChecked ? "bg-green-50" : "bg-gray-50"}`}
+										if (uncheckedItems.length > 0) {
+											uncheckedCategories.push({
+												category,
+												items: uncheckedItems,
+											});
+										}
+										if (checkedItemsList.length > 0) {
+											checkedCategories.push({
+												category,
+												items: checkedItemsList,
+											});
+										}
+									},
+								);
+
+								// Reusable render function for items
+								const renderItem = (item) => (
+									<li
+										key={item.itemKey}
+										className={`py-2 px-3 rounded-md ${item.isChecked ? "bg-green-50" : "bg-gray-50"}`}
+									>
+										<div className="flex items-start">
+											<input
+												type="checkbox"
+												id={item.itemKey}
+												checked={item.isChecked}
+												onChange={() => {
+													setCheckedItems((prev) => ({
+														...prev,
+														[item.itemKey]: !item.isChecked,
+													}));
+												}}
+												className="mt-1 h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500"
+											/>
+											<div className="ml-3 flex-grow">
+												<label
+													htmlFor={item.itemKey}
+													className={`font-medium cursor-pointer ${item.isChecked ? "line-through text-gray-500" : ""}`}
 												>
-													<div className="flex items-start">
-														<input
-															type="checkbox"
-															id={itemKey}
-															checked={isChecked}
-															onChange={() => {
-																setCheckedItems({
-																	...checkedItems,
-																	[itemKey]: !isChecked,
-																});
-															}}
-															className="mt-1 h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500"
-														/>
-														<div className="ml-3 flex-grow">
-															<label
-																htmlFor={itemKey}
-																className={`font-medium cursor-pointer ${isChecked ? "line-through text-gray-500" : ""}`}
-															>
-																{item.name}
-															</label>
-															<div className="text-sm text-gray-600 mt-1">
-																{formatQuantity(item)}
-															</div>
+													{item.name}
+												</label>
+												<div className="text-sm text-gray-600 mt-1">
+													{formatQuantity(item)}
+												</div>
 
-															{item.variations &&
-																item.variations.length > 1 && (
-																	<div className="text-xs text-gray-500 mt-1">
-																		Incluye: {item.variations.join(", ")}
-																	</div>
-																)}
-
-															{/* Show sources in checklist view */}
-															{hasSources && showSources && (
-																<div className="mt-2 text-xs text-gray-600">
-																	<details className="cursor-pointer">
-																		<summary className="text-indigo-600 hover:text-indigo-800">
-																			Ver detalles
-																		</summary>
-																		<div className="mt-2 pl-3 border-l-2 border-indigo-100">
-																			{sources.map((source, idx) => (
-																				<div key={idx} className="mb-1">
-																					<span className="font-medium">
-																						{source.day}
-																					</span>{" "}
-																					- {source.meal}:
-																					<ul className="pl-4 mt-1">
-																						{source.ingredients.map(
-																							(ing, ingIdx) => (
-																								<li key={ingIdx}>
-																									{ing.quantity} {ing.name}
-																								</li>
-																							),
-																						)}
-																					</ul>
-																				</div>
-																			))}
-																		</div>
-																	</details>
-																</div>
-															)}
-														</div>
+												{item.variations?.length > 1 && (
+													<div className="text-xs text-gray-500 mt-1">
+														Incluye: {item.variations.join(", ")}
 													</div>
-												</li>
-											);
-										})}
-									</ul>
-								</div>
-							))}
+												)}
+
+												{item.hasSources && showSources && (
+													<div className="mt-2 text-xs text-gray-600">
+														<details className="cursor-pointer">
+															<summary className="text-indigo-600 hover:text-indigo-800">
+																Ver detalles
+															</summary>
+															<div className="mt-2 pl-3 border-l-2 border-indigo-100">
+																{item.sources.map((source, idx) => (
+																	<div key={idx} className="mb-1">
+																		<span className="font-medium">
+																			{source.day}
+																		</span>{" "}
+																		- {source.meal}:
+																		<ul className="pl-4 mt-1">
+																			{source.ingredients.map((ing, ingIdx) => (
+																				<li key={ingIdx}>
+																					{ing.quantity} {ing.name}
+																				</li>
+																			))}
+																		</ul>
+																	</div>
+																))}
+															</div>
+														</details>
+													</div>
+												)}
+											</div>
+										</div>
+									</li>
+								);
+
+								// Render both sections
+								return (
+									<>
+										{/* UNCHECKED ITEMS */}
+										{uncheckedCategories.length > 0 && (
+											<>
+												<h2>Artítculos</h2>
+												{uncheckedCategories.map(({ category, items }) => (
+													<div key={category}>
+														<h3 className="text-lg font-medium text-indigo-600 mb-3 border-b pb-2">
+															{category}{" "}
+															<span className="text-gray-500 text-sm">
+																({items.length})
+															</span>
+														</h3>
+														<ul className="space-y-3">
+															{items.map(renderItem)}
+														</ul>
+													</div>
+												))}
+											</>
+										)}
+
+										{/* CHECKED ITEMS */}
+										{checkedCategories.length > 0 && (
+											<>
+												<h2 className="mt-8">Marcados</h2>
+												{checkedCategories.map(({ category, items }) => (
+													<div key={category}>
+														<h3 className="text-lg font-medium text-indigo-600 mb-3 border-b pb-2">
+															{category}{" "}
+															<span className="text-gray-500 text-sm">
+																({items.length})
+															</span>
+														</h3>
+														<ul className="space-y-3">
+															{items.map(renderItem)}
+														</ul>
+													</div>
+												))}
+											</>
+										)}
+									</>
+								);
+							})()}
 						</div>
 					</div>
 				</div>
