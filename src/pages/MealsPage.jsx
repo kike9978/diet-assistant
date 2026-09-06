@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAppState } from "../context/AppState";
 import EmptyState from "../components/ui/EmptyState";
 import Button from "../components/ui/Button";
+import { ChevronRight } from "lucide-react";
 import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
 import { MEAL_TYPE_COLOR } from "../features/calendar/mealTypeColors.js";
 
@@ -68,7 +69,7 @@ export default function MealsPage() {
 									</p>
 								</div>
 							</div>
-							<span className="text-ink-muted">→</span>
+							<ChevronRight className="size-4 text-ink-muted shrink-0" aria-hidden />
 						</Link>
 					</li>
 				))}

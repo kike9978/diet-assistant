@@ -21,6 +21,7 @@
     "@lingui/react": "^6.6.0",
     "@tailwindcss/vite": "^4.0.9",
     "html2pdf.js": "^0.10.3",
+    "lucide-react": "^1.41.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.18.3",

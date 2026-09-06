@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { parseQuantity, formatQuantity } from "./quantity.js";
+import {
+	formatAmount,
+	formatQuantity,
+	joinQuantityInput,
+	parseQuantity,
+	splitQuantityInput,
+} from "./quantity.js";
 
 describe("parseQuantity", () => {
 	it("parses simple amounts with units", () => {
@@ -85,5 +91,33 @@ describe("formatQuantity", () => {
 		expect(
 			formatQuantity({ amount: null, unit: "al gusto", raw: "al gusto" }),
 		).toBe("al gusto");
+	});
+});
+
+describe("splitQuantityInput / joinQuantityInput", () => {
+	it("splits a fraction + unit into form fields", () => {
+		expect(splitQuantityInput("1/2 tza")).toEqual({
+			amount: "1/2",
+			unit: "tza",
+		});
+	});
+
+	it("joins amount and unit back to a parseable string", () => {
+		expect(joinQuantityInput("1/2", "tza")).toBe("1/2 tza");
+		expect(joinQuantityInput("2", "pza")).toBe("2 pza");
+	});
+
+	it("treats al gusto as unit-only", () => {
+		expect(splitQuantityInput("al gusto")).toEqual({
+			amount: "",
+			unit: "al gusto",
+		});
+		expect(joinQuantityInput("1", "al gusto")).toBe("al gusto");
+		expect(joinQuantityInput("", "opcional")).toBe("opcional");
+	});
+
+	it("formats mixed numbers in the amount field", () => {
+		expect(formatAmount(1.5)).toBe("1 1/2");
+		expect(splitQuantityInput("1 1/2 tza").amount).toBe("1 1/2");
 	});
 });

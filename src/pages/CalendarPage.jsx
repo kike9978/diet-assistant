@@ -134,8 +134,8 @@ export default function CalendarPage() {
 				</button>
 				<p className="text-xs text-ink-muted mt-1">
 					<Trans>
-						Borra comidas agendadas de hace más de ~4 meses. Biblioteca y
-						plantillas no se tocan.
+						Borra comidas agendadas de hace más de ~4 meses. La biblioteca no
+						se toca.
 					</Trans>
 				</p>
 			</div>
@@ -147,7 +147,7 @@ export default function CalendarPage() {
 				description={
 					<Trans>
 						¿Borrar del calendario todo lo anterior a hace unos 4 meses? No
-						afecta biblioteca ni plantillas.
+						afecta la biblioteca.
 					</Trans>
 				}
 				confirmLabel={<Trans>Limpiar</Trans>}

@@ -25,8 +25,6 @@ export function createEmptyState() {
 			activeMemberId: memberId,
 		},
 		mealLibrary: [],
-		dayTemplates: [],
-		dietTemplates: [],
 		calendars: { [memberId]: {} },
 		weekPlans: { [memberId]: {} },
 		pantry: [],
@@ -34,6 +32,9 @@ export function createEmptyState() {
 		/** @type {{ id: string, memberKeys: string[] }[]} shopping-list display fusions only */
 		shoppingFusions: [],
 		checkedItems: {},
+		shoppingSourceChecks: {},
+		shoppingQtyOverrides: {},
+		shoppingYieldMode: {},
 		mealPrep: {
 			weekStartISO: today,
 			selectedInstanceIds: [],
@@ -68,8 +69,6 @@ export function isValidV2State(state) {
 		s.version === 2 &&
 		s.household &&
 		Array.isArray(s.mealLibrary) &&
-		Array.isArray(s.dayTemplates) &&
-		Array.isArray(s.dietTemplates) &&
 		s.calendars &&
 		typeof s.calendars === "object" &&
 		s.settings &&

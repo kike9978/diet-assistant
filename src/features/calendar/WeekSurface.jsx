@@ -3,6 +3,7 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { useAppState } from "../../context/AppState";
 import { DAY_SHORT_MSG } from "../../i18n/weekDayLabels";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "../../components/ui/Button";
 import {
 	parseDateISO,
@@ -72,7 +73,7 @@ export default function WeekSurface({ selectedDateISO, onSelectDate }) {
 						aria-label={t`Semana anterior`}
 						onClick={() => shiftWeek(-1)}
 					>
-						←
+						<ChevronLeft className="size-4" aria-hidden />
 					</Button>
 					<Button variant="secondary" onClick={goToday}>
 						<Trans>Hoy</Trans>
@@ -82,7 +83,7 @@ export default function WeekSurface({ selectedDateISO, onSelectDate }) {
 						aria-label={t`Semana siguiente`}
 						onClick={() => shiftWeek(1)}
 					>
-						→
+						<ChevronRight className="size-4" aria-hidden />
 					</Button>
 				</div>
 			</div>

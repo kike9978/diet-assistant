@@ -3,12 +3,27 @@ import { inferMealType } from "../../domain/mealType.js";
 import { formatQuantity } from "../../domain/quantity.js";
 import { buildLibraryMeal } from "../calendar/calendarActions.js";
 import { weekDateISOs } from "../calendar/dateUtils.js";
+import { clearShoppingProgressForMeals } from "../shopping/shoppingProgress.js";
 import {
 	createDraftMeal,
 	draftMealToScheduled,
 	ingredientsFromRows,
 	mealFingerprint,
 } from "./weekDraft.js";
+
+/**
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {string} memberId
+ * @param {string[]} dateISOs
+ */
+function clearShoppingForCalendarDates(state, memberId, dateISOs) {
+	const memberCal = state.calendars?.[memberId] || {};
+	const meals = [];
+	for (const dateISO of dateISOs || []) {
+		for (const meal of memberCal[dateISO] || []) meals.push(meal);
+	}
+	return clearShoppingProgressForMeals(state, meals);
+}
 
 /**
  * Canonical Monday-or-weekStartsOn key for storing/looking up week plans.
@@ -162,8 +177,10 @@ function putWeekPlan(state, memberId, weekStartISO, plan) {
 }
 
 /**
- * Save / replace a week plan (does not touch calendars).
+ * Save / replace a week plan's day-plan slots.
  * Preserves date→day-plan assignments for slots that still exist.
+ * Clears calendar days whose assignment was pruned (removed day plan) so
+ * sync/heal cannot resurrect the removed plan from leftover meals.
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {string} weekStartISO
  * @param {DayPlan[]} dayPlans
@@ -174,14 +191,32 @@ export function saveWeekPlan(state, weekStartISO, dayPlans, memberId) {
 	const weekStartsOn = state.settings?.weekStartsOn ?? 1;
 	const key = canonicalWeekStartISO(weekStartISO, weekStartsOn);
 	const existing = getWeekPlan(state, key, mid);
-	const plan = createWeekPlan(
-		key,
-		mid,
-		dayPlans,
-		pruneAssignments(existing?.assignments, dayPlans),
-	);
+	const prevAssignments = existing?.assignments || {};
+	const nextAssignments = pruneAssignments(prevAssignments, dayPlans);
+
+	const datesToClear = [];
+	for (const [dateISO, dayPlanId] of Object.entries(prevAssignments)) {
+		if (!dayPlanId) continue;
+		if (nextAssignments[dateISO]) continue;
+		datesToClear.push(dateISO);
+	}
+
+	let working = state;
+	if (datesToClear.length) {
+		working = clearShoppingForCalendarDates(working, mid, datesToClear);
+		const memberCal = { ...(working.calendars[mid] || {}) };
+		for (const dateISO of datesToClear) {
+			memberCal[dateISO] = [];
+		}
+		working = {
+			...working,
+			calendars: { ...working.calendars, [mid]: memberCal },
+		};
+	}
+
+	const plan = createWeekPlan(key, mid, dayPlans, nextAssignments);
 	return {
-		...putWeekPlan(state, mid, key, plan),
+		...putWeekPlan(working, mid, key, plan),
 		ui: { ...state.ui, onboardingDismissed: true },
 	};
 }
@@ -243,42 +278,6 @@ export function dayPlansFromDietJson(plan) {
 			),
 		}),
 	);
-}
-
-/**
- * Copy a library day template into a week-plan day-plan slot.
- * @param {import("../../domain/types.js").DietAssistantStateV2} state
- * @param {string} dayTemplateId
- * @returns {DayPlan | null}
- */
-export function dayPlanFromDayTemplate(state, dayTemplateId) {
-	const template = (state.dayTemplates || []).find(
-		(d) => d.id === dayTemplateId,
-	);
-	if (!template) return null;
-	const mealById = Object.fromEntries(
-		(state.mealLibrary || []).map((m) => [m.id, m]),
-	);
-	const meals = (template.mealIds || [])
-		.map((id) => mealById[id])
-		.filter(Boolean)
-		.map((meal) =>
-			createDraftMeal({
-				name: meal.name,
-				mealType: meal.mealType || inferMealType(meal.name),
-				ingredients: (meal.ingredients || []).map((ing) => ({
-					name: ing.name,
-					quantity:
-						typeof ing.quantity === "string"
-							? ing.quantity
-							: formatQuantity(ing.quantity) || "",
-				})),
-				mealId: meal.id,
-				source: "library",
-				dirty: false,
-			}),
-		);
-	return createDayPlan({ name: template.name, meals });
 }
 
 /**
@@ -356,7 +355,9 @@ export function applyDayPlanToDate(
 	const dayPlan = plan?.dayPlans?.find((dp) => dp.id === dayPlanId);
 	if (!dayPlan) return state;
 
-	const memberCal = { ...(state.calendars[mid] || {}) };
+	// Replacing a day's meals orphans shopping-only progress for the old instances.
+	const working = clearShoppingForCalendarDates(state, mid, [dateISO]);
+	const memberCal = { ...(working.calendars[mid] || {}) };
 	memberCal[dateISO] = (dayPlan.meals || []).map((meal) =>
 		draftMealToScheduled(meal, dateISO, mid),
 	);
@@ -373,14 +374,14 @@ export function applyDayPlanToDate(
 	return {
 		...putWeekPlan(
 			{
-				...state,
-				calendars: { ...state.calendars, [mid]: memberCal },
+				...working,
+				calendars: { ...working.calendars, [mid]: memberCal },
 			},
 			mid,
 			key,
 			nextPlan,
 		),
-		ui: { ...state.ui, calendarCursorDate: dateISO },
+		ui: { ...working.ui, calendarCursorDate: dateISO },
 	};
 }
 
@@ -407,7 +408,11 @@ export function applyWeekPlanToCalendar(
 	const dayById = Object.fromEntries(
 		(plan.dayPlans || []).map((dp) => [dp.id, dp]),
 	);
-	const memberCal = { ...(state.calendars[mid] || {}) };
+
+	// Clear shopping-only state for every day we rewrite or empty — progress is
+	// not linked to meal plans and would otherwise stick to new instance ids.
+	const working = clearShoppingForCalendarDates(state, mid, weekDates);
+	const memberCal = { ...(working.calendars[mid] || {}) };
 	/** @type {{ [dateISO: string]: string | null }} */
 	const nextAssignments = { ...(plan.assignments || {}) };
 
@@ -439,15 +444,15 @@ export function applyWeekPlanToCalendar(
 	return {
 		...putWeekPlan(
 			{
-				...state,
-				calendars: { ...state.calendars, [mid]: memberCal },
+				...working,
+				calendars: { ...working.calendars, [mid]: memberCal },
 			},
 			mid,
 			weekStartISO,
 			nextPlan,
 		),
 		ui: {
-			...state.ui,
+			...working.ui,
 			calendarCursorDate: weekStartISO,
 			calendarView: "week",
 			onboardingDismissed: true,
@@ -473,9 +478,12 @@ export function clearDayPlanAssignment(
 	const plan = getWeekPlan(state, key, mid);
 	if (!plan?.assignments?.[dateISO]) return state;
 
+	// Assignment itself does not store shopping progress, but clearing it is
+	// part of "limpiar día" — drop shopping-only annotations for that day's meals.
+	const working = clearShoppingForCalendarDates(state, mid, [dateISO]);
 	const assignments = { ...(plan.assignments || {}) };
 	delete assignments[dateISO];
-	return putWeekPlan(state, mid, key, {
+	return putWeekPlan(working, mid, key, {
 		...plan,
 		assignments,
 		updatedAt: new Date().toISOString(),
@@ -579,6 +587,137 @@ export function matchDayPlanForMeals(dayPlans, meals) {
 }
 
 /**
+ * Turn scheduled calendar meals into draft meals for a day-plan slot.
+ * @param {{ mealId?: string | null, name?: string, mealType?: string, ingredients?: object[] }[]} meals
+ * @returns {DraftMeal[]}
+ */
+export function scheduledMealsToDraftMeals(meals) {
+	return (meals || []).map((m) =>
+		createDraftMeal({
+			mealId: m.mealId ?? null,
+			name: m.name,
+			mealType: m.mealType,
+			ingredients: m.ingredients || [],
+			dirty: false,
+			source: m.mealId ? "library" : "create",
+		}),
+	);
+}
+
+/**
+ * Rebuild date→dayPlan assignments from calendar meals for one week.
+ * Calendar content is treated as whole-day materializations of day plans —
+ * never as individually assigned meals.
+ *
+ * Preserves existing day-plan slots (including empty editor stubs). Only adds
+ * new slots when calendar meals cannot be linked to a current day plan.
+ *
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {string} weekStartISO
+ * @param {string} [memberId]
+ * @param {number} [weekStartsOn]
+ */
+export function syncWeekPlanAssignmentsFromCalendar(
+	state,
+	weekStartISO,
+	memberId,
+	weekStartsOn = 1,
+) {
+	const mid = memberId || state.household.activeMemberId;
+	const key = canonicalWeekStartISO(weekStartISO, weekStartsOn);
+	const dates = weekDateISOs(key, weekStartsOn);
+	const cal = state.calendars[mid] || {};
+	const existing = getWeekPlan(state, key, mid);
+
+	/** @type {DayPlan[]} */
+	let dayPlans = [...(existing?.dayPlans || [])];
+	/** @type {{ [dateISO: string]: string | null }} */
+	const assignments = {};
+	let changed = false;
+
+	for (const dateISO of dates) {
+		const meals = cal[dateISO] || [];
+		if (!meals.length) {
+			if (existing?.assignments?.[dateISO]) changed = true;
+			continue;
+		}
+
+		const prevAssignedId = existing?.assignments?.[dateISO] ?? null;
+		const prevPlan = prevAssignedId
+			? dayPlans.find((dp) => dp.id === prevAssignedId)
+			: null;
+		if (prevPlan && mealsMatchAsSet(prevPlan.meals || [], meals)) {
+			assignments[dateISO] = prevPlan.id;
+			continue;
+		}
+
+		let matched = matchDayPlanForMeals(dayPlans, meals);
+		if (!matched) {
+			matched = createDayPlan({
+				name: `Día ${dayPlans.length + 1}`,
+				meals: scheduledMealsToDraftMeals(meals),
+			});
+			dayPlans = [...dayPlans, matched];
+			changed = true;
+		}
+		assignments[dateISO] = matched.id;
+		if (prevAssignedId !== matched.id) changed = true;
+	}
+
+	const prevAssignmentKeys = Object.keys(existing?.assignments || {}).sort();
+	const nextAssignmentKeys = Object.keys(assignments).sort();
+	if (
+		prevAssignmentKeys.length !== nextAssignmentKeys.length ||
+		prevAssignmentKeys.some((k, i) => k !== nextAssignmentKeys[i]) ||
+		nextAssignmentKeys.some(
+			(k) => existing?.assignments?.[k] !== assignments[k],
+		)
+	) {
+		changed = true;
+	}
+
+	const prevPlanIds = (existing?.dayPlans || []).map((dp) => dp.id).join(",");
+	const nextPlanIds = dayPlans.map((dp) => dp.id).join(",");
+	if (prevPlanIds !== nextPlanIds) changed = true;
+
+	if (!changed && existing) return state;
+
+	const nextPlan = createWeekPlan(key, mid, dayPlans, assignments);
+	if (existing?.updatedAt) {
+		nextPlan.updatedAt = changed
+			? new Date().toISOString()
+			: existing.updatedAt;
+	}
+
+	return putWeekPlan(state, mid, key, nextPlan);
+}
+
+/**
+ * Heal every member/week that has calendar meals into day-plan assignments.
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ */
+export function syncAllWeekPlanAssignmentsFromCalendar(state) {
+	const weekStartsOn = state.settings?.weekStartsOn ?? 1;
+	let next = state;
+	for (const [mid, cal] of Object.entries(state.calendars || {})) {
+		const weekKeys = new Set();
+		for (const [dateISO, meals] of Object.entries(cal || {})) {
+			if ((meals || []).length === 0) continue;
+			weekKeys.add(canonicalWeekStartISO(dateISO, weekStartsOn));
+		}
+		for (const weekStart of weekKeys) {
+			next = syncWeekPlanAssignmentsFromCalendar(
+				next,
+				weekStart,
+				mid,
+				weekStartsOn,
+			);
+		}
+	}
+	return next;
+}
+
+/**
  * Whether any calendar day in the week has scheduled meals.
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {string} weekStartISO
@@ -603,14 +742,12 @@ export function weekCalendarHasMeals(
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {DayPlan[]} dayPlans
  * @param {string[]} selectedTempIds
- * @param {{ saveAsTemplate?: boolean, templateName?: string }} [opts]
  * @returns {{ state: import("../../domain/types.js").DietAssistantStateV2, dayPlans: DayPlan[] }}
  */
 export function applyLibrarySaveToDayPlans(
 	state,
 	dayPlans,
 	selectedTempIds,
-	opts = {},
 ) {
 	const selected = new Set(selectedTempIds || []);
 	const groups = uniqueDayPlanMealsForSave(dayPlans);
@@ -646,81 +783,12 @@ export function applyLibrarySaveToDayPlans(
 		}
 	}
 
-	let linked = linkDayPlanMeals(dayPlans, tempToLibraryId);
-	let nextState = {
+	const linked = linkDayPlanMeals(dayPlans, tempToLibraryId);
+	const nextState = {
 		...state,
 		mealLibrary: [...state.mealLibrary, ...newLibraryMeals],
 		ui: { ...state.ui, onboardingDismissed: true },
 	};
-
-	if (opts.saveAsTemplate) {
-		const nowIso = new Date().toISOString();
-		const mealLibrary = [...nextState.mealLibrary];
-		const dayTemplates = [...nextState.dayTemplates];
-		const dayTemplateIds = [];
-		for (const [index, dp] of linked.entries()) {
-			if (!dp.meals?.length) continue;
-			const mealIds = [];
-			for (const draftMeal of dp.meals) {
-				if (draftMeal.mealId) {
-					mealIds.push(draftMeal.mealId);
-					continue;
-				}
-				const meal = buildLibraryMeal({
-					name: draftMeal.name,
-					mealType: draftMeal.mealType,
-					servings: 1,
-					ingredients: (draftMeal.ingredients || []).map((ing) => ({
-						name: ing.name,
-						quantity:
-							typeof ing.quantity === "string"
-								? ing.quantity
-								: formatQuantity(ing.quantity) || "",
-					})),
-					source: "template",
-				});
-				mealLibrary.push(meal);
-				mealIds.push(meal.id);
-			}
-			const dayId = createId();
-			dayTemplates.push({
-				id: dayId,
-				name: dp.name || `Día ${index + 1}`,
-				mealIds,
-			});
-			dayTemplateIds.push(dayId);
-		}
-		if (dayTemplateIds.length > 0) {
-			nextState = {
-				...nextState,
-				mealLibrary,
-				dayTemplates,
-				dietTemplates: [
-					...nextState.dietTemplates,
-					{
-						id: createId(),
-						name: opts.templateName || "Plan importado",
-						dayTemplateIds,
-						createdAt: nowIso,
-					},
-				],
-			};
-			// refresh mealIds on linked from newly created
-			linked = linked.map((dp, index) => {
-				const tmpl = dayTemplates.find(
-					(d) => d.name === (dp.name || `Día ${index + 1}`),
-				);
-				if (!tmpl) return dp;
-				return {
-					...dp,
-					meals: dp.meals.map((m, mi) => ({
-						...m,
-						mealId: m.mealId || tmpl.mealIds[mi] || m.mealId,
-					})),
-				};
-			});
-		}
-	}
 
 	return { state: nextState, dayPlans: linked };
 }

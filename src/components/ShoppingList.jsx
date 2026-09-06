@@ -3,6 +3,7 @@ import { Trans, Plural } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
 import { Link } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { useAppState } from "../context/AppState";
 import { useToast } from "./Toast";
 import { parseDateISO } from "../features/calendar/dateUtils.js";
@@ -12,36 +13,43 @@ import {
 } from "../features/shopping/applyShoppingFusions.js";
 import { useBudget, estimatePrice } from "../features/shopping/useBudget.js";
 import { usePdfExport } from "../features/shopping/usePdfExport.js";
-import { formatShoppingQuantities } from "../features/shopping/applyPantry.js";
 import { useShoppingList } from "../features/shopping/useShoppingList.js";
 import ShoppingMemberPicker from "../features/shopping/ShoppingMemberPicker";
 import { quantityForPantryStock } from "../features/pantry/pantryActions.js";
+import {
+	boughtQuantity,
+	shoppingLineView,
+} from "../features/shopping/shoppingProgress.js";
 import { formatQuantity } from "../domain/quantity.js";
 import Button from "./ui/Button";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import ShoppingListItem from "./ui/ShoppingListItem";
 import AddExtrasSheet from "./shopping/AddExtrasSheet";
-
-function formatItemQuantity(item) {
-	if (item.pantryCovered) return "";
-	return formatShoppingQuantities(item.quantities);
-}
+import ShoppingChecklistRow from "./shopping/ShoppingChecklistRow";
+import ShoppingItemSheet from "./shopping/ShoppingItemSheet";
 
 function itemKeyFor(item) {
 	return shoppingItemChecklistKey(item);
 }
 
+function rowPrice(item, view) {
+	const priced = {
+		...item,
+		quantities: view.displayQty ? [view.displayQty] : item.quantities,
+	};
+	return estimatePrice(priced).price;
+}
+
 function ChecklistCategoryBlocks({
 	categories,
-	isChecked,
-	shoppingWeekPlan,
-	showSources,
-	onToggle,
-	onMoveToPantry,
+	progress,
 	fuseSelectMode,
 	fuseSelectedKeys,
+	showSources,
+	weekPlan,
+	onToggle,
 	onToggleFuseSelect,
-	onUnfuse,
+	onOpen,
 }) {
 	return categories.map(({ category, items }) => (
 		<div key={category} className="mb-6">
@@ -49,76 +57,36 @@ function ChecklistCategoryBlocks({
 				{category}{" "}
 				<span className="text-ink-muted text-sm">({items.length})</span>
 			</h3>
-			<ul className="space-y-2">
+			<ul className="space-y-1.5">
 				{items.map((item) => {
 					const key = itemKeyFor(item);
+					const view = shoppingLineView(item, progress);
 					const fuseSelected = Boolean(fuseSelectedKeys?.[key]);
 					const canFuseSelect = fuseSelectMode && !item.isFused;
 					return (
 						<li
 							key={key}
-							className={`py-2 px-3 rounded-app ${
+							className={`px-3 rounded-app ${
 								canFuseSelect && fuseSelected
 									? "bg-[var(--color-accent-shopping)]/15 ring-2 ring-[var(--color-accent-shopping)]"
-									: isChecked
+									: view.checkState === "checked"
 										? "bg-[var(--color-accent-leaf)]/10"
 										: "bg-surface-2"
 							}`}
 						>
-							<div className="flex items-start gap-3">
-								{fuseSelectMode ? (
-									<input
-										type="checkbox"
-										checked={item.isFused ? false : fuseSelected}
-										disabled={item.isFused}
-										onChange={() => onToggleFuseSelect?.(key)}
-										className="mt-1 h-5 w-5 accent-[var(--color-accent-shopping)] shrink-0"
-										aria-label={t`Seleccionar ${item.name} para combinar`}
-									/>
-								) : (
-									<input
-										type="checkbox"
-										checked={isChecked}
-										onChange={() => onToggle(key)}
-										className="mt-1 h-5 w-5 accent-[var(--color-brand)] shrink-0"
-										aria-label={item.name}
-									/>
-								)}
-								<div className="flex-1 min-w-0">
-									<ShoppingListItem
-										item={item}
-										priceEstimate={estimatePrice(item)}
-										formatQuantity={formatItemQuantity}
-										weekPlan={shoppingWeekPlan}
-										showSources={showSources}
-										checked={!fuseSelectMode && isChecked}
-									/>
-									{!fuseSelectMode &&
-									(item.isFused ||
-										(!item.isExtra && !item.pantryCovered)) ? (
-										<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-											{item.isFused ? (
-												<button
-													type="button"
-													onClick={() => onUnfuse?.(item.fusionId)}
-													className="text-xs font-medium text-ink underline underline-offset-2 decoration-border hover:text-ink-muted"
-												>
-													<Trans>Separar</Trans>
-												</button>
-											) : null}
-											{!item.isExtra && !item.pantryCovered ? (
-												<button
-													type="button"
-													onClick={() => onMoveToPantry(item)}
-													className="text-xs font-medium text-[var(--color-accent-pantry)] hover:opacity-80"
-												>
-													<Trans>Ya lo tengo → despensa</Trans>
-												</button>
-											) : null}
-										</div>
-									) : null}
-								</div>
-							</div>
+							<ShoppingChecklistRow
+								item={item}
+								view={view}
+								price={rowPrice(item, view)}
+								fuseSelectMode={fuseSelectMode}
+								fuseSelected={fuseSelected}
+								checked={view.checkState === "checked"}
+								showSources={showSources}
+								weekPlan={weekPlan}
+								onToggle={() => onToggle(item)}
+								onToggleFuseSelect={() => onToggleFuseSelect?.(key)}
+								onOpen={() => onOpen(item)}
+							/>
 						</li>
 					);
 				})}
@@ -132,7 +100,12 @@ function ShoppingList() {
 		shoppingWeekPlan,
 		state,
 		visibleWeekDates,
-		setCheckedItems,
+		toggleShoppingLine,
+		toggleShoppingSource,
+		setShoppingQtyOverride,
+		setShoppingYieldMode,
+		checkAllShoppingItems,
+		uncheckAllShoppingItems,
 		fuseShoppingItems,
 		unfuseShoppingItem,
 		addShoppingExtra,
@@ -140,10 +113,25 @@ function ShoppingList() {
 		removeShoppingExtra,
 		moveToPantryFromShopping,
 		finishShoppingToPantry,
+		substituteShoppingItem,
 	} = useAppState();
 	const toast = useToast();
 	const { i18n } = useLingui();
-	const checkedItems = state.checkedItems || {};
+	const progress = useMemo(
+		() => ({
+			checkedItems: state.checkedItems || {},
+			sourceChecks: state.shoppingSourceChecks || {},
+			overrides: state.shoppingQtyOverrides || {},
+			yieldModes: state.shoppingYieldMode || {},
+		}),
+		[
+			state.checkedItems,
+			state.shoppingSourceChecks,
+			state.shoppingQtyOverrides,
+			state.shoppingYieldMode,
+		],
+	);
+	const sourceChecks = progress.sourceChecks;
 	const shoppingFusions = state.shoppingFusions || [];
 	const [hidePantryCovered, setHidePantryCovered] = useState(true);
 	const { shoppingList, groupedShoppingList } = useShoppingList(
@@ -168,15 +156,24 @@ function ShoppingList() {
 	const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
 	const [fuseSelectMode, setFuseSelectMode] = useState(false);
 	const [fuseSelectedKeys, setFuseSelectedKeys] = useState({});
+	const [openLineKey, setOpenLineKey] = useState(null);
+
+	const openItem = useMemo(
+		() =>
+			Object.values(shoppingList).find(
+				(item) => itemKeyFor(item) === openLineKey,
+			) || null,
+		[shoppingList, openLineKey],
+	);
+	const openView = openItem ? shoppingLineView(openItem, progress) : null;
 
 	const checkedShoppingItems = useMemo(() => {
 		return Object.values(shoppingList).filter((item) => {
 			if (item.pantryCovered) return false;
-			return Boolean(checkedItems[itemKeyFor(item)]);
+			return shoppingLineView(item, progress).checkState === "checked";
 		});
-	}, [shoppingList, checkedItems]);
+	}, [shoppingList, progress]);
 
-	/** Checklist: split categories into unchecked vs checked (like pre-refactor UX). */
 	const { uncheckedCategories, checkedCategories } = useMemo(() => {
 		const unchecked = [];
 		const checked = [];
@@ -184,9 +181,11 @@ function ShoppingList() {
 			const uncheckedItems = [];
 			const checkedItemsList = [];
 			items.forEach((item) => {
-				const key = itemKeyFor(item);
-				if (checkedItems[key]) checkedItemsList.push(item);
-				else uncheckedItems.push(item);
+				if (shoppingLineView(item, progress).checkState === "checked") {
+					checkedItemsList.push(item);
+				} else {
+					uncheckedItems.push(item);
+				}
 			});
 			if (uncheckedItems.length > 0) {
 				unchecked.push({ category, items: uncheckedItems });
@@ -196,7 +195,7 @@ function ShoppingList() {
 			}
 		});
 		return { uncheckedCategories: unchecked, checkedCategories: checked };
-	}, [groupedShoppingList, checkedItems]);
+	}, [groupedShoppingList, progress]);
 
 	const fuseSelectedCount = useMemo(
 		() => Object.values(fuseSelectedKeys).filter(Boolean).length,
@@ -204,33 +203,23 @@ function ShoppingList() {
 	);
 
 	const handleAddExtras = (items) => {
-		for (const item of items) {
-			addShoppingExtra(item);
-		}
+		for (const extra of items) addShoppingExtra(extra);
 	};
 
 	const handleEditExtraSubmit = (items) => {
-		const item = items[0];
-		if (!editingExtra || !item) return;
-		updateShoppingExtra(editingExtra.id, item);
+		const extra = items[0];
+		if (!editingExtra || !extra) return;
+		updateShoppingExtra(editingExtra.id, extra);
 		setEditingExtra(null);
 	};
 
-	const handleCheckAll = () => {
-		const all = {};
-		Object.values(groupedShoppingList).forEach((items) => {
-			items.forEach((item) => {
-				all[itemKeyFor(item)] = true;
-			});
-		});
-		setCheckedItems(all);
-	};
+	const allVisibleItems = useMemo(
+		() => Object.values(groupedShoppingList).flat(),
+		[groupedShoppingList],
+	);
 
-	const handleUncheckAll = () => setCheckedItems({});
-
-	const toggleItem = (key) => {
-		setCheckedItems((prev) => ({ ...prev, [key]: !prev[key] }));
-	};
+	const handleCheckAll = () => checkAllShoppingItems(allVisibleItems);
+	const handleUncheckAll = () => uncheckAllShoppingItems();
 
 	const toggleFuseSelect = (key) => {
 		setFuseSelectedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -257,33 +246,52 @@ function ShoppingList() {
 	};
 
 	const handleMoveToPantry = (item) => {
+		const view = shoppingLineView(item, progress);
 		const members = expandFusedShoppingItem(item);
 		for (const member of members) {
 			if (member.pantryCovered) continue;
+			const qty =
+				members.length === 1
+					? view.remainingQty || quantityForPantryStock(member)
+					: quantityForPantryStock(member);
 			moveToPantryFromShopping({
 				name: member.name,
-				quantity: quantityForPantryStock(member),
+				quantity: qty,
 				category: member.category,
 			});
 		}
 		if (item.isFused && item.fusionId) {
 			unfuseShoppingItem(item.fusionId);
-		} else {
-			const key = itemKeyFor(item);
-			setCheckedItems((prev) => ({ ...prev, [key]: true }));
+		} else if (view.checkState !== "checked") {
+			toggleShoppingLine(item);
 		}
 		toast?.success?.(t`Guardado en despensa`);
 	};
 
 	const handleFinishShopping = () => {
 		const count = checkedShoppingItems.length;
-		finishShoppingToPantry(checkedShoppingItems);
+		finishShoppingToPantry(
+			checkedShoppingItems.map((item) => {
+				const bought = boughtQuantity(item, progress);
+				return {
+					...item,
+					quantities: bought ? [bought] : item.quantities,
+				};
+			}),
+		);
 		setFinishConfirmOpen(false);
 		setShowFullScreenChecklist(false);
 		exitFuseSelectMode();
 		if (count > 0) {
 			toast?.success?.(t`${count} items guardados en despensa`);
 		}
+	};
+
+	const extras = state.shoppingExtras || [];
+	const handleEditExtraFromItem = (row) => {
+		setOpenLineKey(null);
+		const extra = extras.find((e) => e.id === row.extraId);
+		if (extra) setEditingExtra(extra);
 	};
 
 	const finishButton =
@@ -297,13 +305,11 @@ function ShoppingList() {
 			</Button>
 		) : null;
 
-	const extras = state.shoppingExtras || [];
-
 	return (
 		<div className="flex flex-col gap-6 relative">
 			<ShoppingMemberPicker />
 
-			<div className="bg-surface p-6 rounded-app shadow-soft border border-border flex flex-col overflow-hidden max-h-[90dvh]">
+			<div className="bg-surface p-4 sm:p-6 rounded-app shadow-soft border border-border flex flex-col overflow-hidden max-h-[90dvh]">
 				<div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
 					<div>
 						<h2 className="font-display text-2xl text-ink">
@@ -379,7 +385,7 @@ function ShoppingList() {
 							</button>
 							<button
 								type="button"
-								onClick={() => setShowSources(!showSources)}
+								onClick={() => setShowSources((v) => !v)}
 								className="min-h-11 px-4 rounded-app border border-border bg-surface text-ink font-semibold"
 							>
 								{showSources ? (
@@ -400,93 +406,36 @@ function ShoppingList() {
 											({items.length})
 										</span>
 									</h3>
-									<ul className="space-y-2">
+									<ul className="divide-y divide-border">
 										{items.map((item) => {
 											const key = itemKeyFor(item);
+											const view = shoppingLineView(item, progress);
+											const price = rowPrice(item, view);
 											return (
-												<li key={key} className="group">
-													<div className="flex items-start gap-2">
-														<div className="flex-1 min-w-0">
-															<ShoppingListItem
-																item={item}
-																priceEstimate={estimatePrice(item)}
-																formatQuantity={formatItemQuantity}
-																weekPlan={shoppingWeekPlan}
-																showSources={showSources}
-															/>
-															{item.inPantry && !item.pantryCovered ? (
-																<p className="text-xs text-[var(--color-accent-pantry)] mt-0.5">
-																	{item.pantrySubtracted ? (
-																		<Trans>
-																			Despensa cubre {item.pantrySubtracted}
-																		</Trans>
-																	) : item.pantryNote ? (
-																		<Trans>
-																			También en despensa ({item.pantryNote})
-																		</Trans>
-																	) : null}
-																</p>
-															) : null}
-															{item.pantryCovered ? (
-																<p className="text-xs text-[var(--color-accent-leaf)] mt-0.5">
-																	<Trans>Cubierto por despensa</Trans>
-																</p>
-															) : null}
-															{item.isExtra ? (
-																<p className="text-xs text-[var(--color-accent-shopping)] mt-0.5">
-																	<Trans>Extra</Trans>
-																	{item.extraId
-																		? extras.find((e) => e.id === item.extraId)
-																				?.note
-																			? ` · ${extras.find((e) => e.id === item.extraId).note}`
-																			: ""
-																		: null}
-																</p>
-															) : null}
-															{item.isFused ? (
-																<button
-																	type="button"
-																	onClick={() => handleUnfuse(item.fusionId)}
-																	className="text-xs font-medium text-ink underline underline-offset-2 decoration-border hover:text-ink-muted mt-1.5"
-																>
-																	<Trans>Separar</Trans>
-																</button>
-															) : null}
-														</div>
-														{!item.isExtra && !item.pantryCovered ? (
-															<button
-																type="button"
-																onClick={() => handleMoveToPantry(item)}
-																className="text-xs font-semibold text-[var(--color-accent-pantry)] min-h-11 px-2 shrink-0 opacity-80 hover:opacity-100"
-															>
-																<Trans>Ya lo tengo</Trans>
-															</button>
-														) : null}
-														{item.isExtra && item.extraId ? (
-															<div className="flex flex-col gap-1 shrink-0">
-																<button
-																	type="button"
-																	className="text-xs font-semibold text-ink-muted min-h-9 px-2"
-																	onClick={() => {
-																		const extra = extras.find(
-																			(e) => e.id === item.extraId,
-																		);
-																		if (extra) setEditingExtra(extra);
-																	}}
-																>
-																	<Trans>Editar</Trans>
-																</button>
-																<button
-																	type="button"
-																	className="text-xs font-semibold text-[var(--color-danger)] min-h-9 px-2"
-																	onClick={() =>
-																		removeShoppingExtra(item.extraId)
-																	}
-																>
-																	<Trans>Quitar</Trans>
-																</button>
-															</div>
-														) : null}
+												<li key={key} className="py-2.5 first:pt-0">
+													<div
+														role="button"
+														tabIndex={0}
+														onClick={() => setOpenLineKey(key)}
+														onKeyDown={(e) => {
+															if (e.key === "Enter" || e.key === " ") {
+																e.preventDefault();
+																setOpenLineKey(key);
+															}
+														}}
+														className="w-full text-left cursor-pointer rounded-app focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+													>
+														<ShoppingListItem
+															item={item}
+															priceEstimate={
+																price != null ? { price } : null
+															}
+															formatQuantity={() =>
+																view.displayQty || ""
+															}
+															weekPlan={shoppingWeekPlan}
+															showSources={showSources}
+														/>
 													</div>
 												</li>
 											);
@@ -563,7 +512,7 @@ function ShoppingList() {
 									aria-label={t`Quitar ${extra.name}`}
 									onClick={() => removeShoppingExtra(extra.id)}
 								>
-									×
+									<X className="size-4" aria-hidden />
 								</Button>
 							</li>
 						))}
@@ -585,16 +534,45 @@ function ShoppingList() {
 				initialRows={
 					editingExtra
 						? [
-								{
-									name: editingExtra.name,
-									quantity: formatQuantity(editingExtra.quantity),
-									category: editingExtra.category || "Verduras",
-								},
-							]
+							{
+								name: editingExtra.name,
+								quantity: formatQuantity(editingExtra.quantity),
+								category: editingExtra.category || "Verduras",
+							},
+						]
 						: undefined
 				}
 				single
 				title={<Trans>Editar extra</Trans>}
+			/>
+
+			<ShoppingItemSheet
+				open={Boolean(openItem)}
+				onClose={() => setOpenLineKey(null)}
+				item={openItem}
+				view={openView}
+				price={openItem && openView ? rowPrice(openItem, openView) : null}
+				sourceChecks={sourceChecks}
+				onToggleSource={(sourceKey) =>
+					openItem && toggleShoppingSource(openItem, sourceKey)
+				}
+				onSetOverride={(value) =>
+					openView && setShoppingQtyOverride(openView.lineKey, value)
+				}
+				onSetYieldMode={(mode) =>
+					openView && setShoppingYieldMode(openView.lineKey, mode)
+				}
+				onSubstitute={(payload) => {
+					substituteShoppingItem(payload);
+					setOpenLineKey(null);
+					toast?.success?.(
+						t`${payload.item?.name || ""} sustituida en ${payload.sources?.length || 0} comidas de esta semana.`,
+					);
+				}}
+				onMoveToPantry={handleMoveToPantry}
+				onUnfuse={handleUnfuse}
+				onEditExtra={handleEditExtraFromItem}
+				onRemoveExtra={removeShoppingExtra}
 			/>
 
 			<ConfirmDialog
@@ -618,7 +596,7 @@ function ShoppingList() {
 				onCancel={() => setFinishConfirmOpen(false)}
 			/>
 
-			{showFullScreenChecklist && (
+			{showFullScreenChecklist ? (
 				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto pb-28">
 					<div className="max-w-4xl mx-auto">
 						<div className="sticky top-0 z-10 px-4 pt-4 pb-3 mb-4 bg-surface/95 backdrop-blur border-b border-border">
@@ -632,10 +610,10 @@ function ShoppingList() {
 										exitFuseSelectMode();
 										setShowFullScreenChecklist(false);
 									}}
-									className="min-h-11 min-w-11 rounded-full hover:bg-surface-2"
+									className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-full hover:bg-surface-2"
 									aria-label={t`Cerrar`}
 								>
-									✕
+									<X className="size-5" aria-hidden />
 								</button>
 							</div>
 							<div className="flex flex-wrap gap-2">
@@ -657,17 +635,7 @@ function ShoppingList() {
 										</button>
 										<button
 											type="button"
-											onClick={() => {
-												setFuseSelectMode(true);
-												setFuseSelectedKeys({});
-											}}
-											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
-										>
-											<Trans>Combinar items</Trans>
-										</button>
-										<button
-											type="button"
-											onClick={() => setShowSources(!showSources)}
+											onClick={() => setShowSources((v) => !v)}
 											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
 										>
 											{showSources ? (
@@ -675,6 +643,16 @@ function ShoppingList() {
 											) : (
 												<Trans>Mostrar fuentes</Trans>
 											)}
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setFuseSelectMode(true);
+												setFuseSelectedKeys({});
+											}}
+											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
+										>
+											<Trans>Combinar items</Trans>
 										</button>
 									</>
 								) : (
@@ -696,44 +674,42 @@ function ShoppingList() {
 							</div>
 						</div>
 						<div className="px-4">
-						{uncheckedCategories.length > 0 ? (
-							<section className="mb-2">
-								<h2 className="font-display text-xl text-ink mb-4">
-									<Trans>Artículos</Trans>
-								</h2>
-								<ChecklistCategoryBlocks
-									categories={uncheckedCategories}
-									isChecked={false}
-									shoppingWeekPlan={shoppingWeekPlan}
-									showSources={showSources}
-									onToggle={toggleItem}
-									onMoveToPantry={handleMoveToPantry}
-									fuseSelectMode={fuseSelectMode}
-									fuseSelectedKeys={fuseSelectedKeys}
-									onToggleFuseSelect={toggleFuseSelect}
-									onUnfuse={handleUnfuse}
-								/>
-							</section>
-						) : null}
-						{checkedCategories.length > 0 ? (
-							<section className="mt-8">
-								<h2 className="font-display text-xl text-ink mb-4">
-									<Trans>Marcados</Trans>
-								</h2>
-								<ChecklistCategoryBlocks
-									categories={checkedCategories}
-									isChecked={true}
-									shoppingWeekPlan={shoppingWeekPlan}
-									showSources={showSources}
-									onToggle={toggleItem}
-									onMoveToPantry={handleMoveToPantry}
-									fuseSelectMode={fuseSelectMode}
-									fuseSelectedKeys={fuseSelectedKeys}
-									onToggleFuseSelect={toggleFuseSelect}
-									onUnfuse={handleUnfuse}
-								/>
-							</section>
-						) : null}
+							{uncheckedCategories.length > 0 ? (
+								<section className="mb-2">
+									<h2 className="font-display text-xl text-ink mb-4">
+										<Trans>Artículos</Trans>
+									</h2>
+									<ChecklistCategoryBlocks
+										categories={uncheckedCategories}
+										progress={progress}
+										fuseSelectMode={fuseSelectMode}
+										fuseSelectedKeys={fuseSelectedKeys}
+										showSources={showSources}
+										weekPlan={shoppingWeekPlan}
+										onToggle={toggleShoppingLine}
+										onToggleFuseSelect={toggleFuseSelect}
+										onOpen={(item) => setOpenLineKey(itemKeyFor(item))}
+									/>
+								</section>
+							) : null}
+							{checkedCategories.length > 0 ? (
+								<section className="mt-8">
+									<h2 className="font-display text-xl text-ink mb-4">
+										<Trans>Marcados</Trans>
+									</h2>
+									<ChecklistCategoryBlocks
+										categories={checkedCategories}
+										progress={progress}
+										fuseSelectMode={fuseSelectMode}
+										fuseSelectedKeys={fuseSelectedKeys}
+										showSources={showSources}
+										weekPlan={shoppingWeekPlan}
+										onToggle={toggleShoppingLine}
+										onToggleFuseSelect={toggleFuseSelect}
+										onOpen={(item) => setOpenLineKey(itemKeyFor(item))}
+									/>
+								</section>
+							) : null}
 						</div>
 					</div>
 
@@ -774,7 +750,7 @@ function ShoppingList() {
 						</div>
 					) : null}
 				</div>
-			)}
+			) : null}
 		</div>
 	);
 }

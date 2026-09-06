@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "../../components/ui/Button";
 import {
 	addDays,
@@ -87,7 +88,7 @@ export default function CalendarChrome({
 						aria-label={t`Anterior`}
 						onClick={() => shift(-1)}
 					>
-						←
+						<ChevronLeft className="size-4" aria-hidden />
 					</Button>
 					<Button variant="secondary" onClick={goToday}>
 						<Trans>Hoy</Trans>
@@ -97,7 +98,7 @@ export default function CalendarChrome({
 						aria-label={t`Siguiente`}
 						onClick={() => shift(1)}
 					>
-						→
+						<ChevronRight className="size-4" aria-hidden />
 					</Button>
 				</div>
 			</div>

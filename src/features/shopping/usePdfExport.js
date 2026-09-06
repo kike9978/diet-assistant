@@ -15,7 +15,12 @@ export function usePdfExport() {
 			margin: 1,
 			filename: "lista-de-compras.pdf",
 			image: { type: "jpeg", quality: 0.98 },
-			html2canvas: { scale: 2 },
+			html2canvas: {
+				scale: 2,
+				ignoreElements: (el) =>
+					typeof el?.closest === "function" &&
+					el.closest("[data-pdf-ignore]") != null,
+			},
 			jsPDF: { unit: "cm", format: "a4", orientation: "portrait" },
 		};
 		try {

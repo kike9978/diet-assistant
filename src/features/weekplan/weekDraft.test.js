@@ -40,8 +40,6 @@ function baseState() {
 				updatedAt: "",
 			},
 		],
-		dayTemplates: [],
-		dietTemplates: [],
 		calendars: { m1: {} },
 		pantry: [],
 		shoppingExtras: [],

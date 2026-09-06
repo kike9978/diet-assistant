@@ -221,12 +221,30 @@ export function finishShoppingToPantry(state, items = []) {
 		(f) => !fusionIdsToRemove.has(f.id),
 	);
 
+	const shoppingSourceChecks = { ...(next.shoppingSourceChecks || {}) };
+	const shoppingQtyOverrides = { ...(next.shoppingQtyOverrides || {}) };
+	const shoppingYieldMode = { ...(next.shoppingYieldMode || {}) };
+	for (const key of keysToClear) {
+		delete shoppingQtyOverrides[key];
+		delete shoppingYieldMode[key];
+	}
+	for (const item of toStock) {
+		for (const member of expandFusedShoppingItem(item)) {
+			for (const source of member.sources || []) {
+				if (source?.key) delete shoppingSourceChecks[source.key];
+			}
+		}
+	}
+
 	return {
 		state: {
 			...next,
 			checkedItems,
 			shoppingExtras,
 			shoppingFusions,
+			shoppingSourceChecks,
+			shoppingQtyOverrides,
+			shoppingYieldMode,
 		},
 		addedCount,
 	};
@@ -332,6 +350,7 @@ function normalizeUnit(unit) {
 		tablespoons: "cda",
 		// pieces
 		pza: "pza",
+		pzas: "pza",
 		pieza: "pza",
 		piezas: "pza",
 		pz: "pza",

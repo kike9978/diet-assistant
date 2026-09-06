@@ -4,25 +4,19 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAppState } from "../context/AppState";
 import { formatQuantity } from "../domain/quantity.js";
-import { todayISO } from "../features/calendar/dateUtils.js";
 import MealForm from "../features/meals/MealForm";
 import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
-import Sheet from "../components/ui/Sheet";
 
 export default function MealDetailPage() {
 	const { id } = useParams();
 	const navigate = useNavigate();
-	const { state, updateMeal, deleteMeal, scheduleMeal } = useAppState();
+	const { state, updateMeal, deleteMeal } = useAppState();
 	const { _ } = useLingui();
 	const meal = state.mealLibrary.find((m) => m.id === id);
 	const [editing, setEditing] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
-	const [scheduleOpen, setScheduleOpen] = useState(false);
-	const [scheduleDate, setScheduleDate] = useState(
-		() => state.ui.calendarCursorDate || todayISO(),
-	);
 
 	if (!meal) {
 		return (
@@ -88,18 +82,6 @@ export default function MealDetailPage() {
 			</ul>
 
 			<div className="flex flex-wrap gap-2">
-				<Button onClick={() => setScheduleOpen(true)}>
-					<Trans>Agendar</Trans>
-				</Button>
-				<Button
-					variant="secondary"
-					onClick={() => {
-						scheduleMeal(meal.id, todayISO());
-						navigate("/");
-					}}
-				>
-					<Trans>Agendar hoy</Trans>
-				</Button>
 				<Button variant="secondary" onClick={() => setEditing(true)}>
 					<Trans>Editar</Trans>
 				</Button>
@@ -108,43 +90,19 @@ export default function MealDetailPage() {
 				</Button>
 			</div>
 
+			<p className="text-sm text-ink-muted">
+				<Trans>
+					Para poner comidas en el calendario, arma un plan de día y asígnalo a
+					una fecha.
+				</Trans>{" "}
+				<Link to="/" className="text-brand underline font-semibold">
+					<Trans>Ir al calendario</Trans>
+				</Link>
+			</p>
+
 			<Link to="/meals" className="text-sm text-brand underline font-semibold">
 				<Trans>Volver a comidas</Trans>
 			</Link>
-
-			<Sheet
-				open={scheduleOpen}
-				onClose={() => setScheduleOpen(false)}
-				title={<Trans>Agendar comida</Trans>}
-				footer={
-					<div className="flex gap-2 justify-end">
-						<Button variant="secondary" onClick={() => setScheduleOpen(false)}>
-							<Trans>Cancelar</Trans>
-						</Button>
-						<Button
-							onClick={() => {
-								scheduleMeal(meal.id, scheduleDate);
-								setScheduleOpen(false);
-								navigate("/");
-							}}
-						>
-							<Trans>Agendar</Trans>
-						</Button>
-					</div>
-				}
-			>
-				<label className="block space-y-1">
-					<span className="text-sm font-semibold">
-						<Trans>Fecha</Trans>
-					</span>
-					<input
-						type="date"
-						value={scheduleDate}
-						onChange={(e) => setScheduleDate(e.target.value)}
-						className="w-full min-h-11 px-3 rounded-app border border-border bg-surface"
-					/>
-				</label>
-			</Sheet>
 
 			<ConfirmDialog
 				open={confirmDelete}

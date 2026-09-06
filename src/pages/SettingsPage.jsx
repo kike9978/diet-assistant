@@ -146,8 +146,8 @@ export default function SettingsPage() {
 				</p>
 				<p className="text-xs text-ink-muted">
 					<Trans>
-						Puedes borrar comidas agendadas de hace más de ~4 meses. Biblioteca
-						y plantillas no se tocan.
+						Puedes borrar comidas agendadas de hace más de ~4 meses. La
+						biblioteca no se toca.
 					</Trans>
 				</p>
 				<Button variant="secondary" onClick={() => setPruneOpen(true)}>

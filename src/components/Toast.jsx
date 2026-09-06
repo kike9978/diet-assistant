@@ -1,4 +1,5 @@
 import { useState, createContext, useContext } from 'react';
+import { X } from 'lucide-react';
 
 // Create a context for the toast
 const ToastContext = createContext();
@@ -51,7 +52,7 @@ export function ToastProvider({ children }) {
               onClick={() => removeToast(toast.id)}
               className="ml-3 text-slate-800 hover:text-gray-200"
             >
-              ×
+              <X className="size-4" aria-hidden />
             </button>
           </div>
         ))}

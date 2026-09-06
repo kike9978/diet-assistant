@@ -20,20 +20,10 @@
  *   ingredients: Ingredient[],
  *   tags: string[],
  *   servings: number,
- *   source: "user" | "import" | "template",
+ *   source: "user" | "import",
  *   createdAt: string,
  *   updatedAt: string
  * }} Meal
- *
- * @typedef {{ id: string, name: string, mealIds: string[] }} DayTemplate
- *
- * @typedef {{
- *   id: string,
- *   name: string,
- *   dayTemplateIds: string[],
- *   createdAt: string,
- *   archived?: boolean
- * }} DietTemplate
  *
  * @typedef {{
  *   instanceId: string,
@@ -68,6 +58,9 @@
  * }} ShoppingExtra
  *
  * @typedef {{ [stableKey: string]: boolean }} CheckedItems
+ * @typedef {{ [sourceKey: string]: boolean }} ShoppingSourceChecks
+ * @typedef {{ [lineKey: string]: string }} ShoppingQtyOverrides
+ * @typedef {{ [lineKey: string]: "asWritten" | "cookedToRaw" | "rawToCooked" | "applied" }} ShoppingYieldMode
  *
  * @typedef {{
  *   weekStartISO: string,
@@ -114,14 +107,15 @@
  *   version: 2,
  *   household: Household,
  *   mealLibrary: Meal[],
- *   dayTemplates: DayTemplate[],
- *   dietTemplates: DietTemplate[],
  *   calendars: { [memberId: string]: { [dateISO: string]: ScheduledMeal[] } },
  *   weekPlans: { [memberId: string]: { [weekStartISO: string]: WeekPlan } },
  *   pantry: PantryItem[],
  *   shoppingExtras: ShoppingExtra[],
  *   shoppingFusions: { id: string, memberKeys: string[] }[],
  *   checkedItems: CheckedItems,
+ *   shoppingSourceChecks: ShoppingSourceChecks,
+ *   shoppingQtyOverrides: ShoppingQtyOverrides,
+ *   shoppingYieldMode: ShoppingYieldMode,
  *   mealPrep: MealPrepState,
  *   settings: Settings,
  *   ui: UiState,

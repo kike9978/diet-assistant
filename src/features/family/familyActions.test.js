@@ -18,13 +18,14 @@ function baseState() {
 }
 
 describe("familyActions", () => {
-	it("adds a member with calendar and shopping id", () => {
+	it("adds a member with calendar but does not auto-include in shopping", () => {
 		const next = addMember(baseState(), { name: "Ana" });
 		expect(next.household.members).toHaveLength(2);
 		const ana = next.household.members[1];
 		expect(ana.name).toBe("Ana");
 		expect(next.calendars[ana.id]).toEqual({});
-		expect(next.ui.shoppingMemberIds).toContain(ana.id);
+		expect(next.ui.shoppingMemberIds).toEqual(["m1"]);
+		expect(next.ui.shoppingMemberIds).not.toContain(ana.id);
 	});
 
 	it("does not remove the last member", () => {
@@ -35,10 +36,20 @@ describe("familyActions", () => {
 	it("switches active when removing active member", () => {
 		let state = addMember(baseState(), { name: "Ana" });
 		const anaId = state.household.members[1].id;
+		state = setShoppingMemberIds(state, ["m1", anaId]);
 		state = setActiveMember(state, anaId);
 		state = removeMember(state, anaId);
 		expect(state.household.activeMemberId).toBe("m1");
 		expect(state.household.members).toHaveLength(1);
+	});
+
+	it("setActiveMember aligns shopping members to the active profile", () => {
+		let state = addMember(baseState(), { name: "Ana" });
+		const anaId = state.household.members[1].id;
+		state = setShoppingMemberIds(state, ["m1", anaId]);
+		state = setActiveMember(state, anaId);
+		expect(state.household.activeMemberId).toBe(anaId);
+		expect(state.ui.shoppingMemberIds).toEqual([anaId]);
 	});
 
 	it("setShoppingMemberIds keeps at least one valid id", () => {

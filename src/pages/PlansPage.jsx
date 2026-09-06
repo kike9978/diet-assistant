@@ -8,7 +8,7 @@ import {
 } from "../features/calendar/dateUtils.js";
 
 export default function PlansPage() {
-	const { importDietPlan, state } = useAppState();
+	const { state } = useAppState();
 	const navigate = useNavigate();
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const weekStartISO = toDateISO(
@@ -19,10 +19,6 @@ export default function PlansPage() {
 		navigate(`/plan/week?week=${encodeURIComponent(weekStartISO)}`, {
 			state: { dietPlan: plan },
 		});
-	};
-
-	const handleUploadAsTemplate = (plan) => {
-		importDietPlan(plan, `Plan ${state.dietTemplates.length + 1}`);
 	};
 
 	return (
@@ -53,45 +49,6 @@ export default function PlansPage() {
 						</button>
 					</p>
 				</div>
-			</div>
-
-			{state.dietTemplates.length > 0 ? (
-				<div>
-					<h2 className="font-display text-lg mb-3">
-						<Trans>Plantillas guardadas</Trans>
-					</h2>
-					<ul className="space-y-2">
-						{state.dietTemplates.map((tmpl) => (
-							<li
-								key={tmpl.id}
-								className="bg-surface border border-border rounded-app px-4 py-3 flex justify-between gap-3"
-							>
-								<div>
-									<p className="font-semibold">{tmpl.name}</p>
-									<p className="text-xs text-ink-muted">
-										{tmpl.dayTemplateIds.length} <Trans>días</Trans>
-									</p>
-								</div>
-							</li>
-						))}
-					</ul>
-				</div>
-			) : null}
-
-			<div className="border border-dashed border-border rounded-app p-4">
-				<p className="text-sm text-ink-muted mb-3">
-					<Trans>
-						¿Solo quieres plantillas en la biblioteca sin un plan de semana?
-					</Trans>
-				</p>
-				<details className="text-sm">
-					<summary className="cursor-pointer text-brand font-semibold">
-						<Trans>Importar solo como plantilla</Trans>
-					</summary>
-					<div className="mt-3">
-						<DietPlanUploader onUpload={handleUploadAsTemplate} />
-					</div>
-				</details>
 			</div>
 		</div>
 	);

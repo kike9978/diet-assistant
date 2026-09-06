@@ -66,7 +66,8 @@ export function clearCalendarDay(state, dateISO) {
 }
 
 /**
- * Schedule a library meal onto a date (append).
+ * Append a library meal snapshot onto a calendar date.
+ * Low-level helper for tests/legacy — UI must assign whole day plans instead.
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {string} mealId
  * @param {string} dateISO
@@ -196,70 +197,117 @@ export function moveScheduledMeal(state, instanceId, toDateISO, toIndex) {
 }
 
 /**
+ * Locate a scheduled ingredient across household calendars.
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {string} instanceId
+ * @param {string} ingredientId
+ * @param {string} [preferredMemberId]
+ */
+function findScheduledIngredient(
+	state,
+	instanceId,
+	ingredientId,
+	preferredMemberId,
+) {
+	const calendars = state.calendars || {};
+	const memberIds = preferredMemberId
+		? [
+				preferredMemberId,
+				...Object.keys(calendars).filter((id) => id !== preferredMemberId),
+			]
+		: Object.keys(calendars);
+
+	for (const memberId of memberIds) {
+		const memberCal = calendars[memberId] || {};
+		for (const dateISO of Object.keys(memberCal)) {
+			const list = memberCal[dateISO] || [];
+			const mealIdx = list.findIndex((m) => m.instanceId === instanceId);
+			if (mealIdx === -1) continue;
+			const meal = list[mealIdx];
+			const ingredientIndex = (meal.ingredients || []).findIndex(
+				(ing) => ing.id === ingredientId,
+			);
+			if (ingredientIndex === -1) continue;
+			return { memberId, dateISO, mealIdx, meal, ingredientIndex };
+		}
+	}
+	return null;
+}
+
+/**
  * Substitute ingredient on a scheduled instance; optionally sync library meal.
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {{
  *   instanceId: string,
  *   ingredientId: string,
- *   replacementLine: string,
- *   updateLibrary?: boolean
+ *   replacementLine?: string,
+ *   replacementName?: string,
+ *   updateLibrary?: boolean,
+ *   memberId?: string,
+ *   keepQuantity?: boolean
  * }} payload
  */
 export function applyIngredientSubstitution(state, payload) {
-	const { instanceId, ingredientId, replacementLine, updateLibrary } = payload;
-	const parsed = parseEquivalentLine(replacementLine);
+	const {
+		instanceId,
+		ingredientId,
+		replacementLine,
+		replacementName,
+		updateLibrary,
+		memberId: payloadMemberId,
+		keepQuantity,
+	} = payload;
+	const parsed = replacementName
+		? { name: String(replacementName).trim(), quantity: null }
+		: parseEquivalentLine(replacementLine);
 	if (!parsed.name) return state;
 
-	const memberId = state.household.activeMemberId;
-	const memberCal = { ...(state.calendars[memberId] || {}) };
-	let libraryMealId = null;
-	let ingredientIndex = -1;
-	let found = false;
-
-	for (const dateISO of Object.keys(memberCal)) {
-		const list = memberCal[dateISO] || [];
-		const mealIdx = list.findIndex((m) => m.instanceId === instanceId);
-		if (mealIdx === -1) continue;
-		const meal = list[mealIdx];
-		ingredientIndex = (meal.ingredients || []).findIndex(
-			(ing) => ing.id === ingredientId,
-		);
-		if (ingredientIndex === -1) continue;
-
-		libraryMealId = meal.mealId;
-		const ingredients = [...(meal.ingredients || [])];
-		ingredients[ingredientIndex] = {
-			...ingredients[ingredientIndex],
-			id: createId(),
-			name: parsed.name,
-			quantity: parsed.quantity,
-			categoryHint: getIngredientCategory(parsed.name),
-		};
-		const copy = [...list];
-		copy[mealIdx] = { ...meal, ingredients };
-		memberCal[dateISO] = copy;
-		found = true;
-		break;
-	}
-
+	const found = findScheduledIngredient(
+		state,
+		instanceId,
+		ingredientId,
+		payloadMemberId,
+	);
 	if (!found) return state;
 
+	const { memberId, dateISO, mealIdx, meal, ingredientIndex } = found;
+	const existing = meal.ingredients[ingredientIndex];
+	const nextQty =
+		keepQuantity || parsed.quantity == null
+			? existing.quantity
+			: parsed.quantity;
+
+	const memberCal = { ...(state.calendars[memberId] || {}) };
+	const list = [...(memberCal[dateISO] || [])];
+	const ingredients = [...(meal.ingredients || [])];
+	ingredients[ingredientIndex] = {
+		...existing,
+		id: createId(),
+		name: parsed.name,
+		quantity: nextQty,
+		categoryHint: getIngredientCategory(parsed.name),
+	};
+	list[mealIdx] = { ...meal, ingredients };
+	memberCal[dateISO] = list;
+
 	let mealLibrary = state.mealLibrary;
-	if (updateLibrary && libraryMealId && ingredientIndex >= 0) {
+	if (updateLibrary && meal.mealId && ingredientIndex >= 0) {
 		mealLibrary = mealLibrary.map((m) => {
-			if (m.id !== libraryMealId) return m;
-			const ingredients = [...(m.ingredients || [])];
-			if (!ingredients[ingredientIndex]) return m;
-			ingredients[ingredientIndex] = {
-				...ingredients[ingredientIndex],
-				id: ingredients[ingredientIndex].id || createId(),
+			if (m.id !== meal.mealId) return m;
+			const libIngredients = [...(m.ingredients || [])];
+			if (!libIngredients[ingredientIndex]) return m;
+			libIngredients[ingredientIndex] = {
+				...libIngredients[ingredientIndex],
+				id: libIngredients[ingredientIndex].id || createId(),
 				name: parsed.name,
-				quantity: parsed.quantity,
+				quantity: keepQuantity
+					? libIngredients[ingredientIndex].quantity
+					: parsed.quantity || libIngredients[ingredientIndex].quantity,
 				categoryHint: getIngredientCategory(parsed.name),
 			};
 			return {
 				...m,
-				ingredients,
+				ingredients: libIngredients,
 				updatedAt: new Date().toISOString(),
 			};
 		});
@@ -269,6 +317,145 @@ export function applyIngredientSubstitution(state, payload) {
 		...state,
 		calendars: { ...state.calendars, [memberId]: memberCal },
 		mealLibrary,
+	};
+}
+
+function toIngredient(name, quantity, fallbackQty) {
+	const qty =
+		quantity && String(quantity).trim()
+			? parseQuantity(quantity)
+			: fallbackQty;
+	return {
+		id: createId(),
+		name,
+		quantity: qty,
+		categoryHint: getIngredientCategory(name),
+	};
+}
+
+/**
+ * Replace one scheduled ingredient with one or more free-form ingredients.
+ * Empty quantity on the first row keeps the meal's existing amount.
+ *
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {{
+ *   instanceId: string,
+ *   ingredientId: string,
+ *   memberId?: string,
+ *   replacements: { name: string, quantity?: string }[],
+ *   updateLibrary?: boolean,
+ * }} payload
+ */
+export function replaceScheduledIngredientWith(state, payload) {
+	const replacements = (payload.replacements || [])
+		.map((row) => ({
+			name: String(row?.name || "").trim(),
+			quantity: String(row?.quantity || "").trim(),
+		}))
+		.filter((row) => row.name);
+	if (!replacements.length) return state;
+
+	const found = findScheduledIngredient(
+		state,
+		payload.instanceId,
+		payload.ingredientId,
+		payload.memberId,
+	);
+	if (!found) return state;
+
+	const { memberId, dateISO, mealIdx, meal, ingredientIndex } = found;
+	const existing = meal.ingredients[ingredientIndex];
+	const first = toIngredient(
+		replacements[0].name,
+		replacements[0].quantity,
+		existing.quantity,
+	);
+	const extras = replacements.slice(1).map((row) =>
+		toIngredient(row.name, row.quantity, parseQuantity(row.quantity || "1 pza")),
+	);
+
+	const memberCal = { ...(state.calendars[memberId] || {}) };
+	const list = [...(memberCal[dateISO] || [])];
+	const ingredients = [...(meal.ingredients || [])];
+	ingredients.splice(ingredientIndex, 1, first, ...extras);
+	list[mealIdx] = { ...meal, ingredients };
+	memberCal[dateISO] = list;
+
+	let mealLibrary = state.mealLibrary;
+	if (payload.updateLibrary && meal.mealId) {
+		mealLibrary = mealLibrary.map((m) => {
+			if (m.id !== meal.mealId) return m;
+			const libIngredients = [...(m.ingredients || [])];
+			if (!libIngredients[ingredientIndex]) return m;
+			const libFirst = {
+				...libIngredients[ingredientIndex],
+				id: libIngredients[ingredientIndex].id || createId(),
+				name: first.name,
+				quantity: replacements[0].quantity
+					? first.quantity
+					: libIngredients[ingredientIndex].quantity,
+				categoryHint: first.categoryHint,
+			};
+			const libExtras = extras.map((ing) => ({
+				...ing,
+				id: createId(),
+			}));
+			libIngredients.splice(ingredientIndex, 1, libFirst, ...libExtras);
+			return {
+				...m,
+				ingredients: libIngredients,
+				updatedAt: new Date().toISOString(),
+			};
+		});
+	}
+
+	return {
+		...state,
+		calendars: { ...state.calendars, [memberId]: memberCal },
+		mealLibrary,
+	};
+}
+
+/**
+ * Update only the quantity of a scheduled ingredient (keeps id and name).
+ *
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {{
+ *   instanceId: string,
+ *   ingredientId: string,
+ *   memberId?: string,
+ *   quantity: import("../../domain/quantity.js").Quantity | string,
+ * }} payload
+ */
+export function updateScheduledIngredientQuantity(state, payload) {
+	const found = findScheduledIngredient(
+		state,
+		payload.instanceId,
+		payload.ingredientId,
+		payload.memberId,
+	);
+	if (!found) return state;
+
+	const { memberId, dateISO, mealIdx, meal, ingredientIndex } = found;
+	const existing = meal.ingredients[ingredientIndex];
+	const nextQty =
+		typeof payload.quantity === "string" || payload.quantity == null
+			? parseQuantity(payload.quantity)
+			: payload.quantity;
+	if (!nextQty || (nextQty.amount == null && !nextQty.unit && !nextQty.raw)) {
+		return state;
+	}
+
+	const memberCal = { ...(state.calendars[memberId] || {}) };
+	const list = [...(memberCal[dateISO] || [])];
+	const ingredients = [...(meal.ingredients || [])];
+	ingredients[ingredientIndex] = { ...existing, quantity: nextQty };
+	list[mealIdx] = { ...meal, ingredients };
+	memberCal[dateISO] = list;
+
+	return {
+		...state,
+		calendars: { ...state.calendars, [memberId]: memberCal },
 	};
 }
 

@@ -2,6 +2,36 @@
  * @typedef {{ amount: number | null, unit: string | null, raw: string }} Quantity
  */
 
+/** Canonical short units used in meal/shopping quantities. */
+export const QUANTITY_UNITS = [
+	"pza",
+	"tza",
+	"cda",
+	"cdita",
+	"g",
+	"kg",
+	"ml",
+	"l",
+	"puñado",
+	"lata",
+	"rebanada",
+	"diente",
+	"paq",
+	"porción",
+	"pizca",
+	"al gusto",
+	"opcional",
+];
+
+export const DEFAULT_QUANTITY_UNIT = "pza";
+
+const UNIT_ONLY = new Set(["al gusto", "opcional"]);
+
+/** Units that are valid without a numeric amount (al gusto, opcional). */
+export function isUnitOnlyQuantity(unit) {
+	return UNIT_ONLY.has(String(unit || "").toLowerCase().trim());
+}
+
 /**
  * Non-numeric / presence-only phrases → canonical unit (Spanish source labels).
  * Aliases in ES/EN collapse to the same key for shopping aggregation.
@@ -84,6 +114,68 @@ export function isMiscQuantity(q) {
 }
 
 /**
+ * Format a numeric amount (fractions when they match kitchen staples).
+ * @param {number | null | undefined} value
+ * @returns {string}
+ */
+export function formatAmount(value) {
+	if (value == null || Number.isNaN(Number(value))) return "";
+	const numValue = Number(value);
+
+	if (numValue % 1 !== 0) {
+		const whole = Math.floor(numValue);
+		const fraction = numValue - whole;
+		let fractionStr = "";
+
+		if (Math.abs(fraction - 0.25) < 0.001) fractionStr = "1/4";
+		else if (Math.abs(fraction - 0.5) < 0.001) fractionStr = "1/2";
+		else if (Math.abs(fraction - 0.75) < 0.001) fractionStr = "3/4";
+		else if (Math.abs(fraction - 1 / 3) < 0.02) fractionStr = "1/3";
+		else if (Math.abs(fraction - 2 / 3) < 0.02) fractionStr = "2/3";
+
+		if (fractionStr) {
+			return whole > 0 ? `${whole} ${fractionStr}` : fractionStr;
+		}
+	}
+
+	return Number.isInteger(numValue)
+		? String(numValue)
+		: String(Math.round(numValue * 100) / 100);
+}
+
+/**
+ * Split a stored quantity into form fields (amount text + unit).
+ * @param {Quantity | string | null | undefined} quantity
+ * @returns {{ amount: string, unit: string }}
+ */
+export function splitQuantityInput(quantity) {
+	const parsed =
+		typeof quantity === "string" || quantity == null
+			? parseQuantity(quantity)
+			: quantity;
+	const unit = parsed?.unit ? String(parsed.unit).trim() : "";
+	if (parsed?.amount == null) {
+		return { amount: "", unit };
+	}
+	return { amount: formatAmount(parsed.amount), unit };
+}
+
+/**
+ * Join amount + unit form fields into a parseable quantity string.
+ * @param {string | null | undefined} amount
+ * @param {string | null | undefined} unit
+ * @returns {string}
+ */
+export function joinQuantityInput(amount, unit) {
+	const a = String(amount || "").trim();
+	const u = String(unit || "").trim();
+	if (isUnitOnlyQuantity(u)) return u;
+	if (!a) return u;
+	if (!u) return a;
+	return `${a} ${u}`;
+}
+
+/**
  * Format a Quantity for display (prefers raw when amount is null).
  * @param {Quantity | string | null | undefined} q
  * @returns {string}
@@ -99,29 +191,8 @@ export function formatQuantity(q) {
 	}
 
 	const unit = q.unit || "";
-	const value = q.amount;
-
-	if (value % 1 !== 0) {
-		const whole = Math.floor(value);
-		const fraction = value - whole;
-		let fractionStr = "";
-
-		if (Math.abs(fraction - 0.25) < 0.001) fractionStr = "1/4";
-		else if (Math.abs(fraction - 0.5) < 0.001) fractionStr = "1/2";
-		else if (Math.abs(fraction - 0.75) < 0.001) fractionStr = "3/4";
-		else if (Math.abs(fraction - 1 / 3) < 0.02) fractionStr = "1/3";
-		else if (Math.abs(fraction - 2 / 3) < 0.02) fractionStr = "2/3";
-
-		if (fractionStr) {
-			const body =
-				whole > 0 ? `${whole} ${fractionStr}` : fractionStr;
-			return unit ? `${body} ${unit}` : body;
-		}
-	}
-
-	const num =
-		Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100);
-	return unit ? `${num} ${unit}` : num;
+	const body = formatAmount(q.amount);
+	return unit ? `${body} ${unit}` : body;
 }
 
 /**

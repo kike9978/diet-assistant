@@ -41,6 +41,12 @@ describe("formatShoppingQuantities", () => {
 		expect(formatShoppingQuantities(["2 slices", "1 rebanada"])).toBe(
 			"3 slices",
 		);
+		expect(formatShoppingQuantities(["2 pzas", "13 pieza"])).toBe(
+			"15 pzas",
+		);
+		expect(formatShoppingQuantities(["1 pza", "2 piezas", "3 pzas"])).toBe(
+			"6 pza",
+		);
 	});
 
 	it("dedupes misc phrases to a single mention", () => {

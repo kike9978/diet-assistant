@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { INGREDIENT_CATEGORIES } from "../../domain/ingredient.js";
 import Button from "../ui/Button";
 import Sheet from "../ui/Sheet";
@@ -144,7 +145,7 @@ export default function AddExtrasSheet({
 								aria-label={t`Quitar fila`}
 								onClick={() => removeRow(index)}
 							>
-								×
+								<X className="size-4" aria-hidden />
 							</Button>
 						) : null}
 					</div>

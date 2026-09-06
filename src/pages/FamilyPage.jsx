@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
+import { X } from "lucide-react";
 import { useAppState } from "../context/AppState";
 import { MEMBER_COLORS } from "../features/family/memberColors.js";
 import Button from "../components/ui/Button";
@@ -146,7 +147,7 @@ export default function FamilyPage() {
 									aria-label={t`Eliminar ${member.name}`}
 									onClick={() => setDeleteId(member.id)}
 								>
-									×
+									<X className="size-4" aria-hidden />
 								</Button>
 							) : null}
 						</li>

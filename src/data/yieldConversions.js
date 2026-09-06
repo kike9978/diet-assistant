@@ -1,3 +1,5 @@
+import { normalizeIngredientName } from "../domain/ingredient.js";
+
 /**
  * Approximate cooked ↔ raw yield factors for meal prep planning.
  * `rawToCooked` = cookedWeight / rawWeight (multiply raw → cooked).
@@ -146,4 +148,75 @@ export const YIELD_CONVERSIONS = [
  */
 export function getYieldById(id) {
 	return YIELD_CONVERSIONS.find((y) => y.id === id);
+}
+
+/** Normalized / common names → yield table id. */
+const YIELD_ALIASES = {
+	avena: "avena",
+	oats: "avena",
+	oatmeal: "avena",
+	arroz: "arroz-blanco",
+	"arroz blanco": "arroz-blanco",
+	"arroz-blanco": "arroz-blanco",
+	"arroz integral": "arroz-integral",
+	"arroz-integral": "arroz-integral",
+	pasta: "pasta",
+	lentejas: "lentejas",
+	garbanzos: "garbanzos",
+	frijol: "frijol",
+	frijoles: "frijol",
+	pollo: "pollo",
+	res: "res",
+	cerdo: "cerdo",
+	pavo: "pavo",
+	bacon: "bacon",
+	tocino: "bacon",
+	salmon: "salmon",
+	salmón: "salmon",
+	camaron: "camaron",
+	camarón: "camaron",
+	camarones: "camaron",
+	champinones: "champinones",
+	champiñones: "champinones",
+	papa: "papa",
+	papas: "papa",
+};
+
+/**
+ * Find a yield row for a shopping-line / ingredient name.
+ * @param {string} name
+ * @param {string[]} [extraNames]
+ * @returns {YieldConversion | undefined}
+ */
+export function matchYieldConversion(name, extraNames = []) {
+	const originals = [name, ...extraNames]
+		.map((n) => String(n || "").toLowerCase().trim())
+		.filter(Boolean);
+	if (originals.length === 0) return undefined;
+
+	if (originals.some((n) => n.includes("integral"))) {
+		return getYieldById("arroz-integral");
+	}
+
+	const candidates = [
+		...originals,
+		...originals.map((n) => normalizeIngredientName(n)),
+	];
+
+	for (const candidate of candidates) {
+		if (YIELD_ALIASES[candidate]) {
+			return getYieldById(YIELD_ALIASES[candidate]);
+		}
+		for (const [alias, id] of Object.entries(YIELD_ALIASES)) {
+			if (
+				candidate === alias ||
+				candidate.startsWith(`${alias} `) ||
+				candidate.startsWith(`${alias}(`)
+			) {
+				return getYieldById(id);
+			}
+		}
+	}
+
+	return undefined;
 }

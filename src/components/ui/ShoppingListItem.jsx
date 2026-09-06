@@ -1,7 +1,20 @@
 import { Trans } from "@lingui/react/macro";
-import { useLingui } from "@lingui/react";
-import { useState } from "react";
-import { DAY_LABEL_MSG } from "../../i18n/weekDayLabels";
+import ShoppingItemSourcesExpand from "../shopping/ShoppingItemSourcesExpand";
+
+function displayNames(item) {
+	if (item?.isFused && Array.isArray(item.fusedMembers) && item.fusedMembers.length) {
+		return item.fusedMembers.map((member) => member.name).filter(Boolean);
+	}
+	return item?.name ? [item.name] : [];
+}
+
+function quantityParts(formatted) {
+	if (!formatted) return [];
+	return formatted
+		.split(",")
+		.map((part) => part.trim())
+		.filter(Boolean);
+}
 
 function ShoppingListItem({
 	item,
@@ -11,122 +24,64 @@ function ShoppingListItem({
 	showSources,
 	checked = false,
 }) {
-	const { _ } = useLingui();
-	const [expandedSources, setExpandedSources] = useState(false);
-
-	const findSources = () => {
-		const sources = [];
-		if (!weekPlan || item?.isFused) return sources;
-
-		const normalizedName = item.name.toLowerCase();
-
-		Object.entries(weekPlan).forEach(([day, meals]) => {
-			const dayName = _(DAY_LABEL_MSG[day] || DAY_LABEL_MSG.sunday);
-
-			meals.forEach((meal) => {
-				const matchingIngredients = meal.ingredients.filter(
-					(ing) =>
-						ing.name.toLowerCase() === normalizedName ||
-						item.variations?.includes(ing.name.toLowerCase()),
-				);
-
-				if (matchingIngredients.length > 0) {
-					sources.push({
-						day: dayName,
-						meal: meal.name,
-						ingredients: matchingIngredients,
-					});
-				}
-			});
-		});
-
-		return sources;
-	};
-
-	const sources = findSources();
-	const hasSources = sources.length > 0;
+	const names = displayNames(item);
+	const parts = quantityParts(formatQuantity(item));
+	const priceLabel =
+		priceEstimate?.price != null ? `~${priceEstimate.price} MXN` : "";
+	const nameClass = `font-semibold leading-snug break-words ${
+		checked ? "line-through text-ink-muted" : "text-ink"
+	}`;
 
 	return (
-		<div>
-			<div className="flex justify-between gap-2">
-				<div className="min-w-0">
-					<span
-						className={`font-medium ${checked ? "line-through text-ink-muted" : ""}`}
-					>
-						{item.name}
-					</span>
-					{item.isFused ? (
-						<span className="inline-flex items-center mt-1.5 text-[11px] leading-none text-ink-muted bg-surface border border-border px-2 py-1 rounded">
-							<Trans>Items combinados</Trans>
-						</span>
-					) : null}
-					{item.variations && item.variations.length > 1 && !item.isFused && (
-						<div className="text-xs text-gray-500 mt-1">
-							<Trans>Incluye:</Trans> {item.variations.join(", ")}
-						</div>
+		<div className="min-w-0">
+			<div className="flex items-start gap-2">
+				<div
+					className={`min-w-0 flex-1 ${
+						item.isFused
+							? "border-l-2 border-[var(--color-accent-shopping)] pl-2"
+							: ""
+					}`}
+				>
+					{names.length > 1 ? (
+						<ul className="space-y-0.5">
+							{names.map((name, index) => (
+								<li key={`${name}-${index}`} className={nameClass}>
+									{name}
+								</li>
+							))}
+						</ul>
+					) : (
+						<p className={nameClass}>{names[0] || item.name}</p>
 					)}
-				</div>
-				<div className="text-right shrink-0">
-					<span className="text-gray-600">{formatQuantity(item)}</span>
-					{priceEstimate?.price != null ? (
-						<div className="text-xs text-gray-500">
-							~{priceEstimate.price} MXN
-						</div>
+					{item.variations && item.variations.length > 1 && !item.isFused && (
+						<p className="text-xs text-ink-muted mt-0.5">
+							<Trans>Incluye:</Trans> {item.variations.join(", ")}
+						</p>
+					)}
+					{item.isFused || parts.length > 0 ? (
+						<p className="text-sm text-ink-muted leading-snug break-words mt-0.5">
+							{item.isFused ? (
+								<>
+									<span className="text-[11px] font-medium uppercase tracking-wide">
+										<Trans>Items combinados</Trans>
+									</span>
+									{parts.length > 0 ? " · " : null}
+								</>
+							) : null}
+							{parts.join(" · ")}
+						</p>
 					) : null}
 				</div>
+				{priceLabel ? (
+					<p className="shrink-0 text-xs text-ink-muted tabular-nums pt-1">
+						{priceLabel}
+					</p>
+				) : null}
 			</div>
 
-			{hasSources && showSources && (
-				<div className="mt-1">
-					<button
-						type="button"
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							setExpandedSources(!expandedSources);
-						}}
-						className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
-					>
-						<svg
-							className={`w-3 h-3 mr-1 transition-transform ${expandedSources ? "transform rotate-90" : ""}`}
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							aria-hidden
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M9 5l7 7-7 7"
-							/>
-						</svg>
-						{expandedSources ? (
-							<Trans>Ocultar detalles</Trans>
-						) : (
-							<Trans>Mostrar detalles</Trans>
-						)}
-					</button>
-
-					{expandedSources && (
-						<div className="mt-2 pl-3 border-l-2 border-indigo-100 text-xs text-gray-600">
-							{sources.map((source, index) => (
-								<div key={index} className="mb-1">
-									<span className="font-medium">{source.day}</span> -{" "}
-									{source.meal}:
-									<ul className="pl-4 mt-1">
-										{source.ingredients.map((ing, idx) => (
-											<li key={idx}>
-												{ing.quantity} {ing.name}
-											</li>
-										))}
-									</ul>
-								</div>
-							))}
-						</div>
-					)}
-				</div>
-			)}
+			{showSources ? (
+				<ShoppingItemSourcesExpand item={item} weekPlan={weekPlan} />
+			) : null}
 		</div>
 	);
 }

@@ -202,19 +202,16 @@ export function draftNeedsLibrarySavePrompt(draft) {
 
 /**
  * Add selected draft meals to the library and link mealId on matching draft slots.
- * Optionally create day/diet templates from the (linked) draft.
  *
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {WeekDraft} draft
  * @param {string[]} selectedTempIds
- * @param {{ saveAsTemplate?: boolean, templateName?: string }} [opts]
  * @returns {{ state: import("../../domain/types.js").DietAssistantStateV2, draft: WeekDraft }}
  */
 export function applyLibrarySaveSelections(
 	state,
 	draft,
 	selectedTempIds,
-	opts = {},
 ) {
 	const selected = new Set(selectedTempIds || []);
 	const groups = uniqueDraftMealsForSave(draft);
@@ -263,86 +260,13 @@ export function applyLibrarySaveSelections(
 		})),
 	};
 
-	let nextState = {
+	const nextState = {
 		...state,
 		mealLibrary: [...state.mealLibrary, ...newLibraryMeals],
 		ui: { ...state.ui, onboardingDismissed: true },
 	};
 
-	if (opts.saveAsTemplate) {
-		nextState = saveDraftAsTemplates(
-			nextState,
-			nextDraft,
-			opts.templateName || "Plan importado",
-		);
-	}
-
 	return { state: nextState, draft: nextDraft };
-}
-
-/**
- * Persist draft days as day + diet templates (meals must already have mealIds when possible).
- * @param {import("../../domain/types.js").DietAssistantStateV2} state
- * @param {WeekDraft} draft
- * @param {string} name
- */
-export function saveDraftAsTemplates(state, draft, name) {
-	const now = new Date().toISOString();
-	const mealLibrary = [...state.mealLibrary];
-	const dayTemplates = [...state.dayTemplates];
-	const dayTemplateIds = [];
-
-	for (const [index, day] of (draft.days || []).entries()) {
-		if (!day.meals?.length) continue;
-		const mealIds = [];
-		for (const draftMeal of day.meals) {
-			if (draftMeal.mealId) {
-				mealIds.push(draftMeal.mealId);
-				continue;
-			}
-			const meal = buildLibraryMeal({
-				name: draftMeal.name,
-				mealType: draftMeal.mealType,
-				servings: 1,
-				ingredients: (draftMeal.ingredients || []).map((ing) => ({
-					name: ing.name,
-					quantity:
-						typeof ing.quantity === "string"
-							? ing.quantity
-							: formatQuantity(ing.quantity) || "",
-				})),
-				source: "template",
-			});
-			mealLibrary.push(meal);
-			mealIds.push(meal.id);
-		}
-		const dayId = createId();
-		dayTemplates.push({
-			id: dayId,
-			name: `Día ${index + 1}`,
-			mealIds,
-		});
-		dayTemplateIds.push(dayId);
-	}
-
-	if (dayTemplateIds.length === 0) {
-		return { ...state, mealLibrary };
-	}
-
-	return {
-		...state,
-		mealLibrary,
-		dayTemplates,
-		dietTemplates: [
-			...state.dietTemplates,
-			{
-				id: createId(),
-				name,
-				dayTemplateIds,
-				createdAt: now,
-			},
-		],
-	};
 }
 
 /**

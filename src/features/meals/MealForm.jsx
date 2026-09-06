@@ -2,20 +2,32 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
 import { useState } from "react";
-import { formatQuantity } from "../../domain/quantity.js";
+import { X } from "lucide-react";
+import {
+	DEFAULT_QUANTITY_UNIT,
+	isUnitOnlyQuantity,
+	joinQuantityInput,
+	splitQuantityInput,
+} from "../../domain/quantity.js";
 import { inferMealType } from "../../domain/mealType.js";
 import Button from "../../components/ui/Button";
 import { MEAL_TYPE_MSG, MEAL_TYPE_OPTIONS } from "./mealTypeLabels.js";
+import { unitLabel, unitsForSelect } from "./quantityUnitLabels.js";
+
+function emptyRow() {
+	return { name: "", amount: "", unit: DEFAULT_QUANTITY_UNIT };
+}
 
 function rowsFromMeal(meal) {
-	if (!meal?.ingredients?.length) return [{ name: "", quantity: "" }];
-	return meal.ingredients.map((ing) => ({
-		name: ing.name || "",
-		quantity:
-			typeof ing.quantity === "string"
-				? ing.quantity
-				: formatQuantity(ing.quantity),
-	}));
+	if (!meal?.ingredients?.length) return [emptyRow()];
+	return meal.ingredients.map((ing) => {
+		const { amount, unit } = splitQuantityInput(ing.quantity);
+		return {
+			name: ing.name || "",
+			amount,
+			unit: unit || DEFAULT_QUANTITY_UNIT,
+		};
+	});
 }
 
 /**
@@ -50,7 +62,7 @@ export default function MealForm({
 		);
 	};
 
-	const addRow = () => setRows((prev) => [...prev, { name: "", quantity: "" }]);
+	const addRow = () => setRows((prev) => [...prev, emptyRow()]);
 
 	const handleNameChange = (value) => {
 		setName(value);
@@ -63,7 +75,11 @@ export default function MealForm({
 		e.preventDefault();
 		const trimmedName = name.trim();
 		const ingredients = rows
-			.map((r) => ({ name: r.name.trim(), quantity: r.quantity.trim() }))
+			.map((r) => {
+				const ingName = r.name.trim();
+				const quantity = joinQuantityInput(r.amount, r.unit);
+				return { name: ingName, quantity };
+			})
 			.filter((r) => r.name && r.quantity);
 
 		if (!trimmedName) {
@@ -138,31 +154,52 @@ export default function MealForm({
 				<p className="text-sm font-semibold">
 					<Trans>Ingredientes</Trans>
 				</p>
-				{rows.map((row, index) => (
-					<div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-						<input
-							value={row.name}
-							onChange={(e) => updateRow(index, "name", e.target.value)}
-							placeholder={t`Ingrediente`}
-							className="min-h-11 px-3 rounded-app border border-border bg-surface"
-						/>
-						<input
-							value={row.quantity}
-							onChange={(e) => updateRow(index, "quantity", e.target.value)}
-							placeholder={t`1/2 tza`}
-							className="min-h-11 px-3 rounded-app border border-border bg-surface"
-						/>
-						<Button
-							type="button"
-							variant="ghost"
-							className="!px-2"
-							aria-label={t`Quitar ingrediente`}
-							onClick={() => removeRow(index)}
+				{rows.map((row, index) => {
+					const unitOnly = isUnitOnlyQuantity(row.unit);
+					return (
+						<div
+							key={index}
+							className="grid grid-cols-[minmax(0,1fr)_4.25rem_5.75rem_auto] gap-2"
 						>
-							×
-						</Button>
-					</div>
-				))}
+							<input
+								value={row.name}
+								onChange={(e) => updateRow(index, "name", e.target.value)}
+								placeholder={t`Ingrediente`}
+								className="min-h-11 min-w-0 px-3 rounded-app border border-border bg-surface"
+							/>
+							<input
+								value={unitOnly ? "" : row.amount}
+								onChange={(e) => updateRow(index, "amount", e.target.value)}
+								placeholder={unitOnly ? "—" : t`1/2`}
+								inputMode="decimal"
+								disabled={unitOnly}
+								aria-label={t`Cantidad`}
+								className="min-h-11 min-w-0 px-2 rounded-app border border-border bg-surface disabled:text-ink-muted disabled:opacity-60"
+							/>
+							<select
+								value={row.unit}
+								onChange={(e) => updateRow(index, "unit", e.target.value)}
+								aria-label={t`Unidad`}
+								className="min-h-11 min-w-0 px-2 rounded-app border border-border bg-surface"
+							>
+								{unitsForSelect(row.unit).map((unit) => (
+									<option key={unit} value={unit}>
+										{unitLabel(unit, _)}
+									</option>
+								))}
+							</select>
+							<Button
+								type="button"
+								variant="ghost"
+								className="!px-2"
+								aria-label={t`Quitar ingrediente`}
+								onClick={() => removeRow(index)}
+							>
+								<X className="size-4" aria-hidden />
+							</Button>
+						</div>
+					);
+				})}
 				<Button type="button" variant="secondary" onClick={addRow}>
 					<Trans>Otro ingrediente</Trans>
 				</Button>

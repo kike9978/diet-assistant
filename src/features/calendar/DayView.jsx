@@ -9,6 +9,7 @@ import { MEAL_TYPE_MSG } from "../meals/mealTypeLabels.js";
 import {
 	canonicalWeekStartISO,
 	getWeekPlan,
+	resolveDayPlanForDate,
 } from "../weekplan/weekPlanModel.js";
 import { quantityLabel } from "./calendarActions.js";
 import { parseDateISO } from "./dateUtils.js";
@@ -25,7 +26,7 @@ const DAY_KEYS = [
 ];
 
 /**
- * Day agenda: assign a week-plan day slot to this date, then tweak meals.
+ * Day agenda: assign a whole day plan to this date (not individual meals).
  */
 export default function DayView({ dateISO }) {
 	const { state, applyDayPlanToDate, clearCalendarDay } = useAppState();
@@ -39,6 +40,7 @@ export default function DayView({ dateISO }) {
 		(dp) => (dp.meals || []).length > 0,
 	);
 	const meals = state.calendars[memberId]?.[dateISO] || [];
+	const assignedPlan = resolveDayPlanForDate(weekPlan, dateISO, meals);
 	const d = parseDateISO(dateISO);
 	const weekdayKey = DAY_KEYS[d.getDay()];
 	const dateLabel = d.toLocaleDateString(
@@ -68,6 +70,11 @@ export default function DayView({ dateISO }) {
 							{dateLabel}
 						</span>
 					</h2>
+					{assignedPlan?.name?.trim() ? (
+						<p className="text-sm font-semibold text-brand mt-1">
+							{assignedPlan.name.trim()}
+						</p>
+					) : null}
 				</div>
 				{meals.length > 0 ? (
 					<Button
@@ -193,11 +200,16 @@ export default function DayView({ dateISO }) {
 							const planMeals = dayPlan.meals || [];
 							const expandKey = dayPlan.id;
 							const isExpanded = expandedId === expandKey;
+							const isAssigned = assignedPlan?.id === dayPlan.id;
 
 							return (
 								<li
 									key={dayPlan.id}
-									className="border border-border rounded-app overflow-hidden"
+									className={`border rounded-app overflow-hidden ${
+										isAssigned
+											? "border-[var(--color-brand)] ring-1 ring-inset ring-[var(--color-brand)]"
+											: "border-border"
+									}`}
 								>
 									<div className="flex items-center gap-2 px-3 py-2">
 										<button
@@ -227,6 +239,11 @@ export default function DayView({ dateISO }) {
 											<p className="font-semibold text-ink truncate">
 												{dayPlan.name || `Día ${index + 1}`}
 											</p>
+											{isAssigned ? (
+												<span className="text-xs font-semibold text-brand shrink-0">
+													<Trans>Asignado</Trans>
+												</span>
+											) : null}
 										</button>
 										<Button
 											variant="secondary"

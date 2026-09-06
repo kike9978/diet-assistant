@@ -22,11 +22,6 @@ export function addMember(state, { name, color }) {
 		createdAt: now,
 	};
 
-	const shoppingMemberIds = [
-		...(state.ui.shoppingMemberIds || [state.household.activeMemberId]),
-		id,
-	];
-
 	return {
 		...state,
 		household: {
@@ -36,10 +31,6 @@ export function addMember(state, { name, color }) {
 		calendars: {
 			...state.calendars,
 			[id]: {},
-		},
-		ui: {
-			...state.ui,
-			shoppingMemberIds,
 		},
 	};
 }
@@ -105,6 +96,9 @@ export function setActiveMember(state, memberId) {
 	return {
 		...state,
 		household: { ...state.household, activeMemberId: memberId },
+		// Keep Compras aligned with the calendar profile you are viewing.
+		// Multi-person shopping is re-selected on the Compras page when needed.
+		ui: { ...state.ui, shoppingMemberIds: [memberId] },
 	};
 }
 

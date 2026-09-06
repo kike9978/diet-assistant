@@ -13,6 +13,7 @@ import {
 	matchDayPlanForMeals,
 	resolveDayPlanForDate,
 	saveWeekPlan,
+	syncWeekPlanAssignmentsFromCalendar,
 	weekPlanExists,
 	weekPlanHasContent,
 } from "./weekPlanModel.js";
@@ -25,8 +26,6 @@ function baseState() {
 			activeMemberId: "m1",
 		},
 		mealLibrary: [],
-		dayTemplates: [],
-		dietTemplates: [],
 		calendars: { m1: {} },
 		weekPlans: {},
 		pantry: [],
@@ -54,7 +53,7 @@ function baseState() {
 }
 
 describe("weekPlanModel", () => {
-	it("saveWeekPlan stores by member and weekStartISO without touching calendar", () => {
+	it("saveWeekPlan stores by member and weekStartISO", () => {
 		const dayPlans = [
 			createDayPlan({
 				name: "Día 1",
@@ -329,5 +328,206 @@ describe("weekPlanModel", () => {
 				{ name: "B", mealId: null },
 			])?.name,
 		).toBe("Día B");
+	});
+
+	it("syncWeekPlanAssignmentsFromCalendar rebuilds day plans from calendar meals", () => {
+		const memberId = "m1";
+		let state = baseState();
+		state = {
+			...state,
+			calendars: {
+				[memberId]: {
+					"2026-08-31": [
+						{
+							instanceId: "i1",
+							dateISO: "2026-08-31",
+							memberId,
+							mealId: null,
+							name: "Desayuno: A",
+							mealType: "desayuno",
+							ingredients: [],
+						},
+						{
+							instanceId: "i2",
+							dateISO: "2026-08-31",
+							memberId,
+							mealId: null,
+							name: "Cena: B",
+							mealType: "cena",
+							ingredients: [],
+						},
+					],
+					"2026-09-01": [
+						{
+							instanceId: "i3",
+							dateISO: "2026-09-01",
+							memberId,
+							mealId: null,
+							name: "Desayuno: A",
+							mealType: "desayuno",
+							ingredients: [],
+						},
+						{
+							instanceId: "i4",
+							dateISO: "2026-09-01",
+							memberId,
+							mealId: null,
+							name: "Cena: B",
+							mealType: "cena",
+							ingredients: [],
+						},
+					],
+					"2026-09-02": [
+						{
+							instanceId: "i5",
+							dateISO: "2026-09-02",
+							memberId,
+							mealId: null,
+							name: "Comida: C",
+							mealType: "comida",
+							ingredients: [],
+						},
+					],
+				},
+			},
+			weekPlans: {
+				[memberId]: {
+					"2026-08-31": createWeekPlan("2026-08-31", memberId, [
+						createDayPlan({ name: "Vacío", meals: [] }),
+					]),
+				},
+			},
+		};
+
+		state = syncWeekPlanAssignmentsFromCalendar(state, "2026-08-31");
+		const plan = getWeekPlan(state, "2026-08-31");
+		// Keeps empty stub + creates slots for unmatched calendar meal sets
+		expect(plan.dayPlans.length).toBeGreaterThanOrEqual(2);
+		expect(plan.assignments["2026-08-31"]).toBe(plan.assignments["2026-09-01"]);
+		expect(plan.assignments["2026-09-02"]).toBeTruthy();
+		expect(plan.assignments["2026-08-31"]).not.toBe(
+			plan.assignments["2026-09-02"],
+		);
+		expect(
+			resolveDayPlanForDate(
+				plan,
+				"2026-08-31",
+				state.calendars[memberId]["2026-08-31"],
+			)?.name,
+		).toMatch(/^Día /);
+	});
+
+	it("saveWeekPlan removing a day plan clears its assigned calendar days", () => {
+		const dayA = createDayPlan({
+			name: "Día A",
+			meals: [
+				createDraftMeal({
+					name: "A",
+					ingredients: [{ name: "x", quantity: "1" }],
+				}),
+			],
+		});
+		const dayB = createDayPlan({
+			name: "Día B",
+			meals: [
+				createDraftMeal({
+					name: "B",
+					ingredients: [{ name: "y", quantity: "1" }],
+				}),
+			],
+		});
+		let state = saveWeekPlan(baseState(), "2026-08-31", [dayA, dayB]);
+		state = applyDayPlanToDate(state, "2026-08-31", dayA.id, "2026-08-31");
+		state = applyDayPlanToDate(state, "2026-08-31", dayB.id, "2026-09-01");
+		expect(state.calendars.m1["2026-08-31"]).toHaveLength(1);
+		expect(state.calendars.m1["2026-09-01"]).toHaveLength(1);
+
+		state = saveWeekPlan(state, "2026-08-31", [dayB]);
+		const plan = getWeekPlan(state, "2026-08-31");
+		expect(plan.dayPlans).toHaveLength(1);
+		expect(plan.dayPlans[0].id).toBe(dayB.id);
+		expect(plan.assignments["2026-08-31"]).toBeUndefined();
+		expect(plan.assignments["2026-09-01"]).toBe(dayB.id);
+		expect(state.calendars.m1["2026-08-31"]).toEqual([]);
+		expect(state.calendars.m1["2026-09-01"]).toHaveLength(1);
+
+		// Heal must not resurrect the removed day plan
+		state = syncWeekPlanAssignmentsFromCalendar(state, "2026-08-31");
+		expect(getWeekPlan(state, "2026-08-31").dayPlans.map((dp) => dp.id)).toEqual([
+			dayB.id,
+		]);
+	});
+
+	it("clearing day plan assignment drops shopping-only progress for that day", () => {
+		const dayA = createDayPlan({
+			name: "Día A",
+			meals: [
+				createDraftMeal({
+					name: "Pollo",
+					ingredients: [{ name: "Pollo deshebrado", quantity: "920 g" }],
+				}),
+			],
+		});
+		let state = saveWeekPlan(baseState(), "2026-08-31", [dayA]);
+		state = applyDayPlanToDate(state, "2026-08-31", dayA.id, "2026-08-31");
+		const meal = state.calendars.m1["2026-08-31"][0];
+		const lineKey = `ing:pollo deshebrado`;
+		state = {
+			...state,
+			shoppingQtyOverrides: { [lineKey]: "900 g" },
+			shoppingYieldMode: { [lineKey]: "cookedToRaw" },
+			shoppingSourceChecks: {
+				[`src:${meal.instanceId}:${meal.ingredients[0].id}`]: true,
+			},
+			checkedItems: { [lineKey]: true },
+		};
+
+		state = clearDayPlanAssignment(state, "2026-08-31");
+		expect(getWeekPlan(state, "2026-08-31").assignments["2026-08-31"]).toBeUndefined();
+		expect(state.calendars.m1["2026-08-31"]).toHaveLength(1);
+		expect(state.shoppingQtyOverrides[lineKey]).toBeUndefined();
+		expect(state.shoppingYieldMode[lineKey]).toBeUndefined();
+		expect(state.checkedItems[lineKey]).toBeUndefined();
+		expect(
+			state.shoppingSourceChecks[
+				`src:${meal.instanceId}:${meal.ingredients[0].id}`
+			],
+		).toBeUndefined();
+	});
+
+	it("removing an assigned day plan clears shopping overrides for its meals", () => {
+		const dayA = createDayPlan({
+			name: "Día A",
+			meals: [
+				createDraftMeal({
+					name: "Pollo",
+					ingredients: [{ name: "Pollo deshebrado", quantity: "920 g" }],
+				}),
+			],
+		});
+		const dayB = createDayPlan({
+			name: "Día B",
+			meals: [
+				createDraftMeal({
+					name: "Arroz",
+					ingredients: [{ name: "Arroz", quantity: "1 tza" }],
+				}),
+			],
+		});
+		let state = saveWeekPlan(baseState(), "2026-08-31", [dayA, dayB]);
+		state = applyDayPlanToDate(state, "2026-08-31", dayA.id, "2026-08-31");
+		state = applyDayPlanToDate(state, "2026-08-31", dayB.id, "2026-09-01");
+		const polloKey = "ing:pollo deshebrado";
+		const arrozKey = "ing:arroz";
+		state = {
+			...state,
+			shoppingQtyOverrides: { [polloKey]: "900 g", [arrozKey]: "2 tza" },
+			shoppingYieldMode: { [polloKey]: "cookedToRaw" },
+		};
+
+		state = saveWeekPlan(state, "2026-08-31", [dayB]);
+		expect(state.shoppingQtyOverrides[polloKey]).toBeUndefined();
+		expect(state.shoppingYieldMode[polloKey]).toBeUndefined();
+		expect(state.shoppingQtyOverrides[arrozKey]).toBe("2 tza");
 	});
 });

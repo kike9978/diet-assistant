@@ -14,9 +14,9 @@ export function buildShoppingMap(weekPlan) {
 	const shoppingList = {};
 	if (!weekPlan) return shoppingList;
 
-	Object.values(weekPlan).forEach((meals) => {
+	Object.entries(weekPlan).forEach(([dayKey, meals]) => {
 		(meals || []).forEach((meal) => {
-			(meal.ingredients || []).forEach((ingredient) => {
+			(meal.ingredients || []).forEach((ingredient, ingIndex) => {
 				const normalizedName = normalizeIngredientName(
 					ingredient.name.toLowerCase(),
 				);
@@ -24,6 +24,19 @@ export function buildShoppingMap(weekPlan) {
 					typeof ingredient.quantity === "string"
 						? ingredient.quantity
 						: formatQuantity(ingredient.quantity);
+				const instanceId = meal.instanceId || meal.id || "";
+				const ingredientId = ingredient.id || `idx-${ingIndex}`;
+				const source = {
+					key: `src:${instanceId}:${ingredientId}`,
+					instanceId,
+					ingredientId,
+					memberId: meal.memberId,
+					mealId: meal.mealId ?? null,
+					dayKey,
+					mealName: meal.name,
+					ingredientName: ingredient.name,
+					quantity: qty,
+				};
 
 				if (!shoppingList[normalizedName]) {
 					shoppingList[normalizedName] = {
@@ -31,9 +44,11 @@ export function buildShoppingMap(weekPlan) {
 						normalizedName,
 						quantities: [qty],
 						variations: [ingredient.name.toLowerCase()],
+						sources: [source],
 					};
 				} else {
 					shoppingList[normalizedName].quantities.push(qty);
+					shoppingList[normalizedName].sources.push(source);
 					if (
 						!shoppingList[normalizedName].variations.includes(
 							ingredient.name.toLowerCase(),
@@ -99,5 +114,10 @@ export function groupIngredientsByCategory(shoppingList) {
 		if (!grouped[category]) grouped[category] = [];
 		grouped[category].push(item);
 	});
+	for (const items of Object.values(grouped)) {
+		items.sort((a, b) =>
+			(a.name || "").localeCompare(b.name || "", "es", { sensitivity: "base" }),
+		);
+	}
 	return grouped;
 }

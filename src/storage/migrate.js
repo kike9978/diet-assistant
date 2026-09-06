@@ -2,7 +2,6 @@ import { createId } from "../domain/ids.js";
 import {
 	ingredientFromLegacy,
 	mealFingerprint,
-	normalizeIngredientName,
 } from "../domain/ingredient.js";
 import { inferMealType } from "../domain/mealType.js";
 import { formatQuantity } from "../domain/quantity.js";
@@ -13,6 +12,7 @@ import {
 	weekdayKeysToDateISO,
 } from "../features/calendar/dateUtils.js";
 import { remapCheckedItems } from "../features/shopping/checklistKeys.js";
+import { syncAllWeekPlanAssignmentsFromCalendar } from "../features/weekplan/weekPlanModel.js";
 import { createEmptyState } from "./defaults.js";
 
 const WEEK_DAYS = [
@@ -27,7 +27,7 @@ const WEEK_DAYS = [
 
 /**
  * @param {object} meal
- * @param {"user"|"import"|"template"} source
+ * @param {"user"|"import"} source
  * @param {Map<string, string>} fingerprintToId
  */
 function ensureLibraryMeal(meal, source, fingerprintToId, library) {
@@ -61,31 +61,14 @@ function ensureLibraryMeal(meal, source, fingerprintToId, library) {
 }
 
 /**
- * Explode a dietPlan into library + day/diet templates.
- * @returns {{ dietTemplateId: string }}
+ * Explode a dietPlan into library meals (deduped by fingerprint).
  */
-function ingestDietPlan(dietPlan, name, library, dayTemplates, dietTemplates, fingerprintToId) {
-	const dayTemplateIds = [];
+function ingestDietPlanMeals(dietPlan, library, fingerprintToId) {
 	for (const day of dietPlan?.days || []) {
-		const mealIds = (day.meals || []).map((meal) =>
-			ensureLibraryMeal(meal, "template", fingerprintToId, library),
-		);
-		const dayId = createId();
-		dayTemplates.push({
-			id: dayId,
-			name: day.name || "Día",
-			mealIds,
-		});
-		dayTemplateIds.push(dayId);
+		for (const meal of day.meals || []) {
+			ensureLibraryMeal(meal, "import", fingerprintToId, library);
+		}
 	}
-	const dietId = createId();
-	dietTemplates.push({
-		id: dietId,
-		name: name || "Plan importado",
-		dayTemplateIds,
-		createdAt: new Date().toISOString(),
-	});
-	return { dietTemplateId: dietId };
 }
 
 /**
@@ -195,26 +178,12 @@ export function migrateV1toV2(legacy = {}) {
 	} = legacy;
 
 	if (dietPlan?.days?.length) {
-		ingestDietPlan(
-			dietPlan,
-			"Plan actual",
-			state.mealLibrary,
-			state.dayTemplates,
-			state.dietTemplates,
-			fingerprintToId,
-		);
+		ingestDietPlanMeals(dietPlan, state.mealLibrary, fingerprintToId);
 	}
 
 	for (const pin of pinnedPlans) {
 		if (!pin?.dietPlan?.days) continue;
-		ingestDietPlan(
-			pin.dietPlan,
-			pin.name || "Plan guardado",
-			state.mealLibrary,
-			state.dayTemplates,
-			state.dietTemplates,
-			fingerprintToId,
-		);
+		ingestDietPlanMeals(pin.dietPlan, state.mealLibrary, fingerprintToId);
 		// Restore that pin's weekPlan onto the current week when present
 		if (pin.weekPlan && Object.keys(pin.weekPlan).length > 0) {
 			// Only apply pin week if we don't already have a live weekPlan
@@ -279,7 +248,8 @@ export function migrateV1toV2(legacy = {}) {
 		lastSavedAt: now,
 	};
 
-	return state;
+	// Legacy weekPlan filled calendars without day-plan assignments — heal them.
+	return syncAllWeekPlanAssignmentsFromCalendar(state);
 }
 
 /**

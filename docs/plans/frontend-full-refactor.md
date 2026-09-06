@@ -379,14 +379,24 @@ Token examples: `--color-bg`, `--color-surface`, `--color-ink`, `--accent-breakf
 
 | Pattern | Use |
 |---------|-----|
-| **Bottom / side sheet** | Add meal, substitute, extras |
+| **Bottom / side sheet** | Add meal, substitute, extras, **per-item shopping detail** |
 | **Full page** | Calendar, meal editor, shopping / prep |
 | **Confirm dialog** | Reset, delete member, delete library meal in use |
 | **Segmented control** | Mes / Semana / Día; Lista / Prep |
-| **Chips** | Meal type, member, category filters |
+| **Chips** | Meal type, member, category filters — not quantity fragments on aisle rows |
 | **Empty state** | Illustration + 1 sentence + 1 primary CTA |
+| **Aisle list row** | Compras / Despensa scan line (below) |
+| **Overflow menu (⋮)** | 2–4 secondary actions that must not clip inside `overflow-y-auto` |
 
 Kill nested card-in-card. Cards only when they wrap an interactive unit.
+
+### Aisle list rows (Compras / Despensa)
+
+Inventory lists stay **dense and horizontal**. Canonical shopping line: [`ShoppingChecklistRow`](../../src/components/shopping/ShoppingChecklistRow.jsx) — checkbox (optional) · truncated name · qty + optional price · status chip · chevron. Tap opens [`ShoppingItemSheet`](../../src/components/shopping/ShoppingItemSheet.jsx). Despensa uses the same name / qty / trailing-action hierarchy.
+
+**On the row:** scan and check, or open detail. **Off the row** (sheet or ⋮): Ya lo tengo, Separar, Editar, Quitar, substitute, yield, sources. Do not put a pill or extra action row under every line. Do not sit a long quantity string on the same wrapping line as the name (overlap on narrow screens). Combined items stay one truncated line; unfuse lives in the sheet.
+
+Agent rule: [`.cursor/rules/list-rows.mdc`](../../../.cursor/rules/list-rows.mdc).
 
 ### Shell layout
 

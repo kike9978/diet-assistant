@@ -1,3 +1,4 @@
+import { syncAllWeekPlanAssignmentsFromCalendar } from "../features/weekplan/weekPlanModel.js";
 import { isValidV2State, createEmptyState } from "./defaults.js";
 import {
 	clearLegacyKeys,
@@ -78,8 +79,13 @@ export function normalizeV2State(state) {
 		}
 	}
 
-	return {
+	const mealLibrary = (state.mealLibrary || []).map((meal) =>
+		meal?.source === "template" ? { ...meal, source: "import" } : meal,
+	);
+
+	const next = {
 		...state,
+		mealLibrary,
 		pantry: Array.isArray(state.pantry) ? state.pantry : [],
 		shoppingExtras: Array.isArray(state.shoppingExtras)
 			? state.shoppingExtras
@@ -87,6 +93,20 @@ export function normalizeV2State(state) {
 		shoppingFusions: Array.isArray(state.shoppingFusions)
 			? state.shoppingFusions
 			: [],
+		shoppingSourceChecks:
+			state.shoppingSourceChecks &&
+			typeof state.shoppingSourceChecks === "object"
+				? state.shoppingSourceChecks
+				: {},
+		shoppingQtyOverrides:
+			state.shoppingQtyOverrides &&
+			typeof state.shoppingQtyOverrides === "object"
+				? state.shoppingQtyOverrides
+				: {},
+		shoppingYieldMode:
+			state.shoppingYieldMode && typeof state.shoppingYieldMode === "object"
+				? state.shoppingYieldMode
+				: {},
 		calendars,
 		weekPlans,
 		ui: {
@@ -94,6 +114,10 @@ export function normalizeV2State(state) {
 			shoppingMemberIds,
 		},
 	};
+	delete next.dayTemplates;
+	delete next.dietTemplates;
+	// Calendar days are whole day-plan materializations — heal missing assignments.
+	return syncAllWeekPlanAssignmentsFromCalendar(next);
 }
 
 /**
@@ -178,5 +202,7 @@ export function importState(json) {
 	if (!isValidV2State(parsed)) {
 		throw new Error("Invalid DietAssistantStateV2 document");
 	}
-	return /** @type {import("../domain/types.js").DietAssistantStateV2} */ (parsed);
+	return normalizeV2State(
+		/** @type {import("../domain/types.js").DietAssistantStateV2} */ (parsed),
+	);
 }

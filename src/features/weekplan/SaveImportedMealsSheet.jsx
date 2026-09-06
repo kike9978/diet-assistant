@@ -16,12 +16,10 @@ export default function SaveImportedMealsSheet({
 }) {
 	const groups = uniqueDraftMealsForSave(draft);
 	const [selected, setSelected] = useState(() => new Set());
-	const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
 	useEffect(() => {
 		if (!open) return;
 		setSelected(new Set(groups.flatMap((g) => g.tempIds)));
-		setSaveAsTemplate(false);
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- reset when sheet opens
 	}, [open, draft]);
 
@@ -53,19 +51,12 @@ export default function SaveImportedMealsSheet({
 				<div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
 					<Button
 						variant="secondary"
-						onClick={() =>
-							onConfirm({ selectedTempIds: [], saveAsTemplate: false })
-						}
+						onClick={() => onConfirm({ selectedTempIds: [] })}
 					>
 						<Trans>No guardar ninguna</Trans>
 					</Button>
 					<Button
-						onClick={() =>
-							onConfirm({
-								selectedTempIds: [...selected],
-								saveAsTemplate,
-							})
-						}
+						onClick={() => onConfirm({ selectedTempIds: [...selected] })}
 					>
 						<Trans>Guardar seleccionadas</Trans>
 					</Button>
@@ -135,16 +126,6 @@ export default function SaveImportedMealsSheet({
 					})}
 				</ul>
 			)}
-
-			<label className="flex items-center gap-2 text-sm text-ink">
-				<input
-					type="checkbox"
-					checked={saveAsTemplate}
-					onChange={(e) => setSaveAsTemplate(e.target.checked)}
-					className="h-4 w-4 accent-[var(--color-brand)]"
-				/>
-				<Trans>Guardar también como plantilla</Trans>
-			</label>
 		</Sheet>
 	);
 }

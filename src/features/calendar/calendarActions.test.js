@@ -32,8 +32,6 @@ function baseState() {
 				updatedAt: "",
 			},
 		],
-		dayTemplates: [],
-		dietTemplates: [],
 		calendars: { m1: {} },
 		pantry: [],
 		shoppingExtras: [],
@@ -95,6 +93,50 @@ describe("calendarActions", () => {
 			"pepino",
 		);
 		expect(state.mealLibrary[0].ingredients[0].name).toBe("pepino");
+	});
+
+	it("applyIngredientSubstitution finds a non-active member", () => {
+		const state = baseState();
+		state.household.members.push({
+			id: "m2",
+			name: "Otra",
+			color: "#000",
+			createdAt: "",
+		});
+		state.calendars.m2 = {
+			"2026-09-05": [
+				{
+					instanceId: "other",
+					dateISO: "2026-09-05",
+					memberId: "m2",
+					mealId: null,
+					name: "Cena",
+					mealType: "cena",
+					ingredients: [
+						{
+							id: "x1",
+							name: "avena",
+							quantity: { amount: 1, unit: "tza", raw: "1 tza" },
+						},
+					],
+				},
+			],
+		};
+
+		const next = applyIngredientSubstitution(state, {
+			instanceId: "other",
+			ingredientId: "x1",
+			replacementName: "quinoa",
+			keepQuantity: true,
+			memberId: "m2",
+		});
+
+		expect(next.calendars.m2["2026-09-05"][0].ingredients[0].name).toBe(
+			"quinoa",
+		);
+		expect(next.calendars.m2["2026-09-05"][0].ingredients[0].quantity.amount).toBe(
+			1,
+		);
 	});
 
 	it("prunePastCalendarDays removes old dates", () => {

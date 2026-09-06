@@ -15,7 +15,7 @@ export default function ConfirmDialog({
 	if (!open) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 overflow-y-auto">
+		<div className="fixed inset-0 z-[70] overflow-y-auto">
 			<div className="flex items-center justify-center min-h-screen p-4 text-center">
 				<button
 					type="button"

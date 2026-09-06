@@ -7,8 +7,6 @@ import {
 	useState,
 } from "react";
 import { createId } from "../domain/ids.js";
-import { ingredientFromLegacy } from "../domain/ingredient.js";
-import { inferMealType } from "../domain/mealType.js";
 import { parseQuantity } from "../domain/quantity.js";
 import {
 	applyIngredientSubstitution,
@@ -19,10 +17,9 @@ import {
 	prunePastCalendarDays,
 	removeScheduledMeal as removeScheduledMealInState,
 	replaceScheduledMeal as replaceScheduledMealInState,
-	scheduleLibraryMeal as scheduleLibraryMealInState,
 	updateScheduledMeal as updateScheduledMealInState,
 } from "../features/calendar/calendarActions.js";
-import { todayISO, weekDateISOs } from "../features/calendar/dateUtils.js";
+import { weekDateISOs } from "../features/calendar/dateUtils.js";
 import {
 	applyLibrarySaveSelections,
 	commitWeekDraft,
@@ -36,8 +33,21 @@ import {
 	getWeekPlan as getWeekPlanFromState,
 	listWeekPlans as listWeekPlansFromState,
 	saveWeekPlan as saveWeekPlanInState,
+	syncWeekPlanAssignmentsFromCalendar,
 } from "../features/weekplan/weekPlanModel.js";
 import { loadState, saveState, saveStateImmediate } from "../storage/loadSave.js";
+import {
+	applyShoppingItemSubstitution,
+	clearLineProgress,
+	clearShoppingProgressForMeals,
+	markAllShoppingChecked,
+	revertAppliedYieldConversions,
+	setQtyOverride,
+	setYieldMode,
+	toggleLineCheck,
+	toggleSourceCheck,
+	uncheckAllShopping,
+} from "../features/shopping/shoppingProgress.js";
 import {
 	addMember as addMemberInState,
 	removeMember as removeMemberInState,
@@ -56,9 +66,8 @@ import {
 	applyWeekPlanToState,
 	calendarsToShoppingWeekPlan,
 	calendarsToWeekPlan,
-	dietTemplatesToLegacyDietPlan,
-	importDietPlanIntoState,
 } from "../storage/weekBridge.js";
+import { buildShoppingListWithPantry } from "../features/shopping/buildShoppingList.js";
 
 const AppStateContext = createContext(null);
 
@@ -87,75 +96,6 @@ export function AppStateProvider({ children }) {
 		});
 	}, []);
 
-	const importDietPlan = useCallback((dietPlan, name) => {
-		setState((prev) => importDietPlanIntoState(prev, dietPlan, name));
-	}, []);
-
-	const loadDietTemplate = useCallback((_templateId) => {}, []);
-
-	const createMealAndSchedule = useCallback(
-		({ name, ingredients, dateISO, mealType, servings, schedule = true }) => {
-			const now = new Date().toISOString();
-			const mealId = createId();
-			const date = dateISO || todayISO();
-			const type = mealType || inferMealType(name);
-			const structuredIngredients = (ingredients || []).map((ing) =>
-				ingredientFromLegacy({
-					name: ing.name,
-					quantity: ing.quantity,
-				}),
-			);
-
-			setState((prev) => {
-				const memberId = prev.household.activeMemberId;
-				const meal = {
-					id: mealId,
-					name,
-					mealType: type,
-					ingredients: structuredIngredients,
-					tags: [],
-					servings: servings ?? 1,
-					source: "user",
-					createdAt: now,
-					updatedAt: now,
-				};
-
-				let calendars = prev.calendars;
-				if (schedule) {
-					const scheduled = {
-						instanceId: createId(),
-						dateISO: date,
-						memberId,
-						mealId,
-						name,
-						mealType: type,
-						ingredients: structuredIngredients.map((i) => ({
-							...i,
-							id: createId(),
-						})),
-					};
-					const memberCal = { ...(prev.calendars[memberId] || {}) };
-					memberCal[date] = [...(memberCal[date] || []), scheduled];
-					calendars = { ...prev.calendars, [memberId]: memberCal };
-				}
-
-				return {
-					...prev,
-					mealLibrary: [...prev.mealLibrary, meal],
-					calendars,
-					ui: {
-						...prev.ui,
-						calendarCursorDate: schedule ? date : prev.ui.calendarCursorDate,
-						onboardingDismissed: true,
-					},
-				};
-			});
-
-			return mealId;
-		},
-		[],
-	);
-
 	const createMeal = useCallback((payload) => {
 		const meal = buildLibraryMeal(payload);
 		setState((prev) => ({
@@ -165,6 +105,12 @@ export function AppStateProvider({ children }) {
 		}));
 		return meal.id;
 	}, []);
+
+	/** @deprecated Use createMeal. Never schedules onto the calendar. */
+	const createMealAndSchedule = useCallback(
+		(payload) => createMeal(payload),
+		[createMeal],
+	);
 
 	const updateMeal = useCallback((mealId, payload) => {
 		setState((prev) => {
@@ -193,10 +139,6 @@ export function AppStateProvider({ children }) {
 			return {
 				...prev,
 				mealLibrary: prev.mealLibrary.filter((m) => m.id !== mealId),
-				dayTemplates: prev.dayTemplates.map((dt) => ({
-					...dt,
-					mealIds: (dt.mealIds || []).filter((id) => id !== mealId),
-				})),
 			};
 		});
 	}, []);
@@ -209,6 +151,34 @@ export function AppStateProvider({ children }) {
 					: checkedOrUpdater;
 			return { ...prev, checkedItems: nextChecked };
 		});
+	}, []);
+
+	const toggleShoppingLine = useCallback((item) => {
+		setState((prev) => toggleLineCheck(prev, item));
+	}, []);
+
+	const toggleShoppingSource = useCallback((item, sourceKey) => {
+		setState((prev) => toggleSourceCheck(prev, item, sourceKey));
+	}, []);
+
+	const setShoppingQtyOverride = useCallback((lineKey, value) => {
+		setState((prev) => setQtyOverride(prev, lineKey, value));
+	}, []);
+
+	const setShoppingYieldMode = useCallback((lineKey, mode) => {
+		setState((prev) => setYieldMode(prev, lineKey, mode));
+	}, []);
+
+	const checkAllShoppingItems = useCallback((items) => {
+		setState((prev) => markAllShoppingChecked(prev, items));
+	}, []);
+
+	const uncheckAllShoppingItems = useCallback(() => {
+		setState((prev) => uncheckAllShopping(prev));
+	}, []);
+
+	const clearShoppingLineProgress = useCallback((item) => {
+		setState((prev) => clearLineProgress(prev, item));
 	}, []);
 
 	const fuseShoppingItems = useCallback((memberKeys) => {
@@ -377,11 +347,11 @@ export function AppStateProvider({ children }) {
 					...prev.ui,
 					...(settingsPatch.calendarDefaultView
 						? {
-								calendarView:
-									settingsPatch.calendarDefaultView === "month"
-										? "month"
-										: "week",
-							}
+							calendarView:
+								settingsPatch.calendarDefaultView === "month"
+									? "month"
+									: "week",
+						}
 						: {}),
 				},
 			};
@@ -408,20 +378,20 @@ export function AppStateProvider({ children }) {
 	const clearCalendarDay = useCallback((dateISO) => {
 		setState((prev) => {
 			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
-			return clearDayPlanAssignmentInState(
-				clearCalendarDayInState(prev, dateISO),
+			const mid = prev.household.activeMemberId;
+			// Shopping overrides / yield / partial checks / fusions are not on meal
+			// plans — clear them while the day's meals are still available.
+			const meals = prev.calendars[mid]?.[dateISO] || [];
+			let next = clearShoppingProgressForMeals(prev, meals);
+			next = clearCalendarDayInState(next, dateISO);
+			next = clearDayPlanAssignmentInState(
+				next,
 				dateISO,
 				undefined,
 				weekStartsOn,
 			);
-		});
-	}, []);
-
-	const scheduleMeal = useCallback((mealId, dateISO) => {
-		setState((prev) => {
-			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
-			return clearDayPlanAssignmentInState(
-				scheduleLibraryMealInState(prev, mealId, dateISO),
+			return syncWeekPlanAssignmentsFromCalendar(
+				next,
 				dateISO,
 				undefined,
 				weekStartsOn,
@@ -439,7 +409,7 @@ export function AppStateProvider({ children }) {
 			);
 			let next = replaceScheduledMealInState(prev, instanceId, mealId);
 			if (dateISO) {
-				next = clearDayPlanAssignmentInState(
+				next = syncWeekPlanAssignmentsFromCalendar(
 					next,
 					dateISO,
 					undefined,
@@ -460,7 +430,7 @@ export function AppStateProvider({ children }) {
 			);
 			let next = removeScheduledMealInState(prev, instanceId);
 			if (dateISO) {
-				next = clearDayPlanAssignmentInState(
+				next = syncWeekPlanAssignmentsFromCalendar(
 					next,
 					dateISO,
 					undefined,
@@ -486,7 +456,7 @@ export function AppStateProvider({ children }) {
 				toIndex,
 			);
 			if (fromDateISO) {
-				next = clearDayPlanAssignmentInState(
+				next = syncWeekPlanAssignmentsFromCalendar(
 					next,
 					fromDateISO,
 					undefined,
@@ -494,7 +464,7 @@ export function AppStateProvider({ children }) {
 				);
 			}
 			if (toDateISO && toDateISO !== fromDateISO) {
-				next = clearDayPlanAssignmentInState(
+				next = syncWeekPlanAssignmentsFromCalendar(
 					next,
 					toDateISO,
 					undefined,
@@ -509,6 +479,10 @@ export function AppStateProvider({ children }) {
 		setState((prev) => applyIngredientSubstitution(prev, payload));
 	}, []);
 
+	const substituteShoppingItem = useCallback((payload) => {
+		setState((prev) => applyShoppingItemSubstitution(prev, payload));
+	}, []);
+
 	const updateScheduledMeal = useCallback((instanceId, patch) => {
 		setState((prev) => {
 			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
@@ -519,7 +493,7 @@ export function AppStateProvider({ children }) {
 			);
 			let next = updateScheduledMealInState(prev, instanceId, patch);
 			if (dateISO) {
-				next = clearDayPlanAssignmentInState(
+				next = syncWeekPlanAssignmentsFromCalendar(
 					next,
 					dateISO,
 					undefined,
@@ -531,7 +505,24 @@ export function AppStateProvider({ children }) {
 	}, []);
 
 	const applyMealSaveDisposition = useCallback((opts) => {
-		setState((prev) => applyMealSaveDispositionInState(prev, opts));
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			const mid = prev.household.activeMemberId;
+			const cal = prev.calendars[mid] || {};
+			const dateISO = Object.keys(cal).find((d) =>
+				(cal[d] || []).some((m) => m.instanceId === opts.instanceId),
+			);
+			let next = applyMealSaveDispositionInState(prev, opts);
+			if (dateISO) {
+				next = syncWeekPlanAssignmentsFromCalendar(
+					next,
+					dateISO,
+					undefined,
+					weekStartsOn,
+				);
+			}
+			return next;
+		});
 	}, []);
 
 	/**
@@ -542,15 +533,11 @@ export function AppStateProvider({ children }) {
 		setState((prev) => {
 			let plans = dayPlans;
 			let next = prev;
-			if (opts.selectedSaveTempIds != null || opts.saveAsTemplate) {
+			if (opts.selectedSaveTempIds != null) {
 				const result = applyLibrarySaveToDayPlans(
 					prev,
 					dayPlans,
 					opts.selectedSaveTempIds || [],
-					{
-						saveAsTemplate: opts.saveAsTemplate,
-						templateName: opts.templateName,
-					},
 				);
 				next = result.state;
 				plans = result.dayPlans;
@@ -598,30 +585,30 @@ export function AppStateProvider({ children }) {
 		setState((prev) => {
 			let workingDraft = draft;
 			let next = prev;
-			if (opts.selectedSaveTempIds != null || opts.saveAsTemplate) {
+			if (opts.selectedSaveTempIds != null) {
 				const result = applyLibrarySaveSelections(
 					prev,
 					draft,
 					opts.selectedSaveTempIds || [],
-					{
-						saveAsTemplate: opts.saveAsTemplate,
-						templateName: opts.templateName,
-					},
 				);
 				next = result.state;
 				workingDraft = result.draft;
 			}
-			return commitWeekDraft(next, workingDraft, { replaceDays: true });
+			return syncWeekPlanAssignmentsFromCalendar(
+				commitWeekDraft(next, workingDraft, { replaceDays: true }),
+				workingDraft.weekStartISO || next.ui.calendarCursorDate,
+				undefined,
+				next.settings.weekStartsOn ?? 1,
+			);
 		});
 	}, []);
 
-	const saveMealsToLibrary = useCallback((draft, selectedTempIds, opts = {}) => {
+	const saveMealsToLibrary = useCallback((draft, selectedTempIds) => {
 		setState((prev) => {
 			const result = applyLibrarySaveSelections(
 				prev,
 				draft,
 				selectedTempIds,
-				opts,
 			);
 			return result.state;
 		});
@@ -686,7 +673,24 @@ export function AppStateProvider({ children }) {
 		() => calendarsToShoppingWeekPlan(state),
 		[state],
 	);
-	const dietPlan = useMemo(() => dietTemplatesToLegacyDietPlan(state), [state]);
+
+	useEffect(() => {
+		const modes = state.shoppingYieldMode || {};
+		if (!Object.values(modes).includes("applied")) return;
+		const items = Object.values(
+			buildShoppingListWithPantry(
+				shoppingWeekPlan,
+				state.shoppingExtras,
+				state.pantry,
+			),
+		);
+		setState((prev) => revertAppliedYieldConversions(prev, items));
+	}, [
+		shoppingWeekPlan,
+		state.shoppingYieldMode,
+		state.shoppingExtras,
+		state.pantry,
+	]);
 
 	const visibleWeekDates = useMemo(() => {
 		return weekDateISOs(
@@ -710,12 +714,7 @@ export function AppStateProvider({ children }) {
 		const hasWeekPlans = Object.values(state.weekPlans?.[memberId] || {}).some(
 			(p) => (p.dayPlans || []).some((dp) => (dp.meals || []).length > 0),
 		);
-		return (
-			hasScheduled ||
-			hasWeekPlans ||
-			state.mealLibrary.length > 0 ||
-			state.dietTemplates.length > 0
-		);
+		return hasScheduled || hasWeekPlans || state.mealLibrary.length > 0;
 	}, [state]);
 
 	const value = useMemo(
@@ -724,17 +723,21 @@ export function AppStateProvider({ children }) {
 			updateState,
 			weekPlan,
 			shoppingWeekPlan,
-			dietPlan,
 			visibleWeekDates,
 			activeMember,
 			setWeekPlan,
-			importDietPlan,
-			loadDietTemplate,
 			createMealAndSchedule,
 			createMeal,
 			updateMeal,
 			deleteMeal,
 			setCheckedItems,
+			toggleShoppingLine,
+			toggleShoppingSource,
+			setShoppingQtyOverride,
+			setShoppingYieldMode,
+			checkAllShoppingItems,
+			uncheckAllShoppingItems,
+			clearShoppingLineProgress,
 			fuseShoppingItems,
 			unfuseShoppingItem,
 			addShoppingExtra,
@@ -757,11 +760,11 @@ export function AppStateProvider({ children }) {
 			setCalendarCursorDate,
 			setCalendarView,
 			clearCalendarDay,
-			scheduleMeal,
 			replaceMeal,
 			removeMealInstance,
 			moveMealInstance,
 			substituteIngredient,
+			substituteShoppingItem,
 			updateScheduledMeal,
 			applyMealSaveDisposition,
 			saveWeekPlan,
@@ -783,17 +786,21 @@ export function AppStateProvider({ children }) {
 			updateState,
 			weekPlan,
 			shoppingWeekPlan,
-			dietPlan,
 			visibleWeekDates,
 			activeMember,
 			setWeekPlan,
-			importDietPlan,
-			loadDietTemplate,
 			createMealAndSchedule,
 			createMeal,
 			updateMeal,
 			deleteMeal,
 			setCheckedItems,
+			toggleShoppingLine,
+			toggleShoppingSource,
+			setShoppingQtyOverride,
+			setShoppingYieldMode,
+			checkAllShoppingItems,
+			uncheckAllShoppingItems,
+			clearShoppingLineProgress,
 			fuseShoppingItems,
 			unfuseShoppingItem,
 			addShoppingExtra,
@@ -816,11 +823,11 @@ export function AppStateProvider({ children }) {
 			setCalendarCursorDate,
 			setCalendarView,
 			clearCalendarDay,
-			scheduleMeal,
 			replaceMeal,
 			removeMealInstance,
 			moveMealInstance,
 			substituteIngredient,
+			substituteShoppingItem,
 			updateScheduledMeal,
 			applyMealSaveDisposition,
 			saveWeekPlan,

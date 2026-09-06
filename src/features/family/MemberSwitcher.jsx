@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 import { useAppState } from "../../context/AppState";
 
 /**
@@ -65,7 +66,7 @@ export default function MemberSwitcher() {
 				aria-label={t`Gestionar familia`}
 				title={t`Familia`}
 			>
-				+
+				<Plus className="size-5" aria-hidden />
 			</Link>
 		</div>
 	);

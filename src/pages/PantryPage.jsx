@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
+import { X } from "lucide-react";
 import { useAppState } from "../context/AppState";
 import { formatQuantity } from "../domain/quantity.js";
 import { getIngredientCategory, OTHER_CATEGORY_NAME } from "../domain/ingredient.js";
@@ -116,7 +117,7 @@ export default function PantryPage() {
 									aria-label={t`Eliminar ${item.name}`}
 									onClick={() => setDeleteId(item.id)}
 								>
-									×
+									<X className="size-4" aria-hidden />
 								</Button>
 							</li>
 						))}

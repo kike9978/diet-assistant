@@ -1,12 +1,20 @@
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router-dom";
+import {
+	Utensils,
+	Users,
+	Wrench,
+	ClipboardList,
+	Settings,
+	ChevronRight,
+} from "lucide-react";
 
 const LINKS = [
-	{ to: "/meals", label: <Trans>Comidas</Trans> },
-	{ to: "/family", label: <Trans>Familia</Trans> },
-	{ to: "/tools", label: <Trans>Herramientas</Trans> },
-	{ to: "/plans", label: <Trans>Planes</Trans> },
-	{ to: "/settings", label: <Trans>Ajustes</Trans> },
+	{ to: "/meals", label: <Trans>Comidas</Trans>, Icon: Utensils },
+	{ to: "/family", label: <Trans>Familia</Trans>, Icon: Users },
+	{ to: "/tools", label: <Trans>Herramientas</Trans>, Icon: Wrench },
+	{ to: "/plans", label: <Trans>Planes</Trans>, Icon: ClipboardList },
+	{ to: "/settings", label: <Trans>Ajustes</Trans>, Icon: Settings },
 ];
 
 export default function MorePage() {
@@ -25,8 +33,11 @@ export default function MorePage() {
 							to={item.to}
 							className="flex items-center justify-between min-h-11 px-4 py-3 font-semibold hover:bg-surface-2"
 						>
-							{item.label}
-							<span className="text-ink-muted">→</span>
+							<span className="inline-flex items-center gap-3">
+								<item.Icon className="size-5 text-ink-muted" aria-hidden />
+								{item.label}
+							</span>
+							<ChevronRight className="size-4 text-ink-muted" aria-hidden />
 						</Link>
 					</li>
 				))}

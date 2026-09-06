@@ -89,7 +89,8 @@ function DayColumn({ dateISO, selected, isToday, children, onSelect }) {
 }
 
 /**
- * Week planning grid — day columns show the assigned day-plan name, or empty.
+ * Week planning grid — each day shows its assigned day-plan name, or Vacío.
+ * Content is whole-day assignment only (never individual meal chips).
  */
 export default function WeekView({ selectedDateISO, onSelectDate }) {
 	const { state } = useAppState();

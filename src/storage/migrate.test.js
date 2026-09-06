@@ -5,7 +5,7 @@ import { ingredientChecklistKey } from "../features/shopping/checklistKeys.js";
 import { weekdayKeysToDateISO } from "../features/calendar/dateUtils.js";
 
 describe("migrateV1toV2 golden fixture", () => {
-	it("produces a valid v2 document with library, templates, calendar, and remapped checks", () => {
+	it("produces a valid v2 document with library, calendar, and remapped checks", () => {
 		const state = migrateV1toV2(fixture);
 
 		expect(state.version).toBe(2);
@@ -14,8 +14,8 @@ describe("migrateV1toV2 golden fixture", () => {
 		expect(state.household.members[0].name).toBe("Yo");
 
 		expect(state.mealLibrary.length).toBeGreaterThanOrEqual(2);
-		expect(state.dietTemplates.length).toBeGreaterThanOrEqual(2);
-		expect(state.dayTemplates.length).toBeGreaterThanOrEqual(2);
+		expect(state.dayTemplates).toBeUndefined();
+		expect(state.dietTemplates).toBeUndefined();
 
 		const memberId = state.household.activeMemberId;
 		const cal = state.calendars[memberId];

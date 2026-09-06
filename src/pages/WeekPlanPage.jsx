@@ -4,6 +4,7 @@ import { useLingui } from "@lingui/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useAppState } from "../context/AppState";
+import { ChevronLeft } from "lucide-react";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
 import Sheet from "../components/ui/Sheet";
@@ -24,7 +25,6 @@ import {
 import {
 	createDayPlan,
 	canonicalWeekStartISO,
-	dayPlanFromDayTemplate,
 	dayPlansFromDietJson,
 	getWeekPlan,
 	listWeekPlans,
@@ -41,14 +41,7 @@ function loadDayPlansForWeek(state, weekStartISO, dietPlan) {
 	const existingHasMeals = (existing?.dayPlans || []).some(
 		(dp) => (dp.meals || []).length > 0,
 	);
-	if (existingHasMeals) {
-		return existing.dayPlans.map((dp) => createDayPlan(dp));
-	}
-	const fromTemplates = (state.dayTemplates || [])
-		.map((tmpl) => dayPlanFromDayTemplate(state, tmpl.id))
-		.filter(Boolean);
-	if (fromTemplates.length) return fromTemplates;
-	if (existing?.dayPlans?.length) {
+	if (existingHasMeals || existing?.dayPlans?.length) {
 		return existing.dayPlans.map((dp) => createDayPlan(dp));
 	}
 	return [createDayPlan({ name: "Día 1" }), createDayPlan({ name: "Día 2" })];
@@ -105,6 +98,13 @@ export default function WeekPlanPage() {
 		return loaded;
 	});
 
+	const dayPlansRef = useRef(dayPlans);
+	dayPlansRef.current = dayPlans;
+	const weekStartISORef = useRef(weekStartISO);
+	weekStartISORef.current = weekStartISO;
+	const saveWeekPlanRef = useRef(saveWeekPlan);
+	saveWeekPlanRef.current = saveWeekPlan;
+
 	const setDayPlans = (next) => {
 		dirtyRef.current = true;
 		setDayPlansState((prev) =>
@@ -132,6 +132,9 @@ export default function WeekPlanPage() {
 	const weekStartRef = useRef(weekStartISO);
 	useEffect(() => {
 		if (weekStartRef.current === weekStartISO) return;
+		if (dirtyRef.current) {
+			saveWeekPlanRef.current(weekStartRef.current, dayPlansRef.current);
+		}
 		weekStartRef.current = weekStartISO;
 		dirtyRef.current = false;
 		setSaveStatus("idle");
@@ -144,11 +147,21 @@ export default function WeekPlanPage() {
 		if (!dirtyRef.current) return;
 		setSaveStatus("saving");
 		const timer = setTimeout(() => {
-			saveWeekPlan(weekStartISO, dayPlans);
+			saveWeekPlanRef.current(weekStartISORef.current, dayPlansRef.current);
+			dirtyRef.current = false;
 			setSaveStatus("saved");
 		}, 450);
 		return () => clearTimeout(timer);
 	}, [dayPlans, weekStartISO, saveWeekPlan]);
+
+	// Flush pending autosave on leave so Quitar día / edits are not lost.
+	useEffect(() => {
+		return () => {
+			if (!dirtyRef.current) return;
+			saveWeekPlanRef.current(weekStartISORef.current, dayPlansRef.current);
+			dirtyRef.current = false;
+		};
+	}, []);
 
 	const weekLabel = useMemo(() => {
 		const start = parseDateISO(weekDates[0]);
@@ -305,21 +318,15 @@ export default function WeekPlanPage() {
 		setEditing(null);
 	};
 
-	const handleLibrarySaveConfirm = ({ selectedTempIds, saveAsTemplate }) => {
+	const handleLibrarySaveConfirm = ({ selectedTempIds }) => {
 		setLibrarySaveOpen(false);
 		const opts = {
 			selectedSaveTempIds: selectedTempIds,
-			saveAsTemplate,
-			templateName: t`Plan importado`,
 		};
 		const { dayPlans: linked } = applyLibrarySaveToDayPlans(
 			state,
 			dayPlans,
 			selectedTempIds,
-			{
-				saveAsTemplate,
-				templateName: opts.templateName,
-			},
 		);
 		saveWeekPlan(weekStartISO, dayPlans, opts);
 		dirtyRef.current = false;
@@ -329,14 +336,15 @@ export default function WeekPlanPage() {
 	};
 
 	return (
-		<div className="space-y-4 pb-8">
+		<div className="space-y-4">
 			<div className="flex items-start justify-between gap-3 flex-wrap">
 				<div>
 					<Link
 						to="/"
-						className="text-sm font-semibold text-ink-muted hover:text-ink"
+						className="inline-flex items-center gap-0.5 text-sm font-semibold text-ink-muted hover:text-ink"
 					>
-						<Trans>← Calendario</Trans>
+						<ChevronLeft className="size-4" aria-hidden />
+						<Trans>Calendario</Trans>
 					</Link>
 					<h1 className="font-display text-2xl text-ink mt-1">
 						<Trans>Plan de semana</Trans>
