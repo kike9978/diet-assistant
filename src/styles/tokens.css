@@ -1,0 +1,85 @@
+/* Fresh market / kitchen daylight — tokens via Tailwind v4 @theme */
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,600;0,6..12,700;1,6..12,400&display=swap");
+
+@theme {
+	--font-display: "Fraunces", Georgia, serif;
+	--font-body: "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+
+	--color-bg: #f7f3eb;
+	--color-surface: #fffdf8;
+	--color-surface-2: #f0ebe0;
+	--color-ink: #1f2a24;
+	--color-ink-muted: #5c6b63;
+	--color-border: #d9d0c0;
+
+	--color-brand: #1f6f54;
+	--color-brand-strong: #155a43;
+	--color-accent-citrus: #e8a317;
+	--color-accent-leaf: #3d9a6a;
+	--color-accent-tomato: #d94f3d;
+	--color-accent-blueberry: #3b6ea8;
+
+	--color-accent-breakfast: #e8a317;
+	--color-accent-lunch: #d94f3d;
+	--color-accent-dinner: #3b6ea8;
+	--color-accent-snack: #3d9a6a;
+	--color-accent-shopping: #c45c26;
+	--color-accent-pantry: #7a5c3a;
+
+	--color-danger: #b42318;
+	--color-danger-soft: #fce8e6;
+
+	--radius-sm: 0.5rem;
+	--radius-md: 0.75rem;
+	--radius-lg: 1.25rem;
+
+	--shadow-soft: 0 8px 24px rgb(31 42 36 / 0.08);
+}
+
+@utility font-display {
+	font-family: var(--font-display);
+}
+
+@utility font-body {
+	font-family: var(--font-body);
+}
+
+@utility bg-bg {
+	background-color: var(--color-bg);
+}
+
+@utility bg-surface {
+	background-color: var(--color-surface);
+}
+
+@utility bg-surface-2 {
+	background-color: var(--color-surface-2);
+}
+
+@utility text-ink {
+	color: var(--color-ink);
+}
+
+@utility text-ink-muted {
+	color: var(--color-ink-muted);
+}
+
+@utility bg-brand {
+	background-color: var(--color-brand);
+}
+
+@utility text-brand {
+	color: var(--color-brand);
+}
+
+@utility border-border {
+	border-color: var(--color-border);
+}
+
+@utility shadow-soft {
+	box-shadow: var(--shadow-soft);
+}
+
+@utility rounded-app {
+	border-radius: var(--radius-md);
+}

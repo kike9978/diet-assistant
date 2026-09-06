@@ -1,9 +1,12 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react";
 import { useEffect, useState } from "react";
 import {
 	getIngredientCategory,
 	INGREDIENT_EQUIVALENTS,
-	WEEK_DAYS_SPANISH,
 } from "../utils/ingredientUtils";
+import { DAY_LABEL_MSG } from "../i18n/weekDayLabels";
 
 function ToolsSidebar({
 	isOpen,
@@ -14,6 +17,7 @@ function ToolsSidebar({
 	otherCategoryName,
 	weekPlan,
 }) {
+	const { _ } = useLingui();
 	const [showEquivalents, setShowEquivalents] = useState(false);
 	const [showAddForm, setShowAddForm] = useState(false);
 	const [showSubstituteForm, setShowSubstituteForm] = useState(false);
@@ -55,7 +59,7 @@ function ToolsSidebar({
 						name: ingredient.name,
 						quantity: ingredient.quantity,
 						mealName: meal.name,
-						dayName: WEEK_DAYS_SPANISH.find((d) => d.id === day)?.name || "Día",
+						dayName: _(DAY_LABEL_MSG[day] || DAY_LABEL_MSG.monday),
 					});
 				});
 			});
@@ -149,10 +153,14 @@ function ToolsSidebar({
 			>
 				<div className="p-4">
 					<div className="flex justify-between items-center mb-6">
-						<h3 className="text-lg font-medium">Herramientas</h3>
+						<h3 className="text-lg font-medium">
+							<Trans>Herramientas</Trans>
+						</h3>
 						<button
+							type="button"
 							onClick={onClose}
 							className="text-gray-500 hover:text-gray-700"
+							aria-label={t`Cerrar`}
 						>
 							<svg
 								className="w-6 h-6"
@@ -173,12 +181,15 @@ function ToolsSidebar({
 					{/* Add ingredient form */}
 					<div className="mb-6">
 						<div className="flex justify-between items-center mb-3">
-							<h4 className="font-medium">Agregar ingrediente</h4>
+							<h4 className="font-medium">
+								<Trans>Agregar ingrediente</Trans>
+							</h4>
 							<button
+								type="button"
 								onClick={() => setShowAddForm(!showAddForm)}
 								className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center"
 							>
-								{showAddForm ? "Ocultar" : "Mostrar"}
+								{showAddForm ? <Trans>Ocultar</Trans> : <Trans>Mostrar</Trans>}
 								<svg
 									className={`ml-1 w-4 h-4 transition-transform ${showAddForm ? "transform rotate-180" : ""}`}
 									fill="none"
@@ -206,7 +217,7 @@ function ToolsSidebar({
 											htmlFor="ingredient-name"
 											className="block text-sm font-medium text-gray-700 mb-1"
 										>
-											Ingrediente
+											<Trans>Ingrediente</Trans>
 										</label>
 										<input
 											type="text"
@@ -219,7 +230,7 @@ function ToolsSidebar({
 												})
 											}
 											className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-											placeholder="Ej: Manzana"
+											placeholder={t`Ej: Manzana`}
 											required
 										/>
 									</div>
@@ -229,7 +240,7 @@ function ToolsSidebar({
 											htmlFor="ingredient-quantity"
 											className="block text-sm font-medium text-gray-700 mb-1"
 										>
-											Cantidad
+											<Trans>Cantidad</Trans>
 										</label>
 										<input
 											type="text"
@@ -242,7 +253,7 @@ function ToolsSidebar({
 												})
 											}
 											className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-											placeholder="Ej: 2 pzas, 1/2 tza, 250 g"
+											placeholder={t`Ej: 2 pzas, 1/2 tza, 250 g`}
 											required
 										/>
 									</div>
@@ -252,7 +263,7 @@ function ToolsSidebar({
 											htmlFor="ingredient-category"
 											className="block text-sm font-medium text-gray-700 mb-1"
 										>
-											Categoría
+											<Trans>Categoría</Trans>
 										</label>
 										<select
 											id="ingredient-category"
@@ -282,7 +293,7 @@ function ToolsSidebar({
 										type="submit"
 										className="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
 									>
-										Agregar ingrediente
+										<Trans>Agregar ingrediente</Trans>
 									</button>
 								</div>
 							</form>
@@ -292,12 +303,19 @@ function ToolsSidebar({
 					{/* Substitute ingredient form */}
 					<div className="mb-6">
 						<div className="flex justify-between items-center mb-3">
-							<h4 className="font-medium">Sustituir ingrediente</h4>
+							<h4 className="font-medium">
+								<Trans>Sustituir ingrediente</Trans>
+							</h4>
 							<button
+								type="button"
 								onClick={() => setShowSubstituteForm(!showSubstituteForm)}
 								className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center"
 							>
-								{showSubstituteForm ? "Ocultar" : "Mostrar"}
+								{showSubstituteForm ? (
+									<Trans>Ocultar</Trans>
+								) : (
+									<Trans>Mostrar</Trans>
+								)}
 								<svg
 									className={`ml-1 w-4 h-4 transition-transform ${showSubstituteForm ? "transform rotate-180" : ""}`}
 									fill="none"
@@ -327,7 +345,7 @@ function ToolsSidebar({
 											htmlFor="substitute-ingredient"
 											className="block text-sm font-medium text-gray-700 mb-1"
 										>
-											Ingrediente a sustituir
+											<Trans>Ingrediente a sustituir</Trans>
 										</label>
 										<select
 											id="substitute-ingredient"
@@ -336,7 +354,7 @@ function ToolsSidebar({
 											}
 											className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
 										>
-											<option value="">Selecciona un ingrediente</option>
+											<option value="">{t`Selecciona un ingrediente`}</option>
 											{Object.entries(getGroupedIngredients()).map(
 												([category, ingredients]) => (
 													<optgroup key={category} label={category}>
@@ -361,7 +379,7 @@ function ToolsSidebar({
 												htmlFor="substitute-replacement"
 												className="block text-sm font-medium text-gray-700 mb-1"
 											>
-												Reemplazar con
+												<Trans>Reemplazar con</Trans>
 											</label>
 											<select
 												id="substitute-replacement"
@@ -375,7 +393,7 @@ function ToolsSidebar({
 												className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
 												required
 											>
-												<option value="">Selecciona un equivalente</option>
+												<option value="">{t`Selecciona un equivalente`}</option>
 												{selectedIngredientCategory &&
 												INGREDIENT_EQUIVALENTS[selectedIngredientCategory]
 													? INGREDIENT_EQUIVALENTS[
@@ -411,14 +429,16 @@ function ToolsSidebar({
 										disabled={!substitution.day || !substitution.replacement}
 										className="w-full py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
 									>
-										Sustituir ingrediente
+										<Trans>Sustituir ingrediente</Trans>
 									</button>
 								</div>
 							</form>
 						) : showSubstituteForm &&
 							(!weekPlan || Object.keys(weekPlan).length === 0) ? (
 							<div className="bg-gray-50 p-3 rounded-md text-center text-gray-500">
-								No hay plan de comidas disponible para realizar sustituciones.
+								<Trans>
+									No hay plan de comidas disponible para realizar sustituciones.
+								</Trans>
 							</div>
 						) : null}
 					</div>
@@ -426,12 +446,19 @@ function ToolsSidebar({
 					{/* Equivalents section */}
 					<div>
 						<div className="flex justify-between items-center mb-3">
-							<h4 className="font-medium">Equivalencias comunes</h4>
+							<h4 className="font-medium">
+								<Trans>Equivalencias comunes</Trans>
+							</h4>
 							<button
+								type="button"
 								onClick={() => setShowEquivalents(!showEquivalents)}
 								className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center"
 							>
-								{showEquivalents ? "Ocultar" : "Mostrar"}
+								{showEquivalents ? (
+									<Trans>Ocultar</Trans>
+								) : (
+									<Trans>Mostrar</Trans>
+								)}
 								<svg
 									className={`ml-1 w-4 h-4 transition-transform ${showEquivalents ? "transform rotate-180" : ""}`}
 									fill="none"

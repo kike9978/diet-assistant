@@ -1,23 +1,27 @@
-import { useState } from 'react';
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
+import { useState } from "react";
 
 function DietPlanUploader({ onUpload }) {
-  const [jsonInput, setJsonInput] = useState('');
-  const [error, setError] = useState(null);
-  const [showExample, setShowExample] = useState(false);
+	const [jsonInput, setJsonInput] = useState("");
+	const [error, setError] = useState(null);
+	const [showExample, setShowExample] = useState(false);
 
-  const handleJsonSubmit = () => {
-    try {
-      const plan = JSON.parse(jsonInput);
-      if (validateDietPlan(plan)) {
-        onUpload(plan);
-        setError(null);
-      } else {
-        setError("Invalid diet plan format. Please check the example for the correct format.");
-      }
-    } catch (err) {
-      setError("Invalid JSON. Please check your syntax.");
-    }
-  };
+	const handleJsonSubmit = () => {
+		try {
+			const plan = JSON.parse(jsonInput);
+			if (validateDietPlan(plan)) {
+				onUpload(plan);
+				setError(null);
+			} else {
+				setError(
+					t`Formato de plan inválido. Revisa el ejemplo para el formato correcto.`,
+				);
+			}
+		} catch {
+			setError(t`JSON inválido. Revisa la sintaxis.`);
+		}
+	};
 
   const validateDietPlan = (plan) => {
     // Check if the plan has days
@@ -169,66 +173,87 @@ function DietPlanUploader({ onUpload }) {
   ]
 }`;
 
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Upload Your Diet Plan</h2>
-      <p className="mb-4 text-gray-600">
-        Enter your diet plan in JSON format or use our sample data to get started.
-      </p>
-      
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <label htmlFor="jsonInput" className="block text-sm font-medium text-gray-700">
-            Diet Plan JSON
-          </label>
-          <button
-            type="button"
-            onClick={() => setShowExample(!showExample)}
-            className="text-sm text-indigo-600 hover:text-indigo-800"
-          >
-            {showExample ? "Hide Example" : "Show Example"}
-          </button>
-          <a href="https://chat.deepseek.com/a/chat/s/46cbbfea-1c52-4511-97c9-8ede6a60d959" target='_blank' className="text-sm text-indigo-600 hover:text-indigo-800">JSON Generator</a>
-        </div>
-        
-        {showExample && (
-          <div className="mb-4 p-4 bg-gray-50 rounded-md overflow-auto max-h-60">
-            <pre className="text-xs text-gray-700">{exampleJson}</pre>
-          </div>
-        )}
-        
-        <textarea
-          id="jsonInput"
-          value={jsonInput}
-          onChange={(e) => setJsonInput(e.target.value)}
-          className="w-full h-64 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-          placeholder="Paste your diet plan JSON here..."
-        />
-      </div>
-      
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
-          {error}
-        </div>
-      )}
-      
-      <div className="flex justify-between">
-        <button
-          onClick={handleSampleData}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
-        >
-          Use Sample Data
-        </button>
-        
-        <button
-          onClick={handleJsonSubmit}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          Submit
-        </button>
-      </div>
-    </div>
-  );
+	return (
+		<div className="bg-white p-6 rounded-lg shadow-md">
+			<h2 className="text-2xl font-bold mb-4">
+				<Trans>Sube tu plan alimenticio</Trans>
+			</h2>
+			<p className="mb-4 text-gray-600">
+				<Trans>
+					Pega tu plan en formato JSON o usa los datos de ejemplo para empezar.
+				</Trans>
+			</p>
+
+			<div className="mb-6">
+				<div className="flex justify-between items-center mb-2 gap-2 flex-wrap">
+					<label
+						htmlFor="jsonInput"
+						className="block text-sm font-medium text-gray-700"
+					>
+						<Trans>Plan alimenticio JSON</Trans>
+					</label>
+					<button
+						type="button"
+						onClick={() => setShowExample(!showExample)}
+						className="text-sm text-indigo-600 hover:text-indigo-800"
+					>
+						{showExample ? (
+							<Trans>Ocultar ejemplo</Trans>
+						) : (
+							<Trans>Mostrar ejemplo</Trans>
+						)}
+					</button>
+					<a
+						href="https://chat.deepseek.com/a/chat/s/46cbbfea-1c52-4511-97c9-8ede6a60d959"
+						target="_blank"
+						rel="noreferrer"
+						className="text-sm text-indigo-600 hover:text-indigo-800"
+					>
+						<Trans>Generador JSON</Trans>
+					</a>
+				</div>
+
+				{showExample && (
+					<div className="mb-4 p-4 bg-gray-50 rounded-md overflow-auto max-h-60">
+						<pre className="text-xs text-gray-700">{exampleJson}</pre>
+					</div>
+				)}
+
+				<textarea
+					id="jsonInput"
+					value={jsonInput}
+					onChange={(e) => setJsonInput(e.target.value)}
+					className="w-full h-64 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+					placeholder={t`Pega aquí el JSON de tu plan alimenticio…`}
+				/>
+			</div>
+
+			{error && (
+				<div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+					{error}
+				</div>
+			)}
+
+			<div className="flex justify-between">
+				<button
+					type="button"
+					onClick={handleSampleData}
+					className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+				>
+					<Trans>Usar datos de ejemplo</Trans>
+				</button>
+
+				<button
+					type="button"
+					onClick={handleJsonSubmit}
+					className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+				>
+					<Trans>Enviar</Trans>
+				</button>
+			</div>
+		</div>
+	);
 }
 
-export default DietPlanUploader; 
+export default DietPlanUploader;
+ 

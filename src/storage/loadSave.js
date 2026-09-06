@@ -1,0 +1,158 @@
+import { isValidV2State, createEmptyState } from "./defaults.js";
+import {
+	clearLegacyKeys,
+	migrateV1toV2,
+	readLegacyFromStorage,
+} from "./migrate.js";
+
+export const STORAGE_KEY_V2 = "dietAssistant:v2";
+export const STORAGE_KEY_V1_BACKUP = "dietAssistant:v1-backup";
+
+const SAVE_DEBOUNCE_MS = 200;
+
+let saveTimer = null;
+
+function safeParse(raw) {
+	if (!raw) return null;
+	try {
+		return JSON.parse(raw);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Snapshot selected legacy keys for backup.
+ * @param {Storage} storage
+ */
+function snapshotV1(storage) {
+	const keys = [
+		"dietPlan",
+		"weekPlan",
+		"currentPlanId",
+		"pinnedPlans",
+		"checkedItems",
+		"mealPrepSelectedMeals",
+		"mealPrepUnselectedVisible",
+	];
+	/** @type {Record<string, unknown>} */
+	const snap = {};
+	for (const key of keys) {
+		const raw = storage.getItem(key);
+		if (raw != null) {
+			const parsed = safeParse(raw);
+			snap[key] = parsed !== null ? parsed : raw;
+		}
+	}
+	return snap;
+}
+
+/**
+ * Load v2 state. One-shot migrate from legacy keys if needed.
+ * @param {Storage} [storage]
+ * @returns {import("../domain/types.js").DietAssistantStateV2}
+ */
+export function loadState(storage = localStorage) {
+	const existing = safeParse(storage.getItem(STORAGE_KEY_V2));
+	if (isValidV2State(existing)) {
+		return /** @type {import("../domain/types.js").DietAssistantStateV2} */ (
+			existing
+		);
+	}
+
+	const { hasAny, legacy } = readLegacyFromStorage(storage);
+	if (hasAny) {
+		const migrated = migrateV1toV2(legacy);
+		try {
+			storage.setItem(STORAGE_KEY_V1_BACKUP, JSON.stringify(snapshotV1(storage)));
+		} catch (err) {
+			console.warn("Could not write v1 backup:", err);
+		}
+		saveStateImmediate(migrated, storage);
+		clearLegacyKeys(storage);
+		return migrated;
+	}
+
+	const empty = createEmptyState();
+	saveStateImmediate(empty, storage);
+	return empty;
+}
+
+/**
+ * @param {import("../domain/types.js").DietAssistantStateV2} state
+ * @param {Storage} [storage]
+ */
+export function saveStateImmediate(state, storage = localStorage) {
+	const next = {
+		...state,
+		meta: {
+			...state.meta,
+			lastSavedAt: new Date().toISOString(),
+		},
+	};
+	try {
+		storage.setItem(STORAGE_KEY_V2, JSON.stringify(next));
+	} catch (err) {
+		console.error("Failed to save dietAssistant:v2", err);
+	}
+	return next;
+}
+
+/**
+ * Debounced save; sets meta.lastSavedAt on flush.
+ * @param {import("../domain/types.js").DietAssistantStateV2} state
+ * @param {Storage} [storage]
+ */
+export function saveState(state, storage = localStorage) {
+	if (saveTimer) clearTimeout(saveTimer);
+	saveTimer = setTimeout(() => {
+		saveStateImmediate(state, storage);
+		saveTimer = null;
+	}, SAVE_DEBOUNCE_MS);
+}
+
+/**
+ * Reiniciar: clears calendars, checkedItems, mealPrep, shoppingExtras.
+ * Keeps household, mealLibrary, templates, pantry, settings.
+ * @param {import("../domain/types.js").DietAssistantStateV2} state
+ */
+export function resetActivePlanning(state) {
+	const calendars = {};
+	for (const member of state.household.members) {
+		calendars[member.id] = {};
+	}
+	return {
+		...state,
+		calendars,
+		checkedItems: {},
+		shoppingExtras: [],
+		mealPrep: {
+			weekStartISO: state.mealPrep?.weekStartISO || state.ui.calendarCursorDate,
+			selectedInstanceIds: [],
+			unselectedVisible: true,
+		},
+		meta: {
+			...state.meta,
+			lastSavedAt: new Date().toISOString(),
+		},
+	};
+}
+
+/**
+ * Export full state JSON string (Phase 4 polish; available early for backup).
+ */
+export function exportState(state) {
+	return JSON.stringify(state, null, 2);
+}
+
+/**
+ * @param {string} json
+ * @returns {import("../domain/types.js").DietAssistantStateV2}
+ */
+export function importState(json) {
+	const parsed = typeof json === "string" ? JSON.parse(json) : json;
+	if (!isValidV2State(parsed)) {
+		throw new Error("Invalid DietAssistantStateV2 document");
+	}
+	return /** @type {import("../domain/types.js").DietAssistantStateV2} */ (parsed);
+}

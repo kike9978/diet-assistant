@@ -1,0 +1,107 @@
+{
+  "dietPlan": {
+    "days": [
+      {
+        "id": "day1",
+        "name": "Día 1",
+        "meals": [
+          {
+            "id": "meal1",
+            "name": "Desayuno: Avena",
+            "ingredients": [
+              { "name": "Avena", "quantity": "1/2 tza" },
+              { "name": "Plátano", "quantity": "1 pza" }
+            ]
+          },
+          {
+            "id": "meal2",
+            "name": "Comida: Pollo",
+            "ingredients": [
+              { "name": "Pechuga de pollo", "quantity": "150g" },
+              { "name": "Arroz", "quantity": "1/2 tza" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "weekPlan": {
+    "monday": [
+      {
+        "id": "meal1",
+        "name": "Desayuno: Avena",
+        "ingredients": [
+          { "name": "Avena", "quantity": "1/2 tza" },
+          { "name": "Plátano", "quantity": "1 pza" }
+        ]
+      }
+    ],
+    "tuesday": [
+      {
+        "id": "meal2",
+        "name": "Comida: Pollo",
+        "ingredients": [
+          { "name": "Pechuga de pollo", "quantity": "150g" },
+          { "name": "Arroz", "quantity": "1/2 tza" }
+        ]
+      }
+    ],
+    "wednesday": [],
+    "thursday": [],
+    "friday": [],
+    "saturday": [],
+    "sunday": []
+  },
+  "pinnedPlans": [
+    {
+      "id": "pinned_1",
+      "name": "Plan pin",
+      "planId": "plan_1",
+      "dietPlan": {
+        "days": [
+          {
+            "id": "day1",
+            "name": "Día 1",
+            "meals": [
+              {
+                "id": "meal1",
+                "name": "Desayuno: Avena",
+                "ingredients": [
+                  { "name": "Avena", "quantity": "1/2 tza" },
+                  { "name": "Plátano", "quantity": "1 pza" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "weekPlan": {
+        "monday": [
+          {
+            "id": "meal1",
+            "name": "Desayuno: Avena",
+            "ingredients": [
+              { "name": "Avena", "quantity": "1/2 tza" },
+              { "name": "Plátano", "quantity": "1 pza" }
+            ]
+          }
+        ],
+        "tuesday": [],
+        "wednesday": [],
+        "thursday": [],
+        "friday": [],
+        "saturday": [],
+        "sunday": []
+      },
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "checkedItems": {
+    "Verduras:tomate": true,
+    "Avena": true,
+    "ing:already": true
+  },
+  "mealPrepSelectedMeals": [],
+  "mealPrepUnselectedVisible": true,
+  "currentPlanId": "plan_1"
+}

@@ -1,6 +1,9 @@
 // src/pages/MealPrepPage.js
+import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react";
 import { useEffect, useMemo, useState } from "react";
 import { formatQuantities, sumIngredients } from "../utils/ingredientUtils";
+import { DAY_LABEL_MSG } from "../i18n/weekDayLabels";
 
 function MealCard({
 	meal,
@@ -21,13 +24,14 @@ function MealCard({
 			<div className="flex justify-between items-center">
 				<h3 className="text-lg font-semibold">{meal.name}</h3>
 				<button
+					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
 						setShowIngredients(!showIngredients);
 					}}
 					className="text-indigo-600 hover:text-indigo-800 text-sm px-2 py-1 rounded"
 				>
-					{showIngredients ? "Ocultar" : "Mostrar"}
+					{showIngredients ? <Trans>Ocultar</Trans> : <Trans>Mostrar</Trans>}
 				</button>
 			</div>
 
@@ -60,6 +64,7 @@ const clearMealPrepLocalStorage = () => {
 };
 
 function MealPrepPage({ weekPlan }) {
+	const { _ } = useLingui();
 	// Initialize selectedMeals from localStorage
 	const [selectedMeals, setSelectedMeals] = useState(() => {
 		try {
@@ -198,12 +203,15 @@ function MealPrepPage({ weekPlan }) {
 		<div className="flex flex-col gap-4">
 			<div className="flex justify-end">
 				<button
+					type="button"
 					className="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600"
 					onClick={() => setIsUnselectedVisible(!isUnselectedVisible)}
 				>
-					{isUnselectedVisible
-						? "Mostrar no seleccionados"
-						: "Ocultar no seleccionados"}
+					{isUnselectedVisible ? (
+						<Trans>Mostrar no seleccionados</Trans>
+					) : (
+						<Trans>Ocultar no seleccionados</Trans>
+					)}
 				</button>
 			</div>
 
@@ -215,7 +223,9 @@ function MealPrepPage({ weekPlan }) {
 							key={dayName}
 							className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-2"
 						>
-							<h2 className="text-xl">{dayName}</h2>
+							<h2 className="text-xl">
+								{_(DAY_LABEL_MSG[dayName] || DAY_LABEL_MSG.monday)}
+							</h2>
 							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
 								{meals.map((meal) => {
 									const mealKey = meal.name + dayName;
@@ -236,10 +246,11 @@ function MealPrepPage({ weekPlan }) {
 				})}
 			</div>
 
-			{/* Aggregated Ingredients Section */}
 			{hasAnySelection && (
 				<div className="bg-white p-4 rounded-lg shadow-md">
-					<h2 className="text-xl font-bold mb-4">Ingredientes Totales</h2>
+					<h2 className="text-xl font-bold mb-4">
+						<Trans>Ingredientes Totales</Trans>
+					</h2>
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
 	{aggregatedIngredients
 		.sort((a, b) => a.name.localeCompare(b.name))
@@ -261,6 +272,7 @@ function MealPrepPage({ weekPlan }) {
 					{/* Collapse button */}
 					{ingredient.sources.length > 0 && (
 						<button
+							type="button"
 							className="text-indigo-600 hover:text-indigo-800 text-sm"
 							onClick={(e) => {
 								e.preventDefault();
@@ -269,7 +281,7 @@ function MealPrepPage({ weekPlan }) {
 								details.classList.toggle("hidden");
 							}}
 						>
-							Detalles
+							<Trans>Detalles</Trans>
 						</button>
 					)}
 				</div>
@@ -279,7 +291,7 @@ function MealPrepPage({ weekPlan }) {
 					<div className="hidden mt-2 text-sm text-gray-600 border-t pt-2">
 						<details>
 							<summary className="cursor-pointer text-indigo-600 hover:text-indigo-800">
-								Fuentes ({ingredient.sources.length})
+								<Trans>Fuentes ({ingredient.sources.length})</Trans>
 							</summary>
 							<div className="mt-2 pl-3 border-l-2 border-indigo-100">
 								{ingredient.sources.map((source, idx) => (
@@ -296,7 +308,9 @@ function MealPrepPage({ weekPlan }) {
 
 						{ingredient.variations.length > 1 && (
 							<div className="mt-2 text-xs text-gray-500">
-								<span className="font-medium">Variaciones:</span>{" "}
+								<span className="font-medium">
+									<Trans>Variaciones:</Trans>
+								</span>{" "}
 								{ingredient.variations.join(", ")}
 							</div>
 						)}

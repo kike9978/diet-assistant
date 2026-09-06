@@ -1,3 +1,6 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react";
 import { useId, useState } from "react";
 import {
 	getIngredientCategory,
@@ -5,8 +8,8 @@ import {
 	INGREDIENT_EQUIVALENTS,
 	OTHER_CATEGORY_NAME,
 	WEEK_DAYS,
-	WEEK_DAYS_SPANISH,
 } from "../utils/ingredientUtils";
+import { DAY_LABEL_MSG, WEEK_DAY_IDS } from "../i18n/weekDayLabels";
 import { useToast } from "./Toast";
 import ToolsSidebar from "./ToolsSidebar";
 import Modal from "./ui/base/Modal";
@@ -18,6 +21,7 @@ const now = new Date();
 
 function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 	const toast = useToast();
+	const { _ } = useLingui();
 	const selectId = useId();
 	const [selectedDay, setSelectedDay] = useState(WEEK_DAYS[now.getDay()]);
 	const [expandedDayId, setExpandedDayId] = useState(null);
@@ -35,24 +39,24 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 		selectedReplacement: "",
 	});
 
-	// Initialize weekPlan with empty arrays for each day if not already set
+	const dayTabs = WEEK_DAY_IDS.map((id) => ({
+		id,
+		name: _(DAY_LABEL_MSG[id]),
+	}));
+
 	const ensureWeekPlanStructure = () => {
 		const initializedWeekPlan = { ...weekPlan };
-
 		WEEK_DAYS.forEach((day) => {
 			if (!initializedWeekPlan[day]) {
 				initializedWeekPlan[day] = [];
 			}
 		});
-
 		return initializedWeekPlan;
 	};
 
-	// Make sure weekPlan has the proper structure
 	const structuredWeekPlan = ensureWeekPlanStructure();
 
 	const handleAddDayPlan = (dayPlan) => {
-		// Replace the selected day's meals with the selected day plan
 		const updatedWeekPlan = { ...structuredWeekPlan };
 		updatedWeekPlan[selectedDay] = dayPlan.meals;
 		setWeekPlan(updatedWeekPlan);
@@ -68,18 +72,16 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 		setExpandedDayId(expandedDayId === dayId ? null : dayId);
 	};
 
-	// Función para manejar la adición de un nuevo ingrediente
 	const handleAddIngredient = (newIngredient) => {
 		if (
 			!structuredWeekPlan[selectedDay] ||
 			structuredWeekPlan[selectedDay].length === 0
 		) {
-			// Si no hay comidas en el día seleccionado, crear una nueva comida
 			const updatedWeekPlan = { ...structuredWeekPlan };
 			updatedWeekPlan[selectedDay] = [
 				{
 					id: `custom-meal-${Date.now()}`,
-					name: "Comida personalizada",
+					name: t`Comida personalizada`,
 					ingredients: [
 						{
 							name: newIngredient.name,
@@ -90,7 +92,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 			];
 			setWeekPlan(updatedWeekPlan);
 		} else {
-			// Agregar el ingrediente a la primera comida del día
 			const updatedWeekPlan = { ...structuredWeekPlan };
 			updatedWeekPlan[selectedDay][0].ingredients.push({
 				name: newIngredient.name,
@@ -100,7 +101,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 		}
 	};
 
-	// Función para abrir el modal de sustitución
 	const openSubstitutionModal = (
 		dayPlanId,
 		mealIndex,
@@ -121,7 +121,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 		});
 	};
 
-	// Función para cerrar el modal de sustitución
 	const closeSubstitutionModal = () => {
 		setSubstitutionModal({
 			isOpen: false,
@@ -136,26 +135,18 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 		});
 	};
 
-	// Función para manejar la sustitución de un ingrediente
 	const handleSubstituteIngredient = (substitution) => {
 		const { mealIndex, ingredientIndex, replacement } = substitution;
-
-		// Extraer el nombre y la cantidad del ingrediente del texto de reemplazo
 		const parts = replacement.split(" de ");
 		const quantity = parts[0];
-		const name = parts.slice(1).join(" de "); // Por si hay más de un "de" en el nombre
+		const name = parts.slice(1).join(" de ");
 
-		// Actualizar el weekPlan directamente
 		const updatedWeekPlan = JSON.parse(JSON.stringify(structuredWeekPlan));
 
-		// Buscar si algún día del weekPlan está usando el plan que estamos modificando
 		Object.keys(updatedWeekPlan).forEach((weekDay) => {
-			// Si el día tiene comidas y la comida que estamos modificando existe
 			if (
 				updatedWeekPlan[weekDay]?.[mealIndex]?.ingredients?.[ingredientIndex]
 			) {
-				// Verificar si este día está usando el plan que estamos modificando
-				// Comparamos el nombre del ingrediente y la cantidad para identificarlo
 				const currentIngredient =
 					updatedWeekPlan[weekDay][mealIndex].ingredients[ingredientIndex];
 
@@ -163,33 +154,29 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 					currentIngredient.name === substitutionModal.ingredientName &&
 					currentIngredient.quantity === substitutionModal.ingredientQuantity
 				) {
-					// Actualizar el ingrediente en el weekPlan
 					updatedWeekPlan[weekDay][mealIndex].ingredients[ingredientIndex] = {
-						name: name,
-						quantity: quantity,
+						name,
+						quantity,
 					};
 				}
 			}
 		});
 
-		// Actualizar el estado del weekPlan
 		setWeekPlan(updatedWeekPlan);
-
-		// Cerrar el modal
 		closeSubstitutionModal();
-
-		// Mostrar un mensaje de éxito
 		toast.success(
-			`Ingrediente sustituido: ${substitutionModal.ingredientName} por ${name}`,
+			t`Ingrediente sustituido: ${substitutionModal.ingredientName} por ${name}`,
 		);
 	};
 
+	const selectedDayLabel =
+		_(DAY_LABEL_MSG[selectedDay]) || t`Día seleccionado`;
+
 	return (
 		<div className="h-full flex flex-col">
-			{/* Day selection tabs */}
 			<div className="mb-6 overflow-x-auto">
 				<div className="flex space-x-1 min-w-max">
-					{WEEK_DAYS_SPANISH.map((day) => (
+					{dayTabs.map((day) => (
 						<Tab
 							key={day.id}
 							day={day}
@@ -200,19 +187,17 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 				</div>
 			</div>
 
-			{/* Meal selection */}
 			<div className="md:grid grid-cols-1 md:grid-cols-2 flex flex-col gap-6 flex-grow">
-				{/* Available day plans */}
 				<section className="flex flex-col">
 					<button
 						type="button"
 						className="flex items-center justify-between w-full cursor-pointer bg-transparent border-none p-0 text-left"
 						onClick={() => setArePlansColapsed(!arePlansColapsed)}
 						aria-expanded={!arePlansColapsed}
-						aria-label="Toggle available meal plans"
+						aria-label={t`Mostrar u ocultar planes de comida disponibles`}
 					>
 						<h3 className="text-lg font-medium mb-3">
-							Planes de Comida Disponibles:
+							<Trans>Planes de Comida Disponibles:</Trans>
 						</h3>
 						<svg
 							className={`w-5 h-5 text-gray-500 transition-transform ${
@@ -234,7 +219,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 					{!arePlansColapsed && (
 						<ul className="bg-gray-50 p-4 rounded-md overflow-y-auto flex-grow list-none">
 							{(() => {
-								// Get the days array - handle both dietPlan.days and direct array
 								const days =
 									dietPlan?.days || (Array.isArray(dietPlan) ? dietPlan : null);
 
@@ -242,7 +226,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 									return (
 										<div className="text-center py-10">
 											<p className="text-gray-500">
-												No hay planes de comida disponibles.
+												<Trans>No hay planes de comida disponibles.</Trans>
 											</p>
 										</div>
 									);
@@ -263,15 +247,11 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 					)}
 				</section>
 
-				{/* Selected day's meals */}
 				<div className="flex flex-col p-2">
-					<div className="flex justify-between items-center mb-3 cursor-pointer bg-gray-100 hover:bg-gray-50 p-2 rounded-md -mx-2  ">
+					<div className="flex justify-between items-center mb-3 cursor-pointer bg-gray-100 hover:bg-gray-50 p-2 rounded-md -mx-2">
 						<div className="flex items-center">
 							<h3 className="text-lg font-medium mr-2">
-								Plan para{" "}
-								{WEEK_DAYS_SPANISH.find((day) => day.id === selectedDay)
-									?.name || "Día seleccionado"}
-								:
+								<Trans>Plan para {selectedDayLabel}:</Trans>
 							</h3>
 						</div>
 						{structuredWeekPlan[selectedDay] &&
@@ -284,7 +264,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 									}}
 									className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 text-sm font-medium"
 								>
-									Limpiar día
+									<Trans>Limpiar día</Trans>
 								</button>
 							)}
 					</div>
@@ -304,10 +284,12 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 						) : (
 							<div className="text-center py-10">
 								<p className="text-gray-500 mb-4">
-									No hay plan de comidas para este día.
+									<Trans>No hay plan de comidas para este día.</Trans>
 								</p>
 								<p className="text-gray-500 text-sm">
-									Selecciona un plan de comida de la lista de disponibles.
+									<Trans>
+										Selecciona un plan de comida de la lista de disponibles.
+									</Trans>
 								</p>
 							</div>
 						)}
@@ -315,22 +297,24 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 				</div>
 			</div>
 
-			{/* Modal de sustitución */}
 			{substitutionModal.isOpen && (
 				<Modal
 					closeSubstitutionModal={closeSubstitutionModal}
 					substitutionModal={substitutionModal}
 					handleSubstituteIngredient={handleSubstituteIngredient}
-					heading={"Sustituir ingrediente"}
+					heading={t`Sustituir ingrediente`}
 				>
 					<p className="text-sm text-gray-500 mb-4">
-						Estás sustituyendo{" "}
-						<span className="font-medium">
-							{substitutionModal.ingredientName} (
-							{substitutionModal.ingredientQuantity})
-						</span>{" "}
-						de la comida{" "}
-						<span className="font-medium">{substitutionModal.mealName}</span>.
+						<Trans>
+							Estás sustituyendo{" "}
+							<span className="font-medium">
+								{substitutionModal.ingredientName} (
+								{substitutionModal.ingredientQuantity})
+							</span>{" "}
+							de la comida{" "}
+							<span className="font-medium">{substitutionModal.mealName}</span>
+							.
+						</Trans>
 					</p>
 
 					<div className="mb-4">
@@ -338,7 +322,7 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 							htmlFor={selectId}
 							className="block text-sm font-medium text-gray-700 mb-1"
 						>
-							Reemplazar con
+							<Trans>Reemplazar con</Trans>
 						</label>
 						<select
 							id={selectId}
@@ -351,44 +335,49 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 								})
 							}
 						>
-							<option value="">Selecciona un equivalente</option>
+							<option value="">{t`Selecciona un equivalente`}</option>
 							{(() => {
-								// Determinar la categoría del ingrediente
 								const category = getIngredientCategory(
 									substitutionModal.ingredientName,
 								);
 
-								// Si tenemos equivalentes para esta categoría, mostrarlos
 								if (INGREDIENT_EQUIVALENTS[category]) {
 									return INGREDIENT_EQUIVALENTS[category].map((equivalent) => (
 										<option key={equivalent} value={equivalent}>
 											{equivalent}
 										</option>
 									));
-								} else {
-									// Si no hay equivalentes específicos, mostrar todas las opciones
-									return Object.entries(INGREDIENT_EQUIVALENTS).map(
-										([catName, equivalents]) => (
-											<optgroup key={catName} label={catName}>
-												{equivalents.map((equivalent) => (
-													<option
-														key={`${catName}-${equivalent}`}
-														value={equivalent}
-													>
-														{equivalent}
-													</option>
-												))}
-											</optgroup>
-										),
-									);
 								}
+								return Object.entries(INGREDIENT_EQUIVALENTS).map(
+									([catName, equivalents]) => (
+										<optgroup key={catName} label={catName}>
+											{equivalents.map((equivalent) => (
+												<option
+													key={`${catName}-${equivalent}`}
+													value={equivalent}
+												>
+													{equivalent}
+												</option>
+											))}
+										</optgroup>
+									),
+								);
 							})()}
 						</select>
 					</div>
 				</Modal>
 			)}
 
-			{/* Barra lateral de herramientas */}
+			<div className="mt-4">
+				<button
+					type="button"
+					onClick={() => setSidebarOpen(true)}
+					className="min-h-11 px-4 rounded-app bg-brand text-white font-semibold"
+				>
+					<Trans>Abrir herramientas</Trans>
+				</button>
+			</div>
+
 			<ToolsSidebar
 				isOpen={sidebarOpen}
 				onClose={() => setSidebarOpen(false)}
@@ -398,18 +387,6 @@ function MealPlanner({ dietPlan, weekPlan, setWeekPlan }) {
 				otherCategoryName={OTHER_CATEGORY_NAME}
 				weekPlan={structuredWeekPlan}
 			/>
-
-			{/* Botón flotante para abrir la barra lateral */}
-			{/* <button
-        onClick={() => setSidebarOpen(true)}
-        className="fixed bottom-6 right-6 z-20 bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        aria-label="Abrir herramientas"
-      >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </button> */}
 		</div>
 	);
 }
