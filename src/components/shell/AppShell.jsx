@@ -4,9 +4,9 @@ import BottomNav from "./BottomNav";
 
 export default function AppShell({ headerActions }) {
 	return (
-		<div className="h-dvh max-h-dvh bg-bg flex flex-col overflow-hidden text-ink">
+		<div className="h-full bg-bg flex flex-col overflow-hidden text-ink">
 			<AppHeader actions={headerActions} />
-			<main className="flex-1 overflow-y-auto">
+			<main className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
 				<div className="max-w-5xl mx-auto px-4 py-5">
 					<Outlet />
 				</div>

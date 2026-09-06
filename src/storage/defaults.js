@@ -28,6 +28,7 @@ export function createEmptyState() {
 		dayTemplates: [],
 		dietTemplates: [],
 		calendars: { [memberId]: {} },
+		weekPlans: { [memberId]: {} },
 		pantry: [],
 		shoppingExtras: [],
 		checkedItems: {},
@@ -39,12 +40,12 @@ export function createEmptyState() {
 		settings: {
 			locale: "es",
 			weekStartsOn: 1,
-			calendarDefaultView: "week",
+			calendarDefaultView: "month",
 			currency: "MXN",
 		},
 		ui: {
 			calendarCursorDate: today,
-			calendarView: "week",
+			calendarView: "month",
 			onboardingDismissed: false,
 			shoppingMemberIds: [memberId],
 		},

@@ -4,7 +4,7 @@ import MemberSwitcher from "../../features/family/MemberSwitcher";
 
 export default function AppHeader({ actions }) {
 	return (
-		<header className="bg-brand text-[var(--color-surface)] shadow-soft">
+		<header className="shrink-0 bg-brand text-[var(--color-surface)] shadow-soft">
 			<div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
 				<div className="flex items-center gap-3 min-w-0">
 					<Link to="/" className="min-w-0 shrink">

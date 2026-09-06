@@ -3,23 +3,27 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "../context/AppState";
 import Button from "./ui/Button";
+import {
+	startOfWeek,
+	toDateISO,
+} from "../features/calendar/dateUtils.js";
 
 const STEPS = [
 	{
-		title: <Trans>Crea tu primera comida</Trans>,
+		title: <Trans>Edita el plan de una semana</Trans>,
 		body: (
 			<Trans>
-				Sin pegar JSON: escribe un nombre y unos ingredientes. La verás en tu
-				semana al instante.
+				En el mes, cada fila es una semana. Usa «Editar plan de semana» para
+				armar planes de día con comidas de la biblioteca o un JSON.
 			</Trans>
 		),
 	},
 	{
-		title: <Trans>Arma tu semana</Trans>,
+		title: <Trans>Asigna en la vista Semana</Trans>,
 		body: (
 			<Trans>
-				Desde Calendario asigna plantillas o añade comidas de la biblioteca a
-				cada día.
+				Ahí eliges qué plan de día va en cada weekday y lo aplicas al
+				calendario. Luego puedes ajustar comidas día a día.
 			</Trans>
 		),
 	},
@@ -27,8 +31,8 @@ const STEPS = [
 		title: <Trans>Compra y prepara</Trans>,
 		body: (
 			<Trans>
-				Compras genera la lista de la semana visible. Prep vive ahí mismo —
-				nunca pierdes el rumbo con un Home que borra todo.
+				Compras usa la semana visible del calendario. Prep vive en la misma
+				sección.
 			</Trans>
 		),
 	},
@@ -37,12 +41,18 @@ const STEPS = [
 export default function FirstRun({ onDismiss }) {
 	const [step, setStep] = useState(0);
 	const navigate = useNavigate();
-	const { dismissOnboarding } = useAppState();
+	const { dismissOnboarding, state } = useAppState();
+	const weekStartsOn = state.settings.weekStartsOn ?? 1;
+	const weekStartISO = toDateISO(
+		startOfWeek(state.ui.calendarCursorDate, weekStartsOn),
+	);
 
-	const finish = (goCreate) => {
+	const finish = (goEdit) => {
 		dismissOnboarding();
 		onDismiss?.();
-		if (goCreate) navigate("/meals/new");
+		if (goEdit) {
+			navigate(`/plan/week?week=${encodeURIComponent(weekStartISO)}`);
+		}
 	};
 
 	const current = STEPS[step];
@@ -68,7 +78,7 @@ export default function FirstRun({ onDismiss }) {
 					</Button>
 				) : (
 					<Button onClick={() => finish(true)}>
-						<Trans>Crear comida</Trans>
+						<Trans>Editar plan de esta semana</Trans>
 					</Button>
 				)}
 				<Button variant="ghost" onClick={() => finish(false)}>

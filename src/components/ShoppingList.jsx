@@ -12,8 +12,10 @@ import {
 } from "../features/shopping/checklistKeys.js";
 import { useBudget, estimatePrice } from "../features/shopping/useBudget.js";
 import { usePdfExport } from "../features/shopping/usePdfExport.js";
+import { formatShoppingQuantities } from "../features/shopping/applyPantry.js";
 import { useShoppingList } from "../features/shopping/useShoppingList.js";
 import ShoppingMemberPicker from "../features/shopping/ShoppingMemberPicker";
+import { quantityForPantryStock } from "../features/pantry/pantryActions.js";
 import { formatQuantity } from "../domain/quantity.js";
 import Button from "./ui/Button";
 import ConfirmDialog from "./ui/ConfirmDialog";
@@ -22,8 +24,7 @@ import AddExtrasSheet from "./shopping/AddExtrasSheet";
 
 function formatItemQuantity(item) {
 	if (item.pantryCovered) return "";
-	if (!item.quantities?.length) return "";
-	return item.quantities.filter(Boolean).join(", ");
+	return formatShoppingQuantities(item.quantities);
 }
 
 function itemKeyFor(item) {
@@ -105,12 +106,9 @@ function ShoppingList() {
 	};
 
 	const handleMoveToPantry = (item) => {
-		const qty =
-			item.quantities?.[0] ||
-			(item.pantryNote ? item.pantryNote : "1 pza");
 		moveToPantryFromShopping({
 			name: item.name,
-			quantity: qty,
+			quantity: quantityForPantryStock(item),
 			category: item.category,
 		});
 		const key = itemKeyFor(item);
@@ -194,12 +192,20 @@ function ShoppingList() {
 						</p>
 						<p className="text-ink-muted text-sm mb-4">
 							<Trans>
-								Agrega comidas a tu plan semanal o extras a la lista.
+								Planear la semana agrega comidas; también puedes sumar extras.
 							</Trans>
 						</p>
-						<Button onClick={() => setExtrasOpen(true)}>
-							<Trans>Agregar extras</Trans>
-						</Button>
+						<div className="flex flex-wrap gap-2 justify-center">
+							<Link
+								to="/plan/week"
+								className="inline-flex items-center justify-center min-h-11 px-4 rounded-app bg-brand text-white font-semibold"
+							>
+								<Trans>Planear esta semana</Trans>
+							</Link>
+							<Button variant="secondary" onClick={() => setExtrasOpen(true)}>
+								<Trans>Agregar extras</Trans>
+							</Button>
+						</div>
 					</div>
 				) : (
 					<>

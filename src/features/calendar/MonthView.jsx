@@ -1,5 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
+import { useNavigate } from "react-router-dom";
 import { useAppState } from "../../context/AppState";
 import { DAY_SHORT_MSG } from "../../i18n/weekDayLabels";
 import { MEAL_TYPE_COLOR } from "./mealTypeColors.js";
@@ -10,12 +11,32 @@ import {
 	startOfMonth,
 	todayISO,
 } from "./dateUtils.js";
+import {
+	getWeekPlan,
+	weekCalendarHasMeals,
+	weekPlanHasContent,
+} from "../weekplan/weekPlanModel.js";
+
+function MealChip({ meal }) {
+	return (
+		<div
+			className="text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-md text-white truncate leading-tight"
+			style={{
+				backgroundColor: MEAL_TYPE_COLOR[meal.mealType] || MEAL_TYPE_COLOR.otro,
+			}}
+			title={meal.name}
+		>
+			{meal.name}
+		</div>
+	);
+}
 
 /**
- * Month overview — dots/counts per day; tap → day (or jump week via parent).
+ * Month calendar as one grid. First cell of each week row edits that week's plan.
  */
-export default function MonthView({ onSelectDate }) {
+export default function MonthView({ selectedDateISO, onSelectDate }) {
 	const { state } = useAppState();
+	const navigate = useNavigate();
 	const { _ } = useLingui();
 	const memberId = state.household.activeMemberId;
 	const cal = state.calendars[memberId] || {};
@@ -28,80 +49,109 @@ export default function MonthView({ onSelectDate }) {
 
 	return (
 		<section aria-label="Mes">
-			<div className="grid grid-cols-7 gap-1 mb-1">
+			<div className="grid grid-cols-8 gap-px rounded-app border border-border overflow-hidden bg-border">
+				<div className="bg-surface-2/60 p-1.5 sm:p-2" aria-hidden />
 				{weekdayKeys.map((key) => (
 					<p
 						key={key}
-						className="text-center text-xs font-semibold text-ink-muted py-1"
+						className="bg-surface-2/60 text-center text-xs font-semibold text-ink-muted py-2"
 					>
 						{_(DAY_SHORT_MSG[key])}
 					</p>
 				))}
-			</div>
-			<div className="grid grid-cols-7 gap-1">
-				{weeks.flat().map((dateISO) => {
-					const inMonth = dateISO.startsWith(monthPrefix);
-					const meals = cal[dateISO] || [];
-					const isToday = dateISO === today;
-					const count = meals.length;
-					const d = parseDateISO(dateISO);
-					const activeMember = state.household.members.find(
-						(m) => m.id === memberId,
+
+				{weeks.map((weekDates) => {
+					const weekStart = weekDates[0];
+					const plan = getWeekPlan(state, weekStart, memberId);
+					const hasPlan = weekPlanHasContent(plan);
+					const hasCal = weekCalendarHasMeals(
+						state,
+						weekStart,
+						weekStartsOn,
+						memberId,
 					);
-					const tint =
-						count > 0 && activeMember?.color
-							? {
-									backgroundColor: `${activeMember.color}18`,
-									borderColor: `${activeMember.color}55`,
-								}
-							: undefined;
+					const planTitle = hasCal
+						? "Plan asignado — editar"
+						: hasPlan
+							? "Plan listo — editar"
+							: "Editar plan de semana";
 
 					return (
-						<button
-							type="button"
-							key={dateISO}
-							onClick={() => onSelectDate(dateISO, "week")}
-							style={inMonth ? tint : undefined}
-							className={`min-h-16 sm:min-h-20 rounded-app border p-1.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] ${
-								inMonth
-									? tint
-										? "hover:opacity-95"
-										: "bg-surface border-border hover:border-ink-muted"
-									: "bg-transparent border-transparent opacity-45"
-							} ${isToday ? "ring-1 ring-[var(--color-brand)]" : ""}`}
-						>
-							<span
-								className={`text-sm font-semibold ${
-									isToday ? "text-brand" : inMonth ? "text-ink" : "text-ink-muted"
+						<div key={weekStart} className="contents">
+							<button
+								type="button"
+								title={planTitle}
+								aria-label={planTitle}
+								onClick={() =>
+									navigate(
+										`/plan/week?week=${encodeURIComponent(weekStart)}`,
+									)
+								}
+								className={`min-h-[4.5rem] sm:min-h-[5.5rem] p-1.5 flex flex-col items-center justify-center gap-1 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${
+									hasCal || hasPlan
+										? "bg-[var(--color-brand)]/10 hover:bg-[var(--color-brand)]/15 text-brand"
+										: "bg-surface hover:bg-surface-2 text-ink-muted"
 								}`}
 							>
-								{d.getDate()}
-							</span>
-							{count > 0 ? (
-								<div className="mt-1 flex flex-wrap gap-0.5">
-									{meals.slice(0, 3).map((meal) => (
-										<span
-											key={meal.instanceId}
-											className="w-1.5 h-1.5 rounded-full"
-											style={{
-												backgroundColor:
-													MEAL_TYPE_COLOR[meal.mealType] || MEAL_TYPE_COLOR.otro,
-											}}
-											title={meal.name}
-										/>
-									))}
-									{count > 3 ? (
-										<span className="text-[10px] text-ink-muted leading-none">
-											+{count - 3}
-										</span>
-									) : null}
-								</div>
-							) : (
-								<span className="sr-only">
-									<Trans>Vacío</Trans>
+								<span className="text-lg leading-none" aria-hidden>
+									✎
 								</span>
-							)}
-						</button>
+								<span className="text-[10px] font-semibold leading-tight">
+									{hasCal ? (
+										<Trans>Asignado</Trans>
+									) : hasPlan ? (
+										<Trans>Listo</Trans>
+									) : (
+										<Trans>Editar</Trans>
+									)}
+								</span>
+							</button>
+
+							{weekDates.map((dateISO) => {
+								const inMonth = dateISO.startsWith(monthPrefix);
+								const meals = cal[dateISO] || [];
+								const isToday = dateISO === today;
+								const selected = dateISO === selectedDateISO;
+								const d = parseDateISO(dateISO);
+
+								return (
+									<button
+										type="button"
+										key={dateISO}
+										onClick={() => onSelectDate(dateISO)}
+										className={`min-h-[4.5rem] sm:min-h-[5.5rem] p-1.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${
+											selected
+												? "bg-[var(--color-brand)]/10 ring-1 ring-inset ring-[var(--color-brand)]"
+												: inMonth
+													? "bg-surface hover:bg-surface-2"
+													: "bg-surface-2/40"
+										}`}
+									>
+										<span
+											className={`inline-flex items-center justify-center min-w-6 h-6 text-sm font-semibold rounded-full mb-1 ${
+												isToday
+													? "bg-brand text-white"
+													: inMonth
+														? "text-ink"
+														: "text-ink-muted"
+											}`}
+										>
+											{d.getDate()}
+										</span>
+										<div className="space-y-0.5">
+											{meals.slice(0, 2).map((meal) => (
+												<MealChip key={meal.instanceId} meal={meal} />
+											))}
+											{meals.length > 2 ? (
+												<p className="text-[10px] text-ink-muted font-semibold px-0.5">
+													+{meals.length - 2}
+												</p>
+											) : null}
+										</div>
+									</button>
+								);
+							})}
+						</div>
 					);
 				})}
 			</div>

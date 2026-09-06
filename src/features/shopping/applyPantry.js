@@ -47,6 +47,24 @@ export function sumCompatibleQuantities(quantityStrings = []) {
 }
 
 /**
+ * Display string for aggregated shopping-line quantities (sums compatible units).
+ * @param {string[]} quantityStrings
+ * @returns {string}
+ */
+export function formatShoppingQuantities(quantityStrings = []) {
+	if (!quantityStrings.length) return "";
+	const summed = sumCompatibleQuantities(quantityStrings);
+	if (summed.amount != null) {
+		return formatQuantity({
+			amount: summed.amount,
+			unit: summed.unit,
+			raw: "",
+		});
+	}
+	return summed.rawParts.filter(Boolean).join(", ");
+}
+
+/**
  * Subtract pantry inventory from a shopping map.
  * Fully covered items get `inPantry: true` (kept for “ya lo tengo” UX / hide toggle).
  * Partially covered items get reduced quantities.

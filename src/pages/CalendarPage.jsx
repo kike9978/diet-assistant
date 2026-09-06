@@ -6,17 +6,17 @@ import CalendarChrome from "../features/calendar/CalendarChrome";
 import DayView from "../features/calendar/DayView";
 import MonthView from "../features/calendar/MonthView";
 import WeekView from "../features/calendar/WeekView";
+import WeekAssignBar from "../features/calendar/WeekAssignBar";
 import {
 	todayISO,
 	weekDateISOs,
 } from "../features/calendar/dateUtils.js";
 import FirstRun from "../components/FirstRun";
-import EmptyState from "../components/ui/EmptyState";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 function normalizeCalendarView(view) {
-	return view === "month" ? "month" : "week";
+	return view === "week" ? "week" : "month";
 }
 
 function defaultSelectedDate(cursorDate, weekStartsOn) {
@@ -26,6 +26,10 @@ function defaultSelectedDate(cursorDate, weekStartsOn) {
 	return week[0];
 }
 
+/**
+ * Mes: week rows + edit week plan. Semana: WeekView + DayView —
+ * assign day plans to the selected day, then tweak meals.
+ */
 export default function CalendarPage() {
 	const {
 		hasContent,
@@ -39,7 +43,7 @@ export default function CalendarPage() {
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const cursor = state.ui.calendarCursorDate;
 	const view = normalizeCalendarView(
-		state.ui.calendarView || state.settings.calendarDefaultView || "week",
+		state.ui.calendarView || state.settings.calendarDefaultView || "month",
 	);
 	const showOnboarding = !state.ui.onboardingDismissed && !hasContent;
 
@@ -49,61 +53,41 @@ export default function CalendarPage() {
 	const [pruneOpen, setPruneOpen] = useState(false);
 
 	useEffect(() => {
+		if (view !== "week") return;
 		const week = weekDateISOs(cursor, weekStartsOn);
-		if (view === "week" && !week.includes(selectedDateISO)) {
+		if (!week.includes(selectedDateISO)) {
 			setSelectedDateISO(defaultSelectedDate(cursor, weekStartsOn));
 		}
 	}, [cursor, weekStartsOn, selectedDateISO, view]);
 
-	const handleSelectDate = (dateISO, nextView) => {
+	const weekStartISO = weekDateISOs(cursor, weekStartsOn)[0];
+
+	const handleSelectDateFromMonth = (dateISO) => {
 		setSelectedDateISO(dateISO);
 		setCalendarCursorDate(dateISO);
-		if (nextView) setCalendarView(normalizeCalendarView(nextView));
+		setCalendarView("week");
+	};
+
+	const handleSelectDate = (dateISO) => {
+		setSelectedDateISO(dateISO);
+		setCalendarCursorDate(dateISO);
 	};
 
 	const handleOpenMeal = (meal) => {
 		handleSelectDate(meal.dateISO);
 	};
 
-	if (!hasContent) {
-		return (
-			<div>
-				{showOnboarding ? <FirstRun /> : null}
-				<EmptyState
-					title={<Trans>Empieza por una comida</Trans>}
-					description={
-						<Trans>
-							Crea una comida mínima o importa un plan JSON. Luego la verás en
-							tu semana.
-						</Trans>
-					}
-					actionLabel={<Trans>Crear comida</Trans>}
-					onAction={() => navigate("/meals/new")}
-				/>
-				<div className="text-center mt-4">
-					<Link to="/plans" className="text-brand font-semibold underline">
-						<Trans>O importa un plan JSON</Trans>
-					</Link>
-				</div>
-			</div>
-		);
-	}
-
 	return (
 		<div>
 			{showOnboarding ? <FirstRun /> : null}
+
 			<div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
 				<h1 className="font-display text-2xl text-ink">
 					<Trans>Calendario</Trans>
 				</h1>
-				<div className="flex gap-2 flex-wrap">
-					<Button variant="secondary" onClick={() => navigate("/meals/new")}>
-						<Trans>Crear comida</Trans>
-					</Button>
-					<Button onClick={() => navigate("/shopping")}>
-						<Trans>Ir a compras</Trans>
-					</Button>
-				</div>
+				<Button onClick={() => navigate("/shopping")}>
+					<Trans>Ir a compras</Trans>
+				</Button>
 			</div>
 
 			<CalendarChrome
@@ -116,20 +100,34 @@ export default function CalendarPage() {
 				activeMember={activeMember}
 			/>
 
-			{view === "month" ? (
-				<MonthView
-					onSelectDate={(dateISO) => handleSelectDate(dateISO, "week")}
-				/>
-			) : (
+			{view === "week" ? (
 				<>
+					<WeekAssignBar weekStartISO={weekStartISO} />
 					<WeekView
 						selectedDateISO={selectedDateISO}
-						onSelectDate={(iso) => handleSelectDate(iso)}
+						onSelectDate={handleSelectDate}
 						onOpenMeal={handleOpenMeal}
 					/>
 					<DayView dateISO={selectedDateISO} />
 				</>
+			) : (
+				<MonthView
+					selectedDateISO={selectedDateISO}
+					onSelectDate={handleSelectDateFromMonth}
+				/>
 			)}
+
+			{!hasContent ? (
+				<p className="text-center text-sm text-ink-muted mt-4">
+					<Link to="/plans" className="text-brand font-semibold underline">
+						<Trans>Importar un plan JSON</Trans>
+					</Link>
+					{" · "}
+					<Link to="/meals/new" className="underline">
+						<Trans>Crear comida</Trans>
+					</Link>
+				</p>
+			) : null}
 
 			<div className="mt-6 pt-4 border-t border-border">
 				<button

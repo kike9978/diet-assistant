@@ -6,11 +6,13 @@ import { useAppState } from "../../context/AppState";
 import { DAY_LABEL_MSG } from "../../i18n/weekDayLabels";
 import Button from "../../components/ui/Button";
 import { MEAL_TYPE_MSG } from "../meals/mealTypeLabels.js";
+import {
+	canonicalWeekStartISO,
+	getWeekPlan,
+} from "../weekplan/weekPlanModel.js";
 import { quantityLabel } from "./calendarActions.js";
 import { parseDateISO } from "./dateUtils.js";
 import { MEAL_TYPE_COLOR } from "./mealTypeColors.js";
-import ScheduleMealSheet from "./ScheduleMealSheet";
-import SubstituteSheet from "./SubstituteSheet";
 
 const DAY_KEYS = [
 	"sunday",
@@ -23,19 +25,20 @@ const DAY_KEYS = [
 ];
 
 /**
- * Day agenda: add/replace/substitute, clear day, usar plantilla de día.
+ * Day agenda: assign a week-plan day slot to this date, then tweak meals.
  */
 export default function DayView({ dateISO }) {
-	const {
-		state,
-		assignDayTemplate,
-		clearCalendarDay,
-		removeMealInstance,
-	} = useAppState();
+	const { state, applyDayPlanToDate, clearCalendarDay } = useAppState();
 	const { _, i18n } = useLingui();
 	const memberId = state.household.activeMemberId;
+	const weekStartsOn = state.settings.weekStartsOn ?? 1;
+	const weekStartISO = canonicalWeekStartISO(dateISO, weekStartsOn);
+	const weekPlan = getWeekPlan(state, weekStartISO);
+	/** Assignable day plans = week-plan slots that already have meals. */
+	const dayPlans = (weekPlan?.dayPlans || []).filter(
+		(dp) => (dp.meals || []).length > 0,
+	);
 	const meals = state.calendars[memberId]?.[dateISO] || [];
-	const dayTemplates = state.dayTemplates;
 	const d = parseDateISO(dateISO);
 	const weekdayKey = DAY_KEYS[d.getDay()];
 	const dateLabel = d.toLocaleDateString(
@@ -43,19 +46,11 @@ export default function DayView({ dateISO }) {
 		{ day: "numeric", month: "long" },
 	);
 
-	const [scheduleOpen, setScheduleOpen] = useState(false);
-	const [replaceInstanceId, setReplaceInstanceId] = useState(null);
-	const [subTarget, setSubTarget] = useState(null);
-	const [expandedTemplateId, setExpandedTemplateId] = useState(null);
+	const [expandedId, setExpandedId] = useState(null);
+	const [expandedMealId, setExpandedMealId] = useState(null);
 
-	const mealById = Object.fromEntries(
-		state.mealLibrary.map((m) => [m.id, m]),
-	);
-
-	const openSchedule = (instanceId = null) => {
-		setReplaceInstanceId(instanceId);
-		setScheduleOpen(true);
-	};
+	const planHref = `/plan/week?week=${encodeURIComponent(weekStartISO)}`;
+	const hasAssignSources = dayPlans.length > 0;
 
 	return (
 		<section
@@ -75,9 +70,7 @@ export default function DayView({ dateISO }) {
 					</h2>
 					<p className="text-sm text-ink-muted mt-1">
 						{meals.length === 0 ? (
-							<Trans>
-								Sin comidas. Aplica una plantilla o agrega de la biblioteca.
-							</Trans>
+							<Trans>Sin comidas. Aplica un plan de día abajo.</Trans>
 						) : meals.length === 1 ? (
 							<Trans>1 comida</Trans>
 						) : (
@@ -85,133 +78,135 @@ export default function DayView({ dateISO }) {
 						)}
 					</p>
 				</div>
-				<div className="flex gap-2 flex-wrap">
-					{meals.length > 0 ? (
-						<Button
-							variant="danger"
-							onClick={() => clearCalendarDay(dateISO)}
-						>
-							<Trans>Limpiar día</Trans>
-						</Button>
-					) : null}
-					<Button variant="secondary" onClick={() => openSchedule(null)}>
-						<Trans>De biblioteca</Trans>
-					</Button>
-					<Link
-						to={`/meals/new?date=${encodeURIComponent(dateISO)}`}
-						className="inline-flex items-center justify-center gap-2 min-h-11 px-4 py-2 rounded-app text-sm font-semibold transition bg-brand text-white hover:bg-[var(--color-brand-strong)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
+				{meals.length > 0 ? (
+					<Button
+						variant="danger"
+						onClick={() => clearCalendarDay(dateISO)}
 					>
-						<Trans>Crear</Trans>
-					</Link>
-				</div>
+						<Trans>Limpiar día</Trans>
+					</Button>
+				) : null}
 			</div>
 
 			{meals.length > 0 ? (
-				<ul className="space-y-3 mb-6">
-					{meals.map((meal) => (
-						<li
-							key={meal.instanceId}
-							className="border border-border rounded-app p-3"
-						>
-							<div className="flex items-start justify-between gap-2 mb-2">
-								<div className="flex items-center gap-2 min-w-0">
+				<ul className="space-y-2 mb-6">
+					{meals.map((meal) => {
+						const ingredients = meal.ingredients || [];
+						const isExpanded = expandedMealId === meal.instanceId;
+						const ingredientCount = ingredients.length;
+
+						return (
+							<li
+								key={meal.instanceId}
+								className="border border-border rounded-app overflow-hidden"
+							>
+								<button
+									type="button"
+									className="w-full flex items-center gap-2 px-3 py-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)]"
+									aria-expanded={isExpanded}
+									onClick={() =>
+										setExpandedMealId(isExpanded ? null : meal.instanceId)
+									}
+								>
+									<svg
+										className={`w-4 h-4 shrink-0 text-ink-muted transition-transform ${
+											isExpanded ? "rotate-180" : ""
+										}`}
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+										aria-hidden
+									>
+										<path
+											strokeLinecap="round"
+											strokeLinejoin="round"
+											strokeWidth={2}
+											d="M19 9l-7 7-7-7"
+										/>
+									</svg>
 									<span
 										className="w-2.5 h-2.5 rounded-full shrink-0"
 										style={{
 											backgroundColor:
-												MEAL_TYPE_COLOR[meal.mealType] || MEAL_TYPE_COLOR.otro,
+												MEAL_TYPE_COLOR[meal.mealType] ||
+												MEAL_TYPE_COLOR.otro,
 										}}
 										aria-hidden
 									/>
-									<div className="min-w-0">
+									<div className="min-w-0 flex-1">
 										<h3 className="font-semibold text-ink truncate">
 											{meal.name}
 										</h3>
 										<p className="text-xs text-ink-muted">
-											{_(
-												MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro,
-											)}
+											{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)}
+											{ingredientCount > 0 ? (
+												<>
+													{" · "}
+													{ingredientCount} <Trans>ingredientes</Trans>
+												</>
+											) : null}
 										</p>
 									</div>
-								</div>
-								<div className="flex gap-1 shrink-0">
-									<Button
-										variant="ghost"
-										className="!min-h-9 !px-2 text-xs"
-										onClick={() => openSchedule(meal.instanceId)}
-									>
-										<Trans>Reemplazar</Trans>
-									</Button>
-									<Button
-										variant="ghost"
-										className="!min-h-9 !px-2 text-xs text-[var(--color-danger)]"
-										onClick={() => removeMealInstance(meal.instanceId)}
-									>
-										<Trans>Quitar</Trans>
-									</Button>
-								</div>
-							</div>
-							<ul className="text-sm text-ink-muted space-y-1">
-								{(meal.ingredients || []).map((ing) => (
-									<li
-										key={
-											ing.id || `${ing.name}-${quantityLabel(ing.quantity)}`
-										}
-										className="flex items-center justify-between gap-2"
-									>
-										<span>
-											{ing.name}
-											{quantityLabel(ing.quantity)
-												? ` (${quantityLabel(ing.quantity)})`
-												: ""}
-										</span>
-										<button
-											type="button"
-											className="text-xs font-semibold text-brand shrink-0"
-											onClick={() =>
-												setSubTarget({
-													instanceId: meal.instanceId,
-													ingredient: ing,
-													mealName: meal.name,
-												})
-											}
-										>
-											<Trans>Sustituir</Trans>
-										</button>
-									</li>
-								))}
-							</ul>
-						</li>
-					))}
+								</button>
+
+								{isExpanded ? (
+									<ul className="border-t border-border bg-surface-2/40 px-3 py-3 text-sm text-ink-muted space-y-1">
+										{ingredientCount === 0 ? (
+											<li>
+												<Trans>Sin ingredientes</Trans>
+											</li>
+										) : (
+											ingredients.map((ing) => (
+												<li
+													key={
+														ing.id ||
+														`${ing.name}-${quantityLabel(ing.quantity)}`
+													}
+												>
+													{ing.name}
+													{quantityLabel(ing.quantity)
+														? ` (${quantityLabel(ing.quantity)})`
+														: ""}
+												</li>
+											))
+										)}
+									</ul>
+								) : null}
+							</li>
+						);
+					})}
 				</ul>
 			) : null}
 
 			<div>
 				<h3 className="text-sm font-semibold text-ink mb-2">
-					<Trans>Usar plantilla de día</Trans>
+					<Trans>Usar plan de día</Trans>
 				</h3>
-				{dayTemplates.length === 0 ? (
-					<p className="text-sm text-ink-muted">
-						<Trans>
-							No hay plantillas.{" "}
-							<Link to="/plans" className="text-brand underline font-semibold">
-								Importa un plan
-							</Link>{" "}
-							o crea comidas sueltas.
-						</Trans>
-					</p>
+				{!hasAssignSources ? (
+					<div className="space-y-3">
+						<p className="text-sm text-ink-muted">
+							<Trans>
+								No hay planes de día con comidas en el plan de esta semana.
+							</Trans>
+						</p>
+						<Link
+							to={planHref}
+							className="inline-flex items-center justify-center min-h-11 px-4 rounded-app text-sm font-semibold border border-border bg-surface hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
+						>
+							<Trans>Edita el plan</Trans>
+						</Link>
+					</div>
 				) : (
 					<ul className="space-y-2">
-						{dayTemplates.map((template) => {
-							const templateMeals = (template.mealIds || [])
-								.map((id) => mealById[id])
-								.filter(Boolean);
-							const mealCount = templateMeals.length;
-							const isExpanded = expandedTemplateId === template.id;
+						{dayPlans.map((dayPlan, index) => {
+							const planMeals = dayPlan.meals || [];
+							const mealCount = planMeals.length;
+							const expandKey = dayPlan.id;
+							const isExpanded = expandedId === expandKey;
 
 							return (
 								<li
-									key={template.id}
+									key={dayPlan.id}
 									className="border border-border rounded-app overflow-hidden"
 								>
 									<div className="flex items-center gap-2 px-3 py-2">
@@ -220,9 +215,7 @@ export default function DayView({ dateISO }) {
 											className="flex-1 min-w-0 text-left flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] rounded-md"
 											aria-expanded={isExpanded}
 											onClick={() =>
-												setExpandedTemplateId(
-													isExpanded ? null : template.id,
-												)
+												setExpandedId(isExpanded ? null : expandKey)
 											}
 										>
 											<svg
@@ -243,7 +236,7 @@ export default function DayView({ dateISO }) {
 											</svg>
 											<div className="min-w-0">
 												<p className="font-semibold text-ink truncate">
-													{template.name}
+													{dayPlan.name || `Día ${index + 1}`}
 												</p>
 												<p className="text-xs text-ink-muted">
 													{mealCount === 1 ? (
@@ -258,7 +251,11 @@ export default function DayView({ dateISO }) {
 											variant="secondary"
 											className="shrink-0"
 											onClick={() =>
-												assignDayTemplate(template.id, dateISO)
+												applyDayPlanToDate(
+													weekStartISO,
+													dayPlan.id,
+													dateISO,
+												)
 											}
 										>
 											<Trans>Usar</Trans>
@@ -267,51 +264,45 @@ export default function DayView({ dateISO }) {
 
 									{isExpanded ? (
 										<ul className="border-t border-border bg-surface-2/40 px-3 py-3 space-y-3">
-											{templateMeals.length === 0 ? (
-												<li className="text-sm text-ink-muted">
-													<Trans>Esta plantilla no tiene comidas.</Trans>
+											{planMeals.map((meal) => (
+												<li key={meal.tempId || meal.mealId || meal.name}>
+													<div className="flex items-center gap-2 mb-1">
+														<span
+															className="w-2 h-2 rounded-full shrink-0"
+															style={{
+																backgroundColor:
+																	MEAL_TYPE_COLOR[meal.mealType] ||
+																	MEAL_TYPE_COLOR.otro,
+															}}
+															aria-hidden
+														/>
+														<p className="font-semibold text-sm text-ink">
+															{meal.name}
+														</p>
+														<span className="text-xs text-ink-muted">
+															{_(
+																MEAL_TYPE_MSG[meal.mealType] ||
+																	MEAL_TYPE_MSG.otro,
+															)}
+														</span>
+													</div>
+													<ul className="text-xs text-ink-muted pl-4 list-disc space-y-0.5">
+														{(meal.ingredients || []).map((ing) => (
+															<li
+																key={
+																	ing.id ||
+																	`${ing.name}-${quantityLabel(ing.quantity)}`
+																}
+															>
+																{ing.name}
+																{quantityLabel(ing.quantity)
+																	? ` (${quantityLabel(ing.quantity)})`
+																	: ""}
+															</li>
+														))}
+													</ul>
 												</li>
-											) : (
-												templateMeals.map((meal) => (
-													<li key={meal.id}>
-														<div className="flex items-center gap-2 mb-1">
-															<span
-																className="w-2 h-2 rounded-full shrink-0"
-																style={{
-																	backgroundColor:
-																		MEAL_TYPE_COLOR[meal.mealType] ||
-																		MEAL_TYPE_COLOR.otro,
-																}}
-																aria-hidden
-															/>
-															<p className="font-semibold text-sm text-ink">
-																{meal.name}
-															</p>
-															<span className="text-xs text-ink-muted">
-																{_(
-																	MEAL_TYPE_MSG[meal.mealType] ||
-																		MEAL_TYPE_MSG.otro,
-																)}
-															</span>
-														</div>
-														<ul className="text-xs text-ink-muted pl-4 list-disc space-y-0.5">
-															{(meal.ingredients || []).map((ing) => (
-																<li
-																	key={
-																		ing.id ||
-																		`${ing.name}-${quantityLabel(ing.quantity)}`
-																	}
-																>
-																	{ing.name}
-																	{quantityLabel(ing.quantity)
-																		? ` (${quantityLabel(ing.quantity)})`
-																		: ""}
-																</li>
-															))}
-														</ul>
-													</li>
-												))
-											)}
+											))}
 										</ul>
 									) : null}
 								</li>
@@ -320,24 +311,6 @@ export default function DayView({ dateISO }) {
 					</ul>
 				)}
 			</div>
-
-			<ScheduleMealSheet
-				open={scheduleOpen}
-				onClose={() => {
-					setScheduleOpen(false);
-					setReplaceInstanceId(null);
-				}}
-				dateISO={dateISO}
-				replaceInstanceId={replaceInstanceId}
-			/>
-
-			<SubstituteSheet
-				open={Boolean(subTarget)}
-				onClose={() => setSubTarget(null)}
-				instanceId={subTarget?.instanceId}
-				ingredient={subTarget?.ingredient}
-				mealName={subTarget?.mealName}
-			/>
 		</section>
 	);
 }

@@ -196,13 +196,18 @@ export default function PrepMode() {
 			<div className="bg-surface border border-border rounded-app p-6 text-center space-y-3">
 				<p className="text-ink-muted">
 					<Trans>
-						No hay comidas en la semana visible ({weekLabel}). Agenda algo en el
-						calendario primero.
+						No hay comidas en la semana visible ({weekLabel}). Arma la semana
+						primero.
 					</Trans>
 				</p>
-				<Link to="/" className="text-brand font-semibold underline">
-					<Trans>Ir al calendario</Trans>
-				</Link>
+				<div className="flex flex-wrap gap-3 justify-center">
+					<Link to="/plan/week" className="text-brand font-semibold underline">
+						<Trans>Planear esta semana</Trans>
+					</Link>
+					<Link to="/" className="text-ink-muted underline text-sm">
+						<Trans>Ir al calendario</Trans>
+					</Link>
+				</div>
 			</div>
 		);
 	}

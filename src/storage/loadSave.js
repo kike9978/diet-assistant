@@ -71,6 +71,13 @@ export function normalizeV2State(state) {
 		if (!calendars[m.id]) calendars[m.id] = {};
 	}
 
+	const weekPlans = { ...(state.weekPlans || {}) };
+	for (const m of members) {
+		if (!weekPlans[m.id] || typeof weekPlans[m.id] !== "object") {
+			weekPlans[m.id] = {};
+		}
+	}
+
 	return {
 		...state,
 		pantry: Array.isArray(state.pantry) ? state.pantry : [],
@@ -78,6 +85,7 @@ export function normalizeV2State(state) {
 			? state.shoppingExtras
 			: [],
 		calendars,
+		weekPlans,
 		ui: {
 			...state.ui,
 			shoppingMemberIds,
@@ -152,18 +160,21 @@ export function saveState(state, storage = localStorage) {
 }
 
 /**
- * Reiniciar: clears calendars, checkedItems, mealPrep, shoppingExtras.
+ * Reiniciar: clears calendars, weekPlans, checkedItems, mealPrep, shoppingExtras.
  * Keeps household, mealLibrary, templates, pantry, settings.
  * @param {import("../domain/types.js").DietAssistantStateV2} state
  */
 export function resetActivePlanning(state) {
 	const calendars = {};
+	const weekPlans = {};
 	for (const member of state.household.members) {
 		calendars[member.id] = {};
+		weekPlans[member.id] = {};
 	}
 	return {
 		...state,
 		calendars,
+		weekPlans,
 		checkedItems: {},
 		shoppingExtras: [],
 		mealPrep: {

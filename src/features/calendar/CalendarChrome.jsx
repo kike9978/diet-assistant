@@ -18,6 +18,7 @@ const VIEWS = [
 
 /**
  * Shared calendar chrome: range label, prev/next, Hoy, Mes|Semana.
+ * Month is the primary week-plan-rows view; week is a focused strip + DnD.
  */
 export default function CalendarChrome({
 	view,

@@ -89,12 +89,34 @@
  * }} UiState
  *
  * @typedef {{
+ *   id: string,
+ *   name: string,
+ *   meals: {
+ *     tempId: string,
+ *     mealId: string | null,
+ *     name: string,
+ *     mealType: MealType | string,
+ *     ingredients: Ingredient[],
+ *     dirty?: boolean,
+ *     source?: "library" | "create" | "import"
+ *   }[]
+ * }} DayPlan
+ *
+ * @typedef {{
+ *   weekStartISO: string,
+ *   memberId: string,
+ *   dayPlans: DayPlan[],
+ *   updatedAt: string
+ * }} WeekPlan
+ *
+ * @typedef {{
  *   version: 2,
  *   household: Household,
  *   mealLibrary: Meal[],
  *   dayTemplates: DayTemplate[],
  *   dietTemplates: DietTemplate[],
  *   calendars: { [memberId: string]: { [dateISO: string]: ScheduledMeal[] } },
+ *   weekPlans: { [memberId: string]: { [weekStartISO: string]: WeekPlan } },
  *   pantry: PantryItem[],
  *   shoppingExtras: ShoppingExtra[],
  *   checkedItems: CheckedItems,

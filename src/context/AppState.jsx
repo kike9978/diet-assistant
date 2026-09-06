@@ -12,7 +12,7 @@ import { inferMealType } from "../domain/mealType.js";
 import { parseQuantity } from "../domain/quantity.js";
 import {
 	applyIngredientSubstitution,
-	assignDayTemplateToDate,
+	applyMealSaveDisposition as applyMealSaveDispositionInState,
 	buildLibraryMeal,
 	clearCalendarDay as clearCalendarDayInState,
 	moveScheduledMeal as moveScheduledMealInState,
@@ -20,8 +20,22 @@ import {
 	removeScheduledMeal as removeScheduledMealInState,
 	replaceScheduledMeal as replaceScheduledMealInState,
 	scheduleLibraryMeal as scheduleLibraryMealInState,
+	updateScheduledMeal as updateScheduledMealInState,
 } from "../features/calendar/calendarActions.js";
 import { todayISO, weekDateISOs } from "../features/calendar/dateUtils.js";
+import {
+	applyLibrarySaveSelections,
+	commitWeekDraft,
+} from "../features/weekplan/weekDraft.js";
+import {
+	applyLibrarySaveToDayPlans,
+	applyDayPlanToDate as applyDayPlanToDateInState,
+	applyWeekPlanToCalendar as applyWeekPlanToCalendarInState,
+	copyWeekPlan as copyWeekPlanInState,
+	getWeekPlan as getWeekPlanFromState,
+	listWeekPlans as listWeekPlansFromState,
+	saveWeekPlan as saveWeekPlanInState,
+} from "../features/weekplan/weekPlanModel.js";
 import {
 	loadState,
 	resetActivePlanning,
@@ -376,10 +390,6 @@ export function AppStateProvider({ children }) {
 		}));
 	}, []);
 
-	const assignDayTemplate = useCallback((dayTemplateId, dateISO) => {
-		setState((prev) => assignDayTemplateToDate(prev, dayTemplateId, dateISO));
-	}, []);
-
 	const clearCalendarDay = useCallback((dateISO) => {
 		setState((prev) => clearCalendarDayInState(prev, dateISO));
 	}, []);
@@ -406,6 +416,107 @@ export function AppStateProvider({ children }) {
 
 	const substituteIngredient = useCallback((payload) => {
 		setState((prev) => applyIngredientSubstitution(prev, payload));
+	}, []);
+
+	const updateScheduledMeal = useCallback((instanceId, patch) => {
+		setState((prev) => updateScheduledMealInState(prev, instanceId, patch));
+	}, []);
+
+	const applyMealSaveDisposition = useCallback((opts) => {
+		setState((prev) => applyMealSaveDispositionInState(prev, opts));
+	}, []);
+
+	/**
+	 * Save day-plan slots for a calendar week (does not write calendars).
+	 * Optionally save selected meals to the library first.
+	 */
+	const saveWeekPlan = useCallback((weekStartISO, dayPlans, opts = {}) => {
+		setState((prev) => {
+			let plans = dayPlans;
+			let next = prev;
+			if (opts.selectedSaveTempIds != null || opts.saveAsTemplate) {
+				const result = applyLibrarySaveToDayPlans(
+					prev,
+					dayPlans,
+					opts.selectedSaveTempIds || [],
+					{
+						saveAsTemplate: opts.saveAsTemplate,
+						templateName: opts.templateName,
+					},
+				);
+				next = result.state;
+				plans = result.dayPlans;
+			}
+			return saveWeekPlanInState(next, weekStartISO, plans);
+		});
+	}, []);
+
+	const copyWeekPlan = useCallback((fromWeekStartISO, toWeekStartISO) => {
+		setState((prev) =>
+			copyWeekPlanInState(prev, fromWeekStartISO, toWeekStartISO),
+		);
+	}, []);
+
+	const applyWeekPlanToCalendar = useCallback(
+		(weekStartISO, assignment) => {
+			setState((prev) =>
+				applyWeekPlanToCalendarInState(
+					prev,
+					weekStartISO,
+					assignment,
+					undefined,
+					prev.settings.weekStartsOn ?? 1,
+				),
+			);
+		},
+		[],
+	);
+
+	const applyDayPlanToDate = useCallback((weekStartISO, dayPlanId, dateISO) => {
+		setState((prev) =>
+			applyDayPlanToDateInState(
+				prev,
+				weekStartISO,
+				dayPlanId,
+				dateISO,
+				undefined,
+				prev.settings.weekStartsOn ?? 1,
+			),
+		);
+	}, []);
+
+	/** @deprecated Prefer saveWeekPlan + applyWeekPlanToCalendar */
+	const commitWeekPlan = useCallback((draft, opts = {}) => {
+		setState((prev) => {
+			let workingDraft = draft;
+			let next = prev;
+			if (opts.selectedSaveTempIds != null || opts.saveAsTemplate) {
+				const result = applyLibrarySaveSelections(
+					prev,
+					draft,
+					opts.selectedSaveTempIds || [],
+					{
+						saveAsTemplate: opts.saveAsTemplate,
+						templateName: opts.templateName,
+					},
+				);
+				next = result.state;
+				workingDraft = result.draft;
+			}
+			return commitWeekDraft(next, workingDraft, { replaceDays: true });
+		});
+	}, []);
+
+	const saveMealsToLibrary = useCallback((draft, selectedTempIds, opts = {}) => {
+		setState((prev) => {
+			const result = applyLibrarySaveSelections(
+				prev,
+				draft,
+				selectedTempIds,
+				opts,
+			);
+			return result.state;
+		});
 	}, []);
 
 	const prunePastWeeks = useCallback((opts) => {
@@ -488,8 +599,12 @@ export function AppStateProvider({ children }) {
 		const memberId = state.household.activeMemberId;
 		const cal = state.calendars[memberId] || {};
 		const hasScheduled = Object.values(cal).some((m) => m.length > 0);
+		const hasWeekPlans = Object.values(state.weekPlans?.[memberId] || {}).some(
+			(p) => (p.dayPlans || []).some((dp) => (dp.meals || []).length > 0),
+		);
 		return (
 			hasScheduled ||
+			hasWeekPlans ||
 			state.mealLibrary.length > 0 ||
 			state.dietTemplates.length > 0
 		);
@@ -533,18 +648,27 @@ export function AppStateProvider({ children }) {
 			saveSettings,
 			setCalendarCursorDate,
 			setCalendarView,
-			assignDayTemplate,
 			clearCalendarDay,
 			scheduleMeal,
 			replaceMeal,
 			removeMealInstance,
 			moveMealInstance,
 			substituteIngredient,
+			updateScheduledMeal,
+			applyMealSaveDisposition,
+			saveWeekPlan,
+			copyWeekPlan,
+			applyWeekPlanToCalendar,
+			applyDayPlanToDate,
+			commitWeekPlan,
+			saveMealsToLibrary,
 			prunePastWeeks,
 			setMealPrepSelection,
 			toggleMealPrepInstance,
 			setMealPrepUnselectedVisible,
 			hasContent,
+			getWeekPlan: (weekStartISO) => getWeekPlanFromState(state, weekStartISO),
+			listWeekPlans: () => listWeekPlansFromState(state),
 		}),
 		[
 			state,
@@ -583,13 +707,20 @@ export function AppStateProvider({ children }) {
 			saveSettings,
 			setCalendarCursorDate,
 			setCalendarView,
-			assignDayTemplate,
 			clearCalendarDay,
 			scheduleMeal,
 			replaceMeal,
 			removeMealInstance,
 			moveMealInstance,
 			substituteIngredient,
+			updateScheduledMeal,
+			applyMealSaveDisposition,
+			saveWeekPlan,
+			copyWeekPlan,
+			applyWeekPlanToCalendar,
+			applyDayPlanToDate,
+			commitWeekPlan,
+			saveMealsToLibrary,
 			prunePastWeeks,
 			setMealPrepSelection,
 			toggleMealPrepInstance,

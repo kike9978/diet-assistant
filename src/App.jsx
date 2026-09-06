@@ -24,6 +24,7 @@ import PantryPage from "./pages/PantryPage";
 import PlansPage from "./pages/PlansPage";
 import SettingsPage from "./pages/SettingsPage";
 import ToolsPage from "./pages/ToolsPage";
+import WeekPlanPage from "./pages/WeekPlanPage";
 
 function ShoppingRoute() {
 	const [params] = useSearchParams();
@@ -93,6 +94,7 @@ function AppRoutes() {
 		<Routes>
 			<Route element={<ShellWithActions />}>
 				<Route index element={<CalendarPage />} />
+				<Route path="plan/week" element={<WeekPlanPage />} />
 				<Route path="meals" element={<MealsPage />} />
 				<Route path="meals/new" element={<CreateMealPage />} />
 				<Route path="meals/:id" element={<MealDetailPage />} />

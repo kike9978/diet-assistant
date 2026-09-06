@@ -90,9 +90,9 @@ function DroppableDay({ dateISO, selected, isToday, children, onSelect }) {
 					onSelect(dateISO);
 				}
 			}}
-			className={`snap-start shrink-0 w-[7.5rem] sm:w-auto text-left bg-surface border rounded-app p-3 min-h-28 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 ${
+			className={`snap-start shrink-0 w-[7.5rem] sm:w-auto text-left bg-surface border rounded-app p-3 min-h-28 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${
 				selected
-					? "border-[var(--color-brand)] ring-1 ring-[var(--color-brand)]"
+					? "border-[var(--color-brand)] ring-1 ring-inset ring-[var(--color-brand)]"
 					: "border-border hover:border-ink-muted"
 			} ${isOver ? "bg-surface-2 border-[var(--color-accent-leaf)]" : ""}`}
 		>

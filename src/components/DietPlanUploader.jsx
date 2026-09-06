@@ -24,26 +24,22 @@ function DietPlanUploader({ onUpload }) {
 	};
 
   const validateDietPlan = (plan) => {
-    // Check if the plan has days
     if (!plan.days || !Array.isArray(plan.days) || plan.days.length === 0) {
       return false;
     }
 
-    // Check if each day has the required properties
     for (const day of plan.days) {
-      if (!day.id || !day.name || !day.meals || !Array.isArray(day.meals)) {
+      if (!day.meals || !Array.isArray(day.meals)) {
         return false;
       }
 
-      // Check if each meal has the required properties
       for (const meal of day.meals) {
-        if (!meal.id || !meal.name || !meal.ingredients || !Array.isArray(meal.ingredients)) {
+        if (!meal.name || !meal.ingredients || !Array.isArray(meal.ingredients)) {
           return false;
         }
 
-        // Check if each ingredient has the required properties
         for (const ingredient of meal.ingredients) {
-          if (!ingredient.name || !ingredient.quantity) {
+          if (!ingredient.name || ingredient.quantity == null || ingredient.quantity === "") {
             return false;
           }
         }

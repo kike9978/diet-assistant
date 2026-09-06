@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { applyPantryToShoppingMap, sumCompatibleQuantities } from "./applyPantry.js";
+import {
+	applyPantryToShoppingMap,
+	formatShoppingQuantities,
+	sumCompatibleQuantities,
+} from "./applyPantry.js";
 
 describe("sumCompatibleQuantities", () => {
 	it("sums same unit", () => {
@@ -14,6 +18,21 @@ describe("sumCompatibleQuantities", () => {
 		const result = sumCompatibleQuantities(["100 g", "1 tza"]);
 		expect(result.amount).toBeNull();
 		expect(result.rawParts.length).toBe(2);
+	});
+});
+
+describe("formatShoppingQuantities", () => {
+	it("sums repeated compatible amounts for display", () => {
+		expect(formatShoppingQuantities(["150 g", "150 g", "150 g"])).toBe(
+			"450 g",
+		);
+		expect(
+			formatShoppingQuantities(["1/2 taza", "1/2 taza", "1/2 taza"]),
+		).toBe("1 1/2 taza");
+	});
+
+	it("returns empty for no quantities", () => {
+		expect(formatShoppingQuantities([])).toBe("");
 	});
 });
 

@@ -51,33 +51,6 @@ export function mealToScheduled(meal, dateISO, memberId, opts = {}) {
 }
 
 /**
- * Replace all meals on a date with meals from a day template.
- * @param {import("../../domain/types.js").DietAssistantStateV2} state
- * @param {string} dayTemplateId
- * @param {string} dateISO
- */
-export function assignDayTemplateToDate(state, dayTemplateId, dateISO) {
-	const template = state.dayTemplates.find((d) => d.id === dayTemplateId);
-	if (!template) return state;
-
-	const mealById = Object.fromEntries(state.mealLibrary.map((m) => [m.id, m]));
-	const memberId = state.household.activeMemberId;
-	const scheduled = template.mealIds
-		.map((mealId) => mealById[mealId])
-		.filter(Boolean)
-		.map((meal) => mealToScheduled(meal, dateISO, memberId));
-
-	const memberCal = { ...(state.calendars[memberId] || {}) };
-	memberCal[dateISO] = scheduled;
-
-	return {
-		...state,
-		calendars: { ...state.calendars, [memberId]: memberCal },
-		ui: { ...state.ui, calendarCursorDate: dateISO },
-	};
-}
-
-/**
  * Clear all scheduled meals for a date.
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {string} dateISO
@@ -338,6 +311,148 @@ export function prunePastCalendarDays(state, opts = {}) {
 			),
 		},
 	};
+}
+
+/**
+ * Patch a scheduled meal instance (snapshot fields). Use mealId: null to detach.
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {string} instanceId
+ * @param {{
+ *   name?: string,
+ *   mealType?: string,
+ *   ingredients?: import("../../domain/types.js").Ingredient[],
+ *   mealId?: string | null,
+ *   notes?: string
+ * }} patch
+ */
+export function updateScheduledMeal(state, instanceId, patch) {
+	const memberId = state.household.activeMemberId;
+	const memberCal = { ...(state.calendars[memberId] || {}) };
+	let found = false;
+
+	for (const dateISO of Object.keys(memberCal)) {
+		const list = memberCal[dateISO] || [];
+		const idx = list.findIndex((m) => m.instanceId === instanceId);
+		if (idx === -1) continue;
+		const prev = list[idx];
+		const next = {
+			...prev,
+			...(patch.name != null ? { name: patch.name } : {}),
+			...(patch.mealType != null ? { mealType: patch.mealType } : {}),
+			...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+			...(Object.prototype.hasOwnProperty.call(patch, "mealId")
+				? { mealId: patch.mealId }
+				: {}),
+			...(patch.ingredients
+				? {
+						ingredients: patch.ingredients.map((ing) => ({
+							...ing,
+							id: ing.id || createId(),
+						})),
+					}
+				: {}),
+		};
+		const copy = [...list];
+		copy[idx] = next;
+		memberCal[dateISO] = copy;
+		found = true;
+		break;
+	}
+
+	if (!found) return state;
+	return {
+		...state,
+		calendars: { ...state.calendars, [memberId]: memberCal },
+	};
+}
+
+/**
+ * Apply edit disposition for a linked scheduled meal.
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {{
+ *   instanceId: string,
+ *   payload: {
+ *     name: string,
+ *     mealType?: string,
+ *     servings?: number,
+ *     ingredients: { name: string, quantity: string }[]
+ *   },
+ *   disposition: "update" | "duplicate" | "once"
+ * }} opts
+ */
+export function applyMealSaveDisposition(state, opts) {
+	const { instanceId, payload, disposition } = opts;
+	const memberId = state.household.activeMemberId;
+	const memberCal = state.calendars[memberId] || {};
+	let current = null;
+
+	for (const dateISO of Object.keys(memberCal)) {
+		const found = (memberCal[dateISO] || []).find(
+			(m) => m.instanceId === instanceId,
+		);
+		if (found) {
+			current = found;
+			break;
+		}
+	}
+	if (!current) return state;
+
+	const ingredients = (payload.ingredients || [])
+		.map((ing) =>
+			ingredientFromLegacy({
+				name: ing.name,
+				quantity: ing.quantity,
+			}),
+		)
+		.filter((ing) => ing.name);
+
+	const snapshotPatch = {
+		name: payload.name.trim(),
+		mealType: payload.mealType || current.mealType,
+		ingredients,
+	};
+
+	if (disposition === "once" || !current.mealId) {
+		return updateScheduledMeal(state, instanceId, {
+			...snapshotPatch,
+			mealId: null,
+		});
+	}
+
+	if (disposition === "update") {
+		const existing = state.mealLibrary.find((m) => m.id === current.mealId);
+		if (!existing) {
+			return updateScheduledMeal(state, instanceId, {
+				...snapshotPatch,
+				mealId: null,
+			});
+		}
+		const updated = buildLibraryMeal(payload, existing);
+		const withLibrary = {
+			...state,
+			mealLibrary: state.mealLibrary.map((m) =>
+				m.id === current.mealId ? updated : m,
+			),
+		};
+		return updateScheduledMeal(withLibrary, instanceId, {
+			...snapshotPatch,
+			mealId: current.mealId,
+		});
+	}
+
+	if (disposition === "duplicate") {
+		const created = buildLibraryMeal({ ...payload, source: "user" });
+		const withLibrary = {
+			...state,
+			mealLibrary: [...state.mealLibrary, created],
+		};
+		return updateScheduledMeal(withLibrary, instanceId, {
+			...snapshotPatch,
+			mealId: created.id,
+		});
+	}
+
+	return state;
 }
 
 /**
