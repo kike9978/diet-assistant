@@ -1,12 +1,17 @@
+import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAppState } from "../../context/AppState";
+import { useToast } from "../../components/Toast";
 import { DAY_LABEL_MSG } from "../../i18n/weekDayLabels";
 import Button from "../../components/ui/Button";
+import OverflowMenu, { OverflowMenuItem } from "../../components/ui/OverflowMenu";
 import { MEAL_TYPE_MSG } from "../meals/mealTypeLabels.js";
 import MealFlavorText from "../meals/MealFlavorText";
+import MealLibrarySheet from "../meals/MealLibrarySheet.jsx";
+import EditScheduledMealSheet from "../weekplan/EditScheduledMealSheet";
 import {
 	canonicalWeekStartISO,
 	getWeekPlan,
@@ -27,11 +32,19 @@ const DAY_KEYS = [
 ];
 
 /**
- * Day agenda: assign a whole day plan to this date (not individual meals).
+ * Day agenda: assign a whole day plan to this date; tweak individual meals.
  */
 export default function DayView({ dateISO }) {
-	const { state, applyDayPlanToDate, clearCalendarDay } = useAppState();
+	const {
+		state,
+		applyDayPlanToDate,
+		clearCalendarDay,
+		removeMealInstance,
+		replaceMeal,
+	} = useAppState();
 	const { _, i18n } = useLingui();
+	const navigate = useNavigate();
+	const toast = useToast();
 	const memberId = state.household.activeMemberId;
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const weekStartISO = canonicalWeekStartISO(dateISO, weekStartsOn);
@@ -51,9 +64,18 @@ export default function DayView({ dateISO }) {
 
 	const [expandedId, setExpandedId] = useState(null);
 	const [expandedMealId, setExpandedMealId] = useState(null);
+	const [editingMeal, setEditingMeal] = useState(null);
+	const [replacingMeal, setReplacingMeal] = useState(null);
 
 	const planHref = `/plan/week?week=${encodeURIComponent(weekStartISO)}`;
 	const hasAssignSources = dayPlans.length > 0;
+
+	const handleReplacePick = (libraryMeal) => {
+		if (!replacingMeal) return;
+		replaceMeal(replacingMeal.instanceId, libraryMeal.id);
+		setReplacingMeal(null);
+		toast?.success?.(t`Comida sustituida`);
+	};
 
 	return (
 		<section
@@ -99,79 +121,146 @@ export default function DayView({ dateISO }) {
 								key={meal.instanceId}
 								className="border border-border rounded-app overflow-hidden"
 							>
-								<button
-									type="button"
-									className="w-full flex items-center gap-2 px-3 py-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)]"
-									aria-expanded={isExpanded}
-									onClick={() =>
-										setExpandedMealId(isExpanded ? null : meal.instanceId)
-									}
-								>
-									<svg
-										className={`w-4 h-4 shrink-0 text-ink-muted transition-transform ${
-											isExpanded ? "rotate-180" : ""
-										}`}
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-										aria-hidden
+								<div className="flex items-stretch gap-0">
+									<button
+										type="button"
+										className="min-w-0 flex-1 flex items-center gap-2 px-3 py-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)]"
+										aria-expanded={isExpanded}
+										onClick={() =>
+											setExpandedMealId(
+												isExpanded ? null : meal.instanceId,
+											)
+										}
 									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M19 9l-7 7-7-7"
+										<svg
+											className={`w-4 h-4 shrink-0 text-ink-muted transition-transform ${
+												isExpanded ? "rotate-180" : ""
+											}`}
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+											aria-hidden
+										>
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												strokeWidth={2}
+												d="M19 9l-7 7-7-7"
+											/>
+										</svg>
+										<span
+											className="w-2.5 h-2.5 rounded-full shrink-0"
+											style={{
+												backgroundColor:
+													MEAL_TYPE_COLOR[meal.mealType] ||
+													MEAL_TYPE_COLOR.otro,
+											}}
+											aria-hidden
 										/>
-									</svg>
-									<span
-										className="w-2.5 h-2.5 rounded-full shrink-0"
-										style={{
-											backgroundColor:
-												MEAL_TYPE_COLOR[meal.mealType] ||
-												MEAL_TYPE_COLOR.otro,
-										}}
-										aria-hidden
-									/>
-									<div className="min-w-0 flex-1">
-										<h3 className="font-semibold text-ink line-clamp-2">
-											{meal.name}
-										</h3>
-										<p className="text-xs text-ink-muted">
-											{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)}
-											{ingredientCount > 0 ? (
+										<div className="min-w-0 flex-1">
+											<h3 className="font-semibold text-ink line-clamp-2">
+												{meal.name}
+											</h3>
+											<p className="text-xs text-ink-muted">
+												{_(
+													MEAL_TYPE_MSG[meal.mealType] ||
+														MEAL_TYPE_MSG.otro,
+												)}
+												{ingredientCount > 0 ? (
+													<>
+														{" · "}
+														{ingredientCount} <Trans>ingredientes</Trans>
+													</>
+												) : null}
+											</p>
+										</div>
+									</button>
+									<div className="shrink-0 flex items-center pr-1">
+										<OverflowMenu label={t`Opciones de ${meal.name}`}>
+											{(close) => (
 												<>
-													{" · "}
-													{ingredientCount} <Trans>ingredientes</Trans>
+													<OverflowMenuItem
+														onClick={() => {
+															close();
+															setEditingMeal(meal);
+														}}
+													>
+														<Trans>Editar</Trans>
+													</OverflowMenuItem>
+													<OverflowMenuItem
+														onClick={() => {
+															close();
+															if ((state.mealLibrary || []).length === 0) {
+																toast?.error?.(
+																	t`La biblioteca está vacía. Crea una comida primero.`,
+																);
+																navigate("/meals/new");
+																return;
+															}
+															setReplacingMeal(meal);
+														}}
+													>
+														<Trans>Sustituir comida</Trans>
+													</OverflowMenuItem>
+													{meal.mealId ? (
+														<OverflowMenuItem
+															onClick={() => {
+																close();
+																navigate(`/meals/${meal.mealId}`);
+															}}
+														>
+															<Trans>Abrir en biblioteca</Trans>
+														</OverflowMenuItem>
+													) : null}
+													<OverflowMenuItem
+														danger
+														onClick={() => {
+															close();
+															removeMealInstance(meal.instanceId);
+															toast?.success?.(t`Comida quitada del día`);
+														}}
+													>
+														<Trans>Quitar</Trans>
+													</OverflowMenuItem>
 												</>
-											) : null}
-										</p>
+											)}
+										</OverflowMenu>
 									</div>
-								</button>
+								</div>
 
 								{isExpanded ? (
 									<div className="border-t border-border bg-surface-2/40 px-3 py-3 space-y-2">
 										<MealFlavorText text={meal.flavorText} />
 										<ul className="text-sm text-ink-muted space-y-1">
-										{ingredientCount === 0 ? (
-											<li>
-												<Trans>Sin ingredientes</Trans>
-											</li>
-										) : (
-											ingredients.map((ing) => (
-												<li
-													key={
-														ing.id ||
-														`${ing.name}-${quantityLabel(ing.quantity)}`
-													}
-												>
-													{ing.name}
-													{quantityLabel(ing.quantity)
-														? ` (${quantityLabel(ing.quantity)})`
-														: ""}
+											{ingredientCount === 0 ? (
+												<li>
+													<Trans>Sin ingredientes</Trans>
 												</li>
-											))
-										)}
+											) : (
+												ingredients.map((ing) => (
+													<li
+														key={
+															ing.id ||
+															`${ing.name}-${quantityLabel(ing.quantity)}`
+														}
+													>
+														{ing.name}
+														{quantityLabel(ing.quantity)
+															? ` (${quantityLabel(ing.quantity)})`
+															: ""}
+													</li>
+												))
+											)}
 										</ul>
+										<div className="pt-1 flex flex-wrap gap-2">
+											<Button
+												variant="secondary"
+												className="!min-h-9 !px-3 text-xs"
+												onClick={() => setEditingMeal(meal)}
+											>
+												<Trans>Editar</Trans>
+											</Button>
+										</div>
 									</div>
 								) : null}
 							</li>
@@ -317,6 +406,21 @@ export default function DayView({ dateISO }) {
 					</ul>
 				)}
 			</div>
+
+			<EditScheduledMealSheet
+				open={Boolean(editingMeal)}
+				onClose={() => setEditingMeal(null)}
+				instanceId={editingMeal?.instanceId}
+				meal={editingMeal}
+			/>
+
+			<MealLibrarySheet
+				open={Boolean(replacingMeal)}
+				onClose={() => setReplacingMeal(null)}
+				title={<Trans>Sustituir comida</Trans>}
+				meals={state.mealLibrary}
+				onSelect={handleReplacePick}
+			/>
 		</section>
 	);
 }

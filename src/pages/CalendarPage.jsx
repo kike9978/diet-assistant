@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppState } from "../context/AppState";
+import { useToast } from "../components/Toast";
 import CalendarChrome from "../features/calendar/CalendarChrome";
 import DayView from "../features/calendar/DayView";
 import MonthView from "../features/calendar/MonthView";
@@ -12,7 +14,7 @@ import {
 } from "../features/calendar/dateUtils.js";
 import FirstRun from "../components/FirstRun";
 import Button from "../components/ui/Button";
-import ConfirmDialog from "../components/ui/ConfirmDialog";
+import { getWeekReadiness } from "../features/weekplan/weekReadiness.js";
 
 function normalizeCalendarView(view) {
 	return view === "week" ? "week" : "month";
@@ -36,9 +38,10 @@ export default function CalendarPage() {
 		activeMember,
 		setCalendarCursorDate,
 		setCalendarView,
-		prunePastWeeks,
+		fillEmptyWeekDays,
 	} = useAppState();
 	const navigate = useNavigate();
+	const toast = useToast();
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const cursor = state.ui.calendarCursorDate;
 	const view = normalizeCalendarView(
@@ -49,7 +52,6 @@ export default function CalendarPage() {
 	const [selectedDateISO, setSelectedDateISO] = useState(() =>
 		defaultSelectedDate(cursor, weekStartsOn),
 	);
-	const [pruneOpen, setPruneOpen] = useState(false);
 
 	useEffect(() => {
 		if (view !== "week") return;
@@ -61,6 +63,11 @@ export default function CalendarPage() {
 
 	const weekStartISO = weekDateISOs(cursor, weekStartsOn)[0];
 
+	const readiness = useMemo(
+		() => getWeekReadiness(state, weekStartISO),
+		[state, weekStartISO],
+	);
+
 	const handleSelectDateFromMonth = (dateISO) => {
 		setSelectedDateISO(dateISO);
 		setCalendarCursorDate(dateISO);
@@ -70,6 +77,14 @@ export default function CalendarPage() {
 	const handleSelectDate = (dateISO) => {
 		setSelectedDateISO(dateISO);
 		setCalendarCursorDate(dateISO);
+	};
+
+	const handleFillEmpty = () => {
+		const n = fillEmptyWeekDays(weekStartISO);
+		if (n > 0) {
+			toast?.success?.(t`${n} días asignados`);
+			setCalendarView("week");
+		}
 	};
 
 	return (
@@ -98,6 +113,11 @@ export default function CalendarPage() {
 				onToday={(iso) => setSelectedDateISO(iso)}
 				activeMember={activeMember}
 				editPlanWeekStartISO={view === "week" ? weekStartISO : null}
+				assignedDays={view === "week" ? readiness.assignedDays : null}
+				totalDays={view === "week" ? readiness.totalDays : null}
+				canFillEmpty={view === "week" && readiness.canFillEmpty}
+				emptyDays={readiness.emptyDays}
+				onFillEmpty={handleFillEmpty}
 			/>
 
 			{view === "week" ? (
@@ -116,50 +136,33 @@ export default function CalendarPage() {
 			)}
 
 			{!hasContent ? (
-				<p className="text-center text-sm text-ink-muted mt-4">
-					<Link to="/plans" className="text-brand font-semibold underline">
-						<Trans>Importar un plan JSON</Trans>
-					</Link>
-					{" · "}
-					<Link to="/meals/new" className="underline">
+				<p className="text-center text-sm text-ink-muted mt-4 space-x-1">
+					<Link to="/meals/new" className="text-brand font-semibold underline">
 						<Trans>Crear comida</Trans>
+					</Link>
+					<span aria-hidden>·</span>
+					<Link
+						to={`/plan/week?week=${encodeURIComponent(weekStartISO)}`}
+						className="underline"
+					>
+						<Trans>Editar plan de esta semana</Trans>
+					</Link>
+					<span aria-hidden>·</span>
+					<Link to="/plans" className="underline">
+						<Trans>Importar JSON (avanzado)</Trans>
+					</Link>
+				</p>
+			) : readiness.libraryThin && view === "week" ? (
+				<p className="text-center text-sm text-ink-muted mt-4 space-x-1">
+					<Link to="/meals/new" className="text-brand font-semibold underline">
+						<Trans>Nueva comida</Trans>
+					</Link>
+					<span aria-hidden>·</span>
+					<Link to="/plans" className="underline">
+						<Trans>Importar</Trans>
 					</Link>
 				</p>
 			) : null}
-
-			<div className="mt-6 pt-4 border-t border-border">
-				<button
-					type="button"
-					className="text-sm text-ink-muted underline hover:text-ink"
-					onClick={() => setPruneOpen(true)}
-				>
-					<Trans>Limpiar semanas pasadas</Trans>
-				</button>
-				<p className="text-xs text-ink-muted mt-1">
-					<Trans>
-						Borra comidas agendadas de hace más de ~4 meses. La biblioteca no
-						se toca.
-					</Trans>
-				</p>
-			</div>
-
-			<ConfirmDialog
-				open={pruneOpen}
-				danger
-				title={<Trans>Limpiar semanas pasadas</Trans>}
-				description={
-					<Trans>
-						¿Borrar del calendario todo lo anterior a hace unos 4 meses? No
-						afecta la biblioteca.
-					</Trans>
-				}
-				confirmLabel={<Trans>Limpiar</Trans>}
-				onConfirm={() => {
-					prunePastWeeks({ keepMonths: 4 });
-					setPruneOpen(false);
-				}}
-				onCancel={() => setPruneOpen(false)}
-			/>
 		</div>
 	);
 }

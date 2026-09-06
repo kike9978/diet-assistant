@@ -59,7 +59,7 @@ export function canonicalWeekStartISO(dateISO, weekStartsOn = 1) {
 export function createDayPlan(opts = {}) {
 	return {
 		id: opts.id || createId(),
-		name: (opts.name || "Día").trim() || "Día",
+		name: (opts.name || "Menú A").trim() || "Menú A",
 		meals: (opts.meals || []).map((m) =>
 			createDraftMeal({
 				...m,
@@ -69,6 +69,22 @@ export function createDayPlan(opts = {}) {
 			}),
 		),
 	};
+}
+
+/**
+ * Next default day-plan name: Menú A, Menú B, …
+ * @param {{ name?: string }[]} existing
+ */
+export function nextDayPlanName(existing = []) {
+	const used = new Set(
+		(existing || []).map((dp) => (dp.name || "").trim().toLowerCase()),
+	);
+	const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	for (const letter of letters) {
+		const name = `Menú ${letter}`;
+		if (!used.has(name.toLowerCase())) return name;
+	}
+	return `Menú ${existing.length + 1}`;
 }
 
 /**
@@ -719,6 +735,56 @@ export function syncAllWeekPlanAssignmentsFromCalendar(state) {
 		}
 	}
 	return next;
+}
+
+/**
+ * Fill empty calendar days in the week by round-robin over day plans that have meals.
+ * Days that already have scheduled meals are left unchanged.
+ *
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {string} weekStartISO
+ * @param {string} [memberId]
+ * @param {number} [weekStartsOn]
+ * @returns {{ state: import("../../domain/types.js").DietAssistantStateV2, assignedCount: number }}
+ */
+export function fillEmptyWeekDays(
+	state,
+	weekStartISO,
+	memberId,
+	weekStartsOn = 1,
+) {
+	const mid = memberId || state.household.activeMemberId;
+	const key = canonicalWeekStartISO(weekStartISO, weekStartsOn);
+	const plan = getWeekPlan(state, key, mid);
+	const dayPlansWithMeals = (plan?.dayPlans || []).filter(
+		(dp) => (dp.meals || []).length > 0,
+	);
+	if (!dayPlansWithMeals.length) {
+		return { state, assignedCount: 0 };
+	}
+
+	const dates = weekDateISOs(key, weekStartsOn);
+	let next = state;
+	let assignedCount = 0;
+	let planIndex = 0;
+
+	for (const dateISO of dates) {
+		const cal = next.calendars[mid] || {};
+		if ((cal[dateISO] || []).length > 0) continue;
+		const dayPlan = dayPlansWithMeals[planIndex % dayPlansWithMeals.length];
+		planIndex += 1;
+		next = applyDayPlanToDate(
+			next,
+			key,
+			dayPlan.id,
+			dateISO,
+			mid,
+			weekStartsOn,
+		);
+		assignedCount += 1;
+	}
+
+	return { state: next, assignedCount };
 }
 
 /**

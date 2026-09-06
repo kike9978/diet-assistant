@@ -39,13 +39,13 @@ export default function MealSaveDispositionDialog({
 					</p>
 					<div className="flex flex-col gap-2">
 						<Button onClick={() => onChoose("update")}>
-							<Trans>Actualizar guardada</Trans>
+							<Trans>Actualizar biblioteca</Trans>
 						</Button>
 						<Button variant="secondary" onClick={() => onChoose("duplicate")}>
-							<Trans>Duplicar en biblioteca</Trans>
+							<Trans>Guardar como nueva</Trans>
 						</Button>
 						<Button variant="secondary" onClick={() => onChoose("once")}>
-							<Trans>Solo esta vez</Trans>
+							<Trans>Solo este día</Trans>
 						</Button>
 						<Button variant="ghost" onClick={onCancel}>
 							<Trans>Cancelar</Trans>

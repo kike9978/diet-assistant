@@ -30,6 +30,7 @@ import {
 	getWeekPlan,
 	listWeekPlans,
 	applyLibrarySaveToDayPlans,
+	nextDayPlanName,
 	uniqueDayPlanMealsForSave,
 } from "../features/weekplan/weekPlanModel.js";
 
@@ -45,7 +46,10 @@ function loadDayPlansForWeek(state, weekStartISO, dietPlan) {
 	if (existingHasMeals || existing?.dayPlans?.length) {
 		return existing.dayPlans.map((dp) => createDayPlan(dp));
 	}
-	return [createDayPlan({ name: "Día 1" }), createDayPlan({ name: "Día 2" })];
+	return [
+		createDayPlan({ name: "Menú A" }),
+		createDayPlan({ name: "Menú B" }),
+	];
 }
 
 /**
@@ -229,7 +233,7 @@ export default function WeekPlanPage() {
 		const slots = dayPlansFromDietJson(plan);
 		if (!slots.length) {
 			if (mode === "replace") {
-				setDayPlans([createDayPlan({ name: "Día 1" })]);
+				setDayPlans([createDayPlan({ name: "Menú A" })]);
 			}
 			return;
 		}
@@ -378,9 +382,8 @@ export default function WeekPlanPage() {
 
 			<p className="text-sm text-ink-muted">
 				<Trans>
-					Arma los planes de día (comidas por slot). Arrastra para reordenar.
-					Los cambios se guardan solos. Luego, en Semana, asigna cada plan a un
-					día.
+					Arma planes de día y reordena. Se guarda solo. Luego asígnalos en
+					Semana.
 				</Trans>
 			</p>
 
@@ -418,7 +421,7 @@ export default function WeekPlanPage() {
 									}))
 								}
 								onBlur={(e) => {
-									const trimmed = e.target.value.trim() || "Día";
+									const trimmed = e.target.value.trim() || "Menú";
 									if (trimmed === slot.name) return;
 									updateSlot(slot.id, (dp) => ({
 										...dp,
@@ -445,8 +448,10 @@ export default function WeekPlanPage() {
 						</div>
 
 						{slot.meals.length === 0 ? (
-							<p className="text-sm text-ink-muted">
-								<Trans>Sin comidas en este plan de día.</Trans>
+							<p className="text-sm text-ink-muted mb-1">
+								<Trans>
+									Sin comidas. Agrega de la biblioteca o crea una nueva.
+								</Trans>
 							</p>
 						) : (
 							<SortableDayMeals
@@ -493,7 +498,7 @@ export default function WeekPlanPage() {
 					onClick={() =>
 						setDayPlans((prev) => [
 							...prev,
-							createDayPlan({ name: `Día ${prev.length + 1}` }),
+							createDayPlan({ name: nextDayPlanName(prev) }),
 						])
 					}
 				>

@@ -85,7 +85,7 @@ export default function SaveImportedMealsSheet({
 					<Trans>No hay comidas nuevas que guardar.</Trans>
 				</p>
 			) : (
-				<ul className="space-y-2 max-h-72 overflow-y-auto mb-4">
+				<ul className="space-y-2 mb-4">
 					{groups.map((group) => {
 						const checked = group.tempIds.every((id) => selected.has(id));
 						const qtyPreview = (group.meal.ingredients || [])

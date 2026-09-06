@@ -30,22 +30,41 @@ export default function Sheet({
 			<div
 				role="dialog"
 				aria-modal="true"
-				className={`relative w-full ${width} max-h-[90dvh] bg-surface rounded-t-app sm:rounded-app shadow-soft sm:m-4 ${padded
-						? "overflow-y-auto p-5"
-						: "flex h-[90dvh] sm:h-[min(40rem,85dvh)] flex-col overflow-hidden"
-					}`}
+				className={`relative w-full ${width} max-h-[90dvh] bg-surface rounded-t-app sm:rounded-app shadow-soft sm:m-4 flex flex-col overflow-hidden ${
+					padded ? "" : "h-[90dvh] sm:h-[min(40rem,85dvh)]"
+				}`}
 			>
 				{showHeader ? (
-					<div className="flex items-start justify-between gap-3 mb-4">
+					<div
+						className={`flex items-start justify-between gap-3 shrink-0 ${
+							padded ? "px-5 pt-5 pb-4" : "mb-4"
+						}`}
+					>
 						<h3 className="font-display text-xl text-ink">{title}</h3>
 						<Button variant="ghost" className="!min-h-9 !px-2" onClick={onClose}>
 							<Trans>Cerrar</Trans>
 						</Button>
 					</div>
 				) : null}
-				{children}
+				{padded ? (
+					<div
+						className={`min-h-0 overflow-y-auto px-5 ${
+							showHeader ? "" : "pt-5"
+						} ${footer ? "pb-4" : "pb-5"}`}
+					>
+						{children}
+					</div>
+				) : (
+					children
+				)}
 				{footer ? (
-					<div className="mt-5 pt-4 border-t border-border">{footer}</div>
+					<div
+						className={`shrink-0 border-t border-border ${
+							padded ? "px-5 pb-5 pt-4" : "mt-5 pt-4"
+						}`}
+					>
+						{footer}
+					</div>
 				) : null}
 			</div>
 		</div>

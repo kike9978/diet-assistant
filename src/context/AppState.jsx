@@ -30,12 +30,17 @@ import {
 	applyWeekPlanToCalendar as applyWeekPlanToCalendarInState,
 	clearDayPlanAssignment as clearDayPlanAssignmentInState,
 	copyWeekPlan as copyWeekPlanInState,
+	fillEmptyWeekDays as fillEmptyWeekDaysInState,
 	getWeekPlan as getWeekPlanFromState,
 	listWeekPlans as listWeekPlansFromState,
 	saveWeekPlan as saveWeekPlanInState,
 	syncWeekPlanAssignmentsFromCalendar,
 } from "../features/weekplan/weekPlanModel.js";
-import { loadState, saveState, saveStateImmediate } from "../storage/loadSave.js";
+import {
+	loadState,
+	saveState,
+	saveStateImmediate,
+} from "../storage/loadSave.js";
 import {
 	applyShoppingItemSubstitution,
 	clearLineProgress,
@@ -360,6 +365,20 @@ export function AppStateProvider({ children }) {
 		});
 	}, []);
 
+	/** Replace entire app state (backup restore). Persists immediately. */
+	const replaceAllState = useCallback((nextState) => {
+		const next = {
+			...nextState,
+			meta: {
+				...nextState.meta,
+				lastSavedAt: new Date().toISOString(),
+			},
+		};
+		saveStateImmediate(next);
+		setState(next);
+		return next;
+	}, []);
+
 	const setCalendarCursorDate = useCallback((dateISO) => {
 		setState((prev) => ({
 			...prev,
@@ -580,6 +599,22 @@ export function AppStateProvider({ children }) {
 		);
 	}, []);
 
+	/** Fill empty weekdays from day plans (round-robin). Returns how many days were assigned. */
+	const fillEmptyWeekDays = useCallback((weekStartISO) => {
+		let assignedCount = 0;
+		setState((prev) => {
+			const result = fillEmptyWeekDaysInState(
+				prev,
+				weekStartISO,
+				undefined,
+				prev.settings.weekStartsOn ?? 1,
+			);
+			assignedCount = result.assignedCount;
+			return result.state;
+		});
+		return assignedCount;
+	}, []);
+
 	/** @deprecated Prefer saveWeekPlan + applyWeekPlanToCalendar */
 	const commitWeekPlan = useCallback((draft, opts = {}) => {
 		setState((prev) => {
@@ -757,6 +792,7 @@ export function AppStateProvider({ children }) {
 			setLocale,
 			setWeekStartsOn,
 			saveSettings,
+			replaceAllState,
 			setCalendarCursorDate,
 			setCalendarView,
 			clearCalendarDay,
@@ -771,6 +807,7 @@ export function AppStateProvider({ children }) {
 			copyWeekPlan,
 			applyWeekPlanToCalendar,
 			applyDayPlanToDate,
+			fillEmptyWeekDays,
 			commitWeekPlan,
 			saveMealsToLibrary,
 			prunePastWeeks,
@@ -820,6 +857,7 @@ export function AppStateProvider({ children }) {
 			setLocale,
 			setWeekStartsOn,
 			saveSettings,
+			replaceAllState,
 			setCalendarCursorDate,
 			setCalendarView,
 			clearCalendarDay,
@@ -834,6 +872,7 @@ export function AppStateProvider({ children }) {
 			copyWeekPlan,
 			applyWeekPlanToCalendar,
 			applyDayPlanToDate,
+			fillEmptyWeekDays,
 			commitWeekPlan,
 			saveMealsToLibrary,
 			prunePastWeeks,

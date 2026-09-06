@@ -13,8 +13,8 @@ const STEPS = [
 		title: <Trans>Edita el plan de una semana</Trans>,
 		body: (
 			<Trans>
-				En el mes, cada fila es una semana. Usa «Editar plan de semana» para
-				armar planes de día con comidas de la biblioteca o un JSON.
+				Arma planes de día con comidas de la biblioteca. En el mes, cada fila
+				es una semana — usa «Editar plan».
 			</Trans>
 		),
 	},
@@ -22,8 +22,8 @@ const STEPS = [
 		title: <Trans>Asigna en la vista Semana</Trans>,
 		body: (
 			<Trans>
-				Ahí eliges qué plan de día va en cada weekday y lo aplicas al
-				calendario. Luego puedes ajustar comidas día a día.
+				Elige qué plan de día va en cada weekday, o usa «Autocompletar» para
+				asignarlos de una vez.
 			</Trans>
 		),
 	},
@@ -31,8 +31,8 @@ const STEPS = [
 		title: <Trans>Compra y prepara</Trans>,
 		body: (
 			<Trans>
-				Compras usa la semana visible del calendario. Prep vive en la misma
-				sección.
+				Compras y Preparar usan la semana visible del calendario. Cada una
+				tiene su propia pestaña abajo.
 			</Trans>
 		),
 	},
@@ -71,6 +71,11 @@ export default function FirstRun({ onDismiss }) {
 			<p className="text-ink-muted text-sm sm:text-base max-w-prose mb-6">
 				{current.body}
 			</p>
+			{isLast ? (
+				<p className="text-xs text-ink-muted -mt-4 mb-6">
+					<Trans>Los datos viven en este dispositivo.</Trans>
+				</p>
+			) : null}
 			<div className="flex flex-wrap gap-2">
 				{!isLast ? (
 					<Button onClick={() => setStep((s) => s + 1)}>

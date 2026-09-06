@@ -1,16 +1,40 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { useLingui } from "@lingui/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "../context/AppState";
 import { activateLocale } from "../i18n";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
+import { exportState, importState } from "../storage/loadSave.js";
+
+function formatSavedAt(iso, locale) {
+	if (!iso) return null;
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return null;
+	return d.toLocaleString(locale === "en" ? "en-US" : "es-MX", {
+		dateStyle: "medium",
+		timeStyle: "short",
+	});
+}
+
+function backupFilename() {
+	const d = new Date();
+	const yyyy = d.getFullYear();
+	const mm = String(d.getMonth() + 1).padStart(2, "0");
+	const dd = String(d.getDate()).padStart(2, "0");
+	return `malanga-backup-${yyyy}-${mm}-${dd}.json`;
+}
 
 export default function SettingsPage() {
-	const { state, saveSettings, prunePastWeeks } = useAppState();
+	const { state, saveSettings, prunePastWeeks, replaceAllState } = useAppState();
 	const toast = useToast();
+	const { i18n } = useLingui();
+	const fileInputRef = useRef(null);
 	const [pruneOpen, setPruneOpen] = useState(false);
+	const [restoreOpen, setRestoreOpen] = useState(false);
+	const [pendingRestore, setPendingRestore] = useState(null);
 
 	const [draft, setDraft] = useState(() => ({
 		locale: state.settings.locale,
@@ -40,6 +64,11 @@ export default function SettingsPage() {
 		);
 	}, [draft, state.settings]);
 
+	const lastSavedLabel = formatSavedAt(
+		state.meta?.lastSavedAt,
+		i18n.locale,
+	);
+
 	const onSave = async () => {
 		const nextLocale = draft.locale;
 		saveSettings({
@@ -49,9 +78,44 @@ export default function SettingsPage() {
 		});
 		await activateLocale(nextLocale);
 		document.documentElement.lang = nextLocale;
-		toast?.success?.(
-			nextLocale === "en" ? t`Ajustes guardados` : t`Ajustes guardados`,
-		);
+		toast?.success?.(t`Ajustes guardados`);
+	};
+
+	const handleExport = () => {
+		const json = exportState(state);
+		const blob = new Blob([json], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = backupFilename();
+		a.click();
+		URL.revokeObjectURL(url);
+		toast?.success?.(t`Copia de seguridad descargada`);
+	};
+
+	const handleFilePicked = async (e) => {
+		const file = e.target.files?.[0];
+		e.target.value = "";
+		if (!file) return;
+		try {
+			const text = await file.text();
+			const next = importState(text);
+			setPendingRestore(next);
+			setRestoreOpen(true);
+		} catch {
+			toast?.error?.(t`No se pudo leer el archivo. ¿Es una copia de Malanga?`);
+		}
+	};
+
+	const confirmRestore = async () => {
+		if (!pendingRestore) return;
+		const next = replaceAllState(pendingRestore);
+		setRestoreOpen(false);
+		setPendingRestore(null);
+		const locale = next.settings?.locale || "es";
+		await activateLocale(locale);
+		document.documentElement.lang = locale;
+		toast?.success?.(t`Datos restaurados`);
 	};
 
 	return (
@@ -64,6 +128,10 @@ export default function SettingsPage() {
 					<Trans>Guardar ajustes</Trans>
 				</Button>
 			</div>
+
+			<p className="text-sm text-ink-muted -mt-4">
+				<Trans>Los datos viven en este dispositivo.</Trans>
+			</p>
 
 			<label className="block space-y-1">
 				<span className="text-sm font-semibold">
@@ -140,6 +208,42 @@ export default function SettingsPage() {
 				</p>
 			)}
 
+			<div className="space-y-3 pt-2 border-t border-border">
+				<p className="text-sm font-semibold">
+					<Trans>Datos</Trans>
+				</p>
+				{lastSavedLabel ? (
+					<p className="text-xs text-ink-muted">
+						<Trans>Último guardado:</Trans>{" "}
+						<span className="font-semibold text-ink">{lastSavedLabel}</span>
+					</p>
+				) : null}
+				<p className="text-xs text-ink-muted">
+					<Trans>
+						Exporta una copia JSON o restaura una anterior. Restaurar reemplaza
+						todo lo de este dispositivo.
+					</Trans>
+				</p>
+				<div className="flex flex-wrap gap-2">
+					<Button variant="secondary" onClick={handleExport}>
+						<Trans>Exportar datos</Trans>
+					</Button>
+					<Button
+						variant="secondary"
+						onClick={() => fileInputRef.current?.click()}
+					>
+						<Trans>Restaurar datos</Trans>
+					</Button>
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept="application/json,.json"
+						className="hidden"
+						onChange={handleFilePicked}
+					/>
+				</div>
+			</div>
+
 			<div className="space-y-2 pt-2 border-t border-border">
 				<p className="text-sm font-semibold">
 					<Trans>Retención del calendario</Trans>
@@ -161,7 +265,8 @@ export default function SettingsPage() {
 				title={<Trans>Limpiar semanas pasadas</Trans>}
 				description={
 					<Trans>
-						¿Borrar del calendario todo lo anterior a hace unos 4 meses?
+						¿Borrar del calendario todo lo anterior a hace unos 4 meses? No
+						afecta la biblioteca.
 					</Trans>
 				}
 				confirmLabel={<Trans>Limpiar</Trans>}
@@ -171,6 +276,26 @@ export default function SettingsPage() {
 					toast?.success?.(t`Semanas pasadas limpiadas`);
 				}}
 				onCancel={() => setPruneOpen(false)}
+			/>
+
+			<ConfirmDialog
+				open={restoreOpen}
+				danger
+				title={<Trans>Restaurar datos</Trans>}
+				description={
+					<Trans>
+						¿Reemplazar todos los datos de este dispositivo con la copia
+						seleccionada? No se puede deshacer.
+					</Trans>
+				}
+				confirmLabel={<Trans>Restaurar</Trans>}
+				onConfirm={() => {
+					void confirmRestore();
+				}}
+				onCancel={() => {
+					setRestoreOpen(false);
+					setPendingRestore(null);
+				}}
 			/>
 		</div>
 	);

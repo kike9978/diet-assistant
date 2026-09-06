@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -19,8 +19,8 @@ const VIEWS = [
 ];
 
 /**
- * Shared calendar chrome: member + range, prev/next/Hoy, Mes|Semana, optional edit plan.
- * Compact on mobile — two rows max so day content starts higher.
+ * Shared calendar chrome: member + range, prev/next/Hoy, Mes|Semana,
+ * edit plan + optional auto-fill (week view).
  */
 export default function CalendarChrome({
 	view,
@@ -31,6 +31,11 @@ export default function CalendarChrome({
 	onToday,
 	activeMember = null,
 	editPlanWeekStartISO = null,
+	assignedDays = null,
+	totalDays = null,
+	canFillEmpty = false,
+	emptyDays = 0,
+	onFillEmpty = null,
 }) {
 	const { i18n } = useLingui();
 	const locale = i18n.locale === "en" ? "en-US" : "es-MX";
@@ -67,6 +72,11 @@ export default function CalendarChrome({
 
 	const showEditPlan =
 		activeView === "week" && typeof editPlanWeekStartISO === "string";
+	const showAssignMeta =
+		activeView === "week" &&
+		typeof assignedDays === "number" &&
+		typeof totalDays === "number" &&
+		totalDays > 0;
 
 	return (
 		<div className="flex flex-col gap-2 mb-3">
@@ -85,6 +95,15 @@ export default function CalendarChrome({
 								</span>
 								<span className="text-ink-muted"> · </span>
 								<span className="capitalize">{rangeLabel}</span>
+								{showAssignMeta ? (
+									<>
+										<span className="text-ink-muted"> · </span>
+										<span className="tabular-nums text-ink">
+											{assignedDays}/{totalDays}{" "}
+											<Trans>asignados</Trans>
+										</span>
+									</>
+								) : null}
 							</span>
 						</p>
 					) : (
@@ -120,7 +139,7 @@ export default function CalendarChrome({
 				</div>
 			</div>
 
-			<div className="flex items-center justify-between gap-2">
+			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div
 					className="inline-flex rounded-app border border-border bg-surface p-0.5"
 					role="tablist"
@@ -145,12 +164,26 @@ export default function CalendarChrome({
 				</div>
 
 				{showEditPlan ? (
-					<Link
-						to={`/plan/week?week=${encodeURIComponent(editPlanWeekStartISO)}`}
-						className="inline-flex items-center justify-center min-h-9 px-3 rounded-app text-xs font-semibold border border-border bg-surface hover:bg-surface-2"
-					>
-						<Trans>Editar plan</Trans>
-					</Link>
+					<div className="flex items-center gap-1.5 shrink-0">
+						{canFillEmpty && onFillEmpty ? (
+							<Button
+								onClick={onFillEmpty}
+								className="min-h-9 px-3 text-xs"
+							>
+								<Plural
+									value={emptyDays}
+									one="Autocompletar # día"
+									other="Autocompletar # días"
+								/>
+							</Button>
+						) : null}
+						<Link
+							to={`/plan/week?week=${encodeURIComponent(editPlanWeekStartISO)}`}
+							className="inline-flex items-center justify-center min-h-9 px-3 rounded-app text-xs font-semibold border border-border bg-surface hover:bg-surface-2"
+						>
+							<Trans>Editar plan</Trans>
+						</Link>
+					</div>
 				) : null}
 			</div>
 		</div>

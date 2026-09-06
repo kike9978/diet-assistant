@@ -26,6 +26,12 @@ export default function MorePage() {
 			<p className="text-sm text-ink-muted">
 				<Trans>Comidas, familia, herramientas, planes y ajustes.</Trans>
 			</p>
+			<p className="text-xs text-ink-muted">
+				<Trans>Los datos viven en este dispositivo.</Trans>{" "}
+				<Link to="/settings" className="text-brand font-semibold underline">
+					<Trans>Copia de seguridad en Ajustes</Trans>
+				</Link>
+			</p>
 			<ul className="border border-border rounded-app bg-surface overflow-hidden divide-y divide-border">
 				{LINKS.map((item) => (
 					<li key={item.to}>
