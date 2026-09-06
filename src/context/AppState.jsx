@@ -211,6 +211,45 @@ export function AppStateProvider({ children }) {
 		});
 	}, []);
 
+	const fuseShoppingItems = useCallback((memberKeys) => {
+		const unique = [...new Set((memberKeys || []).filter(Boolean))];
+		if (unique.length < 2) return;
+		setState((prev) => {
+			const fusion = {
+				id: createId(),
+				memberKeys: unique,
+			};
+			const checked = { ...(prev.checkedItems || {}) };
+			const allChecked = unique.every((k) => checked[k]);
+			for (const k of unique) {
+				delete checked[k];
+			}
+			if (allChecked) {
+				checked[`fuse:${fusion.id}`] = true;
+			}
+			return {
+				...prev,
+				shoppingFusions: [...(prev.shoppingFusions || []), fusion],
+				checkedItems: checked,
+			};
+		});
+	}, []);
+
+	const unfuseShoppingItem = useCallback((fusionId) => {
+		if (!fusionId) return;
+		setState((prev) => {
+			const checked = { ...(prev.checkedItems || {}) };
+			delete checked[`fuse:${fusionId}`];
+			return {
+				...prev,
+				shoppingFusions: (prev.shoppingFusions || []).filter(
+					(f) => f.id !== fusionId,
+				),
+				checkedItems: checked,
+			};
+		});
+	}, []);
+
 	const addShoppingExtra = useCallback(({ name, quantity, category, note }) => {
 		setState((prev) => {
 			const extra = {
@@ -696,6 +735,8 @@ export function AppStateProvider({ children }) {
 			updateMeal,
 			deleteMeal,
 			setCheckedItems,
+			fuseShoppingItems,
+			unfuseShoppingItem,
 			addShoppingExtra,
 			updateShoppingExtra,
 			removeShoppingExtra,
@@ -753,6 +794,8 @@ export function AppStateProvider({ children }) {
 			updateMeal,
 			deleteMeal,
 			setCheckedItems,
+			fuseShoppingItems,
+			unfuseShoppingItem,
 			addShoppingExtra,
 			updateShoppingExtra,
 			removeShoppingExtra,

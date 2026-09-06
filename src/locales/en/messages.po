@@ -72,6 +72,10 @@ msgstr "{count} items saved to pantry"
 msgid "{fallback}"
 msgstr "{fallback}"
 
+#: src/components/ShoppingList.jsx
+msgid "{fuseSelectedCount, plural, one {# item seleccionado} other {# items seleccionados}}"
+msgstr "{fuseSelectedCount, plural, one {# item selected} other {# items selected}}"
+
 #: src/features/calendar/DayView.jsx
 #~ msgid "{mealCount} comidas"
 #~ msgstr "{mealCount} meals"
@@ -272,6 +276,7 @@ msgid "Cambiar persona"
 msgstr "Switch person"
 
 #: src/components/shopping/AddExtrasSheet.jsx
+#: src/components/ShoppingList.jsx
 #: src/components/ui/base/Modal.jsx
 #: src/components/ui/ConfirmDialog.jsx
 #: src/features/calendar/SubstituteSheet.jsx
@@ -335,6 +340,14 @@ msgstr "Color"
 #: src/pages/FamilyPage.jsx
 msgid "Color {c}"
 msgstr "Color {c}"
+
+#: src/components/ShoppingList.jsx
+msgid "Combinar"
+msgstr "Combine"
+
+#: src/components/ShoppingList.jsx
+msgid "Combinar items"
+msgstr "Combine items"
 
 #: src/features/meals/mealTypeLabels.js
 msgid "Comida"
@@ -565,6 +578,10 @@ msgstr "e.g. Rice"
 #: src/features/calendar/WeekAssignBar.jsx
 #~ msgid "El plan de semana aún no tiene comidas. Edítalo para armar los planes de día."
 #~ msgstr "This week plan has no meals yet. Edit it to build day plans."
+
+#: src/components/ShoppingList.jsx
+msgid "Elige 2 o más items para combinarlos en uno."
+msgstr "Pick 2 or more items to combine into one."
 
 #: src/pages/PrepPage.jsx
 msgid "Elige qué comidas de la semana vas a preparar y revisa los ingredientes agregados."
@@ -844,6 +861,15 @@ msgstr "Go to Week"
 #: src/features/shopping/PrepMode.jsx
 msgid "Ir al calendario"
 msgstr "Go to calendar"
+
+#: src/components/ShoppingList.jsx
+#: src/components/ui/ShoppingListItem.jsx
+msgid "Items combinados"
+msgstr "Combined items"
+
+#: src/components/ShoppingList.jsx
+msgid "Items separados"
+msgstr "Items separated"
 
 #: src/components/DietPlanUploader.jsx
 #: src/features/weekplan/ImportJsonSheet.jsx
@@ -1302,6 +1328,11 @@ msgstr "Select an ingredient"
 msgid "Selecciona un plan de comida de la lista de disponibles."
 msgstr "Select a meal plan from the available list."
 
+#. placeholder {0}: item.name
+#: src/components/ShoppingList.jsx
+msgid "Seleccionar {0} para combinar"
+msgstr "Select {0} to combine"
+
 #: src/features/family/MemberSwitcher.jsx
 msgid "Selector de perfil del hogar"
 msgstr "Household profile switcher"
@@ -1335,6 +1366,10 @@ msgstr "Visible week:"
 #: src/pages/SettingsPage.jsx
 msgid "Semanas pasadas limpiadas"
 msgstr "Past weeks cleared"
+
+#: src/components/ShoppingList.jsx
+msgid "Separar"
+msgstr "Split"
 
 #: src/components/FirstRun.jsx
 #: src/features/calendar/CalendarChrome.jsx

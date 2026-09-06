@@ -84,6 +84,9 @@ export function normalizeV2State(state) {
 		shoppingExtras: Array.isArray(state.shoppingExtras)
 			? state.shoppingExtras
 			: [],
+		shoppingFusions: Array.isArray(state.shoppingFusions)
+			? state.shoppingFusions
+			: [],
 		calendars,
 		weekPlans,
 		ui: {

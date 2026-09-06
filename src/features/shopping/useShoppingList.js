@@ -3,15 +3,17 @@ import {
 	buildShoppingListWithPantry,
 	groupIngredientsByCategory,
 } from "./buildShoppingList.js";
+import { applyShoppingFusions } from "./applyShoppingFusions.js";
 
 /**
- * Derived shopping list from weekPlan + shoppingExtras − pantry.
+ * Derived shopping list from weekPlan + shoppingExtras − pantry,
+ * then shopping-only fusions (display merge; reversible).
  */
 export function useShoppingList(
 	weekPlan,
 	shoppingExtras = [],
 	pantry = [],
-	{ hidePantryCovered = false } = {},
+	{ hidePantryCovered = false, shoppingFusions = [] } = {},
 ) {
 	return useMemo(() => {
 		const withPantry = buildShoppingListWithPantry(
@@ -19,14 +21,15 @@ export function useShoppingList(
 			shoppingExtras,
 			pantry,
 		);
+		const withFusions = applyShoppingFusions(withPantry, shoppingFusions);
 		const filtered = hidePantryCovered
 			? Object.fromEntries(
-					Object.entries(withPantry).filter(
+					Object.entries(withFusions).filter(
 						([, item]) => !item.pantryCovered,
 					),
 				)
-			: withPantry;
+			: withFusions;
 		const grouped = groupIngredientsByCategory(filtered);
 		return { shoppingList: filtered, groupedShoppingList: grouped };
-	}, [weekPlan, shoppingExtras, pantry, hidePantryCovered]);
+	}, [weekPlan, shoppingExtras, pantry, hidePantryCovered, shoppingFusions]);
 }

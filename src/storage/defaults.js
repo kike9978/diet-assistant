@@ -31,6 +31,8 @@ export function createEmptyState() {
 		weekPlans: { [memberId]: {} },
 		pantry: [],
 		shoppingExtras: [],
+		/** @type {{ id: string, memberKeys: string[] }[]} shopping-list display fusions only */
+		shoppingFusions: [],
 		checkedItems: {},
 		mealPrep: {
 			weekStartISO: today,

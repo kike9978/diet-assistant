@@ -120,6 +120,7 @@
  *   weekPlans: { [memberId: string]: { [weekStartISO: string]: WeekPlan } },
  *   pantry: PantryItem[],
  *   shoppingExtras: ShoppingExtra[],
+ *   shoppingFusions: { id: string, memberKeys: string[] }[],
  *   checkedItems: CheckedItems,
  *   mealPrep: MealPrepState,
  *   settings: Settings,

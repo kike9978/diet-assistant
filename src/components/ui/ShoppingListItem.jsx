@@ -16,7 +16,7 @@ function ShoppingListItem({
 
 	const findSources = () => {
 		const sources = [];
-		if (!weekPlan) return sources;
+		if (!weekPlan || item?.isFused) return sources;
 
 		const normalizedName = item.name.toLowerCase();
 
@@ -55,7 +55,12 @@ function ShoppingListItem({
 					>
 						{item.name}
 					</span>
-					{item.variations && item.variations.length > 1 && (
+					{item.isFused ? (
+						<span className="inline-flex items-center mt-1.5 text-[11px] leading-none text-ink-muted bg-surface border border-border px-2 py-1 rounded">
+							<Trans>Items combinados</Trans>
+						</span>
+					) : null}
+					{item.variations && item.variations.length > 1 && !item.isFused && (
 						<div className="text-xs text-gray-500 mt-1">
 							<Trans>Incluye:</Trans> {item.variations.join(", ")}
 						</div>

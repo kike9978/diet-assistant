@@ -10,6 +10,10 @@ export function extraChecklistKey(id) {
 	return `extra:${id}`;
 }
 
+export function fusionChecklistKey(id) {
+	return `fuse:${id}`;
+}
+
 /**
  * Remap legacy checkedItems keys to the stable scheme.
  * Drops unmapped / broken `item.name`-only keys that cannot be normalized safely

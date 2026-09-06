@@ -6,8 +6,10 @@ import {
 import { formatQuantity, parseQuantity } from "../../domain/quantity.js";
 import {
 	extraChecklistKey,
+	fusionChecklistKey,
 	ingredientChecklistKey,
 } from "../shopping/checklistKeys.js";
+import { expandFusedShoppingItem } from "../shopping/applyShoppingFusions.js";
 
 /**
  * @param {string | import("../../domain/types.js").Quantity} quantity
@@ -172,20 +174,32 @@ export function finishShoppingToPantry(state, items = []) {
 	let next = state;
 	const keysToClear = new Set();
 	const extraIdsToRemove = new Set();
+	const fusionIdsToRemove = new Set();
+	let addedCount = 0;
 
 	for (const item of toStock) {
-		next = upsertPantryFromShopping(next, {
-			name: item.name,
-			quantity: quantityForPantryStock(item),
-			category: item.category,
-		});
-		if (item.isExtra && item.extraId) {
-			keysToClear.add(extraChecklistKey(item.extraId));
-			extraIdsToRemove.add(item.extraId);
-		} else {
-			keysToClear.add(
-				ingredientChecklistKey(item.normalizedName || item.name),
-			);
+		const members = expandFusedShoppingItem(item);
+		if (item.isFused && item.fusionId) {
+			fusionIdsToRemove.add(item.fusionId);
+			keysToClear.add(fusionChecklistKey(item.fusionId));
+		}
+
+		for (const member of members) {
+			if (member.pantryCovered) continue;
+			next = upsertPantryFromShopping(next, {
+				name: member.name,
+				quantity: quantityForPantryStock(member),
+				category: member.category,
+			});
+			addedCount += 1;
+			if (member.isExtra && member.extraId) {
+				keysToClear.add(extraChecklistKey(member.extraId));
+				extraIdsToRemove.add(member.extraId);
+			} else {
+				keysToClear.add(
+					ingredientChecklistKey(member.normalizedName || member.name),
+				);
+			}
 		}
 	}
 
@@ -197,14 +211,18 @@ export function finishShoppingToPantry(state, items = []) {
 	const shoppingExtras = (next.shoppingExtras || []).filter(
 		(e) => !extraIdsToRemove.has(e.id),
 	);
+	const shoppingFusions = (next.shoppingFusions || []).filter(
+		(f) => !fusionIdsToRemove.has(f.id),
+	);
 
 	return {
 		state: {
 			...next,
 			checkedItems,
 			shoppingExtras,
+			shoppingFusions,
 		},
-		addedCount: toStock.length,
+		addedCount,
 	};
 }
 

@@ -7,9 +7,9 @@ import { useAppState } from "../context/AppState";
 import { useToast } from "./Toast";
 import { parseDateISO } from "../features/calendar/dateUtils.js";
 import {
-	extraChecklistKey,
-	ingredientChecklistKey,
-} from "../features/shopping/checklistKeys.js";
+	expandFusedShoppingItem,
+	shoppingItemChecklistKey,
+} from "../features/shopping/applyShoppingFusions.js";
 import { useBudget, estimatePrice } from "../features/shopping/useBudget.js";
 import { usePdfExport } from "../features/shopping/usePdfExport.js";
 import { formatShoppingQuantities } from "../features/shopping/applyPantry.js";
@@ -28,8 +28,7 @@ function formatItemQuantity(item) {
 }
 
 function itemKeyFor(item) {
-	if (item.isExtra && item.extraId) return extraChecklistKey(item.extraId);
-	return ingredientChecklistKey(item.normalizedName || item.name);
+	return shoppingItemChecklistKey(item);
 }
 
 function ChecklistCategoryBlocks({
@@ -39,6 +38,10 @@ function ChecklistCategoryBlocks({
 	showSources,
 	onToggle,
 	onMoveToPantry,
+	fuseSelectMode,
+	fuseSelectedKeys,
+	onToggleFuseSelect,
+	onUnfuse,
 }) {
 	return categories.map(({ category, items }) => (
 		<div key={category} className="mb-6">
@@ -49,19 +52,38 @@ function ChecklistCategoryBlocks({
 			<ul className="space-y-2">
 				{items.map((item) => {
 					const key = itemKeyFor(item);
+					const fuseSelected = Boolean(fuseSelectedKeys?.[key]);
+					const canFuseSelect = fuseSelectMode && !item.isFused;
 					return (
 						<li
 							key={key}
-							className={`py-2 px-3 rounded-app ${isChecked ? "bg-[var(--color-accent-leaf)]/10" : "bg-surface-2"}`}
+							className={`py-2 px-3 rounded-app ${
+								canFuseSelect && fuseSelected
+									? "bg-[var(--color-accent-shopping)]/15 ring-2 ring-[var(--color-accent-shopping)]"
+									: isChecked
+										? "bg-[var(--color-accent-leaf)]/10"
+										: "bg-surface-2"
+							}`}
 						>
 							<div className="flex items-start gap-3">
-								<input
-									type="checkbox"
-									checked={isChecked}
-									onChange={() => onToggle(key)}
-									className="mt-1 h-5 w-5 accent-[var(--color-brand)] shrink-0"
-									aria-label={item.name}
-								/>
+								{fuseSelectMode ? (
+									<input
+										type="checkbox"
+										checked={item.isFused ? false : fuseSelected}
+										disabled={item.isFused}
+										onChange={() => onToggleFuseSelect?.(key)}
+										className="mt-1 h-5 w-5 accent-[var(--color-accent-shopping)] shrink-0"
+										aria-label={t`Seleccionar ${item.name} para combinar`}
+									/>
+								) : (
+									<input
+										type="checkbox"
+										checked={isChecked}
+										onChange={() => onToggle(key)}
+										className="mt-1 h-5 w-5 accent-[var(--color-brand)] shrink-0"
+										aria-label={item.name}
+									/>
+								)}
 								<div className="flex-1 min-w-0">
 									<ShoppingListItem
 										item={item}
@@ -69,19 +91,34 @@ function ChecklistCategoryBlocks({
 										formatQuantity={formatItemQuantity}
 										weekPlan={shoppingWeekPlan}
 										showSources={showSources}
-										checked={isChecked}
+										checked={!fuseSelectMode && isChecked}
 									/>
+									{!fuseSelectMode &&
+									(item.isFused ||
+										(!item.isExtra && !item.pantryCovered)) ? (
+										<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+											{item.isFused ? (
+												<button
+													type="button"
+													onClick={() => onUnfuse?.(item.fusionId)}
+													className="text-xs font-medium text-ink underline underline-offset-2 decoration-border hover:text-ink-muted"
+												>
+													<Trans>Separar</Trans>
+												</button>
+											) : null}
+											{!item.isExtra && !item.pantryCovered ? (
+												<button
+													type="button"
+													onClick={() => onMoveToPantry(item)}
+													className="text-xs font-medium text-[var(--color-accent-pantry)] hover:opacity-80"
+												>
+													<Trans>Ya lo tengo → despensa</Trans>
+												</button>
+											) : null}
+										</div>
+									) : null}
 								</div>
 							</div>
-							{!item.isExtra && !item.pantryCovered ? (
-								<button
-									type="button"
-									onClick={() => onMoveToPantry(item)}
-									className="mt-1 text-xs font-semibold text-[var(--color-accent-pantry)]"
-								>
-									<Trans>Ya lo tengo → despensa</Trans>
-								</button>
-							) : null}
 						</li>
 					);
 				})}
@@ -96,6 +133,8 @@ function ShoppingList() {
 		state,
 		visibleWeekDates,
 		setCheckedItems,
+		fuseShoppingItems,
+		unfuseShoppingItem,
 		addShoppingExtra,
 		updateShoppingExtra,
 		removeShoppingExtra,
@@ -105,12 +144,13 @@ function ShoppingList() {
 	const toast = useToast();
 	const { i18n } = useLingui();
 	const checkedItems = state.checkedItems || {};
+	const shoppingFusions = state.shoppingFusions || [];
 	const [hidePantryCovered, setHidePantryCovered] = useState(true);
 	const { shoppingList, groupedShoppingList } = useShoppingList(
 		shoppingWeekPlan,
 		state.shoppingExtras,
 		state.pantry,
-		{ hidePantryCovered },
+		{ hidePantryCovered, shoppingFusions },
 	);
 	const totalBudget = useBudget(groupedShoppingList);
 	const { pdfState, exportToPDF } = usePdfExport();
@@ -126,6 +166,8 @@ function ShoppingList() {
 	const [extrasOpen, setExtrasOpen] = useState(false);
 	const [editingExtra, setEditingExtra] = useState(null);
 	const [finishConfirmOpen, setFinishConfirmOpen] = useState(false);
+	const [fuseSelectMode, setFuseSelectMode] = useState(false);
+	const [fuseSelectedKeys, setFuseSelectedKeys] = useState({});
 
 	const checkedShoppingItems = useMemo(() => {
 		return Object.values(shoppingList).filter((item) => {
@@ -156,6 +198,11 @@ function ShoppingList() {
 		return { uncheckedCategories: unchecked, checkedCategories: checked };
 	}, [groupedShoppingList, checkedItems]);
 
+	const fuseSelectedCount = useMemo(
+		() => Object.values(fuseSelectedKeys).filter(Boolean).length,
+		[fuseSelectedKeys],
+	);
+
 	const handleAddExtras = (items) => {
 		for (const item of items) {
 			addShoppingExtra(item);
@@ -185,14 +232,46 @@ function ShoppingList() {
 		setCheckedItems((prev) => ({ ...prev, [key]: !prev[key] }));
 	};
 
+	const toggleFuseSelect = (key) => {
+		setFuseSelectedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+	};
+
+	const exitFuseSelectMode = () => {
+		setFuseSelectMode(false);
+		setFuseSelectedKeys({});
+	};
+
+	const handleFuseSelected = () => {
+		const keys = Object.entries(fuseSelectedKeys)
+			.filter(([, on]) => on)
+			.map(([k]) => k);
+		if (keys.length < 2) return;
+		fuseShoppingItems(keys);
+		exitFuseSelectMode();
+		toast?.success?.(t`Items combinados`);
+	};
+
+	const handleUnfuse = (fusionId) => {
+		unfuseShoppingItem(fusionId);
+		toast?.success?.(t`Items separados`);
+	};
+
 	const handleMoveToPantry = (item) => {
-		moveToPantryFromShopping({
-			name: item.name,
-			quantity: quantityForPantryStock(item),
-			category: item.category,
-		});
-		const key = itemKeyFor(item);
-		setCheckedItems((prev) => ({ ...prev, [key]: true }));
+		const members = expandFusedShoppingItem(item);
+		for (const member of members) {
+			if (member.pantryCovered) continue;
+			moveToPantryFromShopping({
+				name: member.name,
+				quantity: quantityForPantryStock(member),
+				category: member.category,
+			});
+		}
+		if (item.isFused && item.fusionId) {
+			unfuseShoppingItem(item.fusionId);
+		} else {
+			const key = itemKeyFor(item);
+			setCheckedItems((prev) => ({ ...prev, [key]: true }));
+		}
 		toast?.success?.(t`Guardado en despensa`);
 	};
 
@@ -201,6 +280,7 @@ function ShoppingList() {
 		finishShoppingToPantry(checkedShoppingItems);
 		setFinishConfirmOpen(false);
 		setShowFullScreenChecklist(false);
+		exitFuseSelectMode();
 		if (count > 0) {
 			toast?.success?.(t`${count} items guardados en despensa`);
 		}
@@ -362,6 +442,15 @@ function ShoppingList() {
 																			: ""
 																		: null}
 																</p>
+															) : null}
+															{item.isFused ? (
+																<button
+																	type="button"
+																	onClick={() => handleUnfuse(item.fusionId)}
+																	className="text-xs font-medium text-ink underline underline-offset-2 decoration-border hover:text-ink-muted mt-1.5"
+																>
+																	<Trans>Separar</Trans>
+																</button>
 															) : null}
 														</div>
 														{!item.isExtra && !item.pantryCovered ? (
@@ -530,48 +619,93 @@ function ShoppingList() {
 			/>
 
 			{showFullScreenChecklist && (
-				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto p-4 pb-28">
+				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto pb-28">
 					<div className="max-w-4xl mx-auto">
-						<div className="flex justify-between items-center mb-6">
-							<h2 className="font-display text-2xl">
-								<Trans>Lista de Compras — Checklist</Trans>
-							</h2>
-							<button
-								type="button"
-								onClick={() => setShowFullScreenChecklist(false)}
-								className="min-h-11 min-w-11 rounded-full hover:bg-surface-2"
-								aria-label={t`Cerrar`}
+						<div
+							className={
+								fuseSelectMode
+									? "sticky top-0 z-10 px-4 pt-4 pb-3 mb-4 bg-surface/95 backdrop-blur border-b border-border"
+									: "px-4 pt-4"
+							}
+						>
+							<div
+								className={`flex justify-between items-center ${fuseSelectMode ? "mb-3" : "mb-6"}`}
 							>
-								✕
-							</button>
-						</div>
-						<div className="flex flex-wrap gap-2 mb-4">
-							<button
-								type="button"
-								onClick={handleCheckAll}
-								className="min-h-11 px-3 rounded-app bg-[var(--color-accent-leaf)]/20 text-brand font-semibold"
+								<h2 className="font-display text-2xl">
+									<Trans>Lista de Compras — Checklist</Trans>
+								</h2>
+								<button
+									type="button"
+									onClick={() => {
+										exitFuseSelectMode();
+										setShowFullScreenChecklist(false);
+									}}
+									className="min-h-11 min-w-11 rounded-full hover:bg-surface-2"
+									aria-label={t`Cerrar`}
+								>
+									✕
+								</button>
+							</div>
+							<div
+								className={`flex flex-wrap gap-2 ${fuseSelectMode ? "" : "mb-4"}`}
 							>
-								<Trans>Marcar todos</Trans>
-							</button>
-							<button
-								type="button"
-								onClick={handleUncheckAll}
-								className="min-h-11 px-3 rounded-app bg-[var(--color-danger-soft)] text-[var(--color-danger)] font-semibold"
-							>
-								<Trans>Desmarcar todo</Trans>
-							</button>
-							<button
-								type="button"
-								onClick={() => setShowSources(!showSources)}
-								className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
-							>
-								{showSources ? (
-									<Trans>Ocultar fuentes</Trans>
+								{!fuseSelectMode ? (
+									<>
+										<button
+											type="button"
+											onClick={handleCheckAll}
+											className="min-h-11 px-3 rounded-app bg-[var(--color-accent-leaf)]/20 text-brand font-semibold"
+										>
+											<Trans>Marcar todos</Trans>
+										</button>
+										<button
+											type="button"
+											onClick={handleUncheckAll}
+											className="min-h-11 px-3 rounded-app bg-[var(--color-danger-soft)] text-[var(--color-danger)] font-semibold"
+										>
+											<Trans>Desmarcar todo</Trans>
+										</button>
+										<button
+											type="button"
+											onClick={() => {
+												setFuseSelectMode(true);
+												setFuseSelectedKeys({});
+											}}
+											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
+										>
+											<Trans>Combinar items</Trans>
+										</button>
+										<button
+											type="button"
+											onClick={() => setShowSources(!showSources)}
+											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
+										>
+											{showSources ? (
+												<Trans>Ocultar fuentes</Trans>
+											) : (
+												<Trans>Mostrar fuentes</Trans>
+											)}
+										</button>
+									</>
 								) : (
-									<Trans>Mostrar fuentes</Trans>
+									<>
+										<p className="text-sm text-ink-muted self-center">
+											<Trans>
+												Elige 2 o más items para combinarlos en uno.
+											</Trans>
+										</p>
+										<button
+											type="button"
+											onClick={exitFuseSelectMode}
+											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
+										>
+											<Trans>Cancelar</Trans>
+										</button>
+									</>
 								)}
-							</button>
+							</div>
 						</div>
+						<div className="px-4">
 						{uncheckedCategories.length > 0 ? (
 							<section className="mb-2">
 								<h2 className="font-display text-xl text-ink mb-4">
@@ -584,6 +718,10 @@ function ShoppingList() {
 									showSources={showSources}
 									onToggle={toggleItem}
 									onMoveToPantry={handleMoveToPantry}
+									fuseSelectMode={fuseSelectMode}
+									fuseSelectedKeys={fuseSelectedKeys}
+									onToggleFuseSelect={toggleFuseSelect}
+									onUnfuse={handleUnfuse}
 								/>
 							</section>
 						) : null}
@@ -599,12 +737,34 @@ function ShoppingList() {
 									showSources={showSources}
 									onToggle={toggleItem}
 									onMoveToPantry={handleMoveToPantry}
+									fuseSelectMode={fuseSelectMode}
+									fuseSelectedKeys={fuseSelectedKeys}
+									onToggleFuseSelect={toggleFuseSelect}
+									onUnfuse={handleUnfuse}
 								/>
 							</section>
 						) : null}
+						</div>
 					</div>
 
-					{checkedShoppingItems.length > 0 ? (
+					{fuseSelectMode && fuseSelectedCount >= 2 ? (
+						<div className="fixed bottom-0 inset-x-0 z-[60] border-t border-border bg-surface/95 backdrop-blur px-4 py-3">
+							<div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+								<p className="text-sm text-ink-muted">
+									<Plural
+										value={fuseSelectedCount}
+										one="# item seleccionado"
+										other="# items seleccionados"
+									/>
+								</p>
+								<Button onClick={handleFuseSelected} className="w-full sm:w-auto">
+									<Trans>Combinar</Trans>
+								</Button>
+							</div>
+						</div>
+					) : null}
+
+					{!fuseSelectMode && checkedShoppingItems.length > 0 ? (
 						<div className="fixed bottom-0 inset-x-0 z-[60] border-t border-border bg-surface/95 backdrop-blur px-4 py-3">
 							<div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
 								<p className="text-sm text-ink-muted">
