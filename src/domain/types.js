@@ -106,6 +106,7 @@
  *   weekStartISO: string,
  *   memberId: string,
  *   dayPlans: DayPlan[],
+ *   assignments?: { [dateISO: string]: string | null },
  *   updatedAt: string
  * }} WeekPlan
  *

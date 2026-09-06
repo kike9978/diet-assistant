@@ -107,7 +107,9 @@ export default function WeekPlanPage() {
 
 	const setDayPlans = (next) => {
 		dirtyRef.current = true;
-		setDayPlansState(next);
+		setDayPlansState((prev) =>
+			typeof next === "function" ? next(prev) : next,
+		);
 	};
 
 	const [librarySlotId, setLibrarySlotId] = useState(null);
@@ -404,6 +406,7 @@ export default function WeekPlanPage() {
 					>
 						<div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
 							<input
+								type="text"
 								value={slot.name}
 								onChange={(e) =>
 									updateSlot(slot.id, (dp) => ({
@@ -411,7 +414,16 @@ export default function WeekPlanPage() {
 										name: e.target.value,
 									}))
 								}
-								className="font-display text-lg text-ink bg-transparent border-b border-transparent focus:border-border outline-none min-w-[8rem]"
+								onBlur={(e) => {
+									const trimmed = e.target.value.trim() || "Día";
+									if (trimmed === slot.name) return;
+									updateSlot(slot.id, (dp) => ({
+										...dp,
+										name: trimmed,
+									}));
+								}}
+								placeholder={t`Nombre del plan de día`}
+								className="flex-1 min-w-[8rem] font-display text-lg text-ink bg-surface-2/40 border border-border rounded-app px-2.5 py-1 outline-none cursor-text focus:border-[var(--color-brand)] focus:ring-1 focus:ring-[var(--color-brand)]"
 								aria-label={t`Nombre del plan de día`}
 							/>
 							{dayPlans.length > 1 ? (

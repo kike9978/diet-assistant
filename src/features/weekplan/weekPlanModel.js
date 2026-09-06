@@ -59,9 +59,15 @@ export function createDayPlan(opts = {}) {
  * @param {string} weekStartISO
  * @param {string} memberId
  * @param {DayPlan[]} [dayPlans]
+ * @param {{ [dateISO: string]: string | null }} [assignments]
  * @returns {WeekPlan}
  */
-export function createWeekPlan(weekStartISO, memberId, dayPlans = []) {
+export function createWeekPlan(
+	weekStartISO,
+	memberId,
+	dayPlans = [],
+	assignments = {},
+) {
 	return {
 		weekStartISO,
 		memberId,
@@ -71,6 +77,7 @@ export function createWeekPlan(weekStartISO, memberId, dayPlans = []) {
 				name: dp.name || `Día ${i + 1}`,
 			}),
 		),
+		assignments: { ...(assignments || {}) },
 		updatedAt: new Date().toISOString(),
 	};
 }
@@ -111,7 +118,52 @@ export function listWeekPlans(state, memberId) {
 }
 
 /**
+ * Keep date→dayPlanId links that still point at a current day-plan slot.
+ * @param {{ [dateISO: string]: string | null } | undefined} assignments
+ * @param {DayPlan[]} dayPlans
+ */
+function pruneAssignments(assignments, dayPlans) {
+	const validIds = new Set((dayPlans || []).map((dp) => dp.id));
+	/** @type {{ [dateISO: string]: string | null }} */
+	const next = {};
+	for (const [dateISO, dayPlanId] of Object.entries(assignments || {})) {
+		if (dayPlanId && validIds.has(dayPlanId)) next[dateISO] = dayPlanId;
+	}
+	return next;
+}
+
+/**
+ * Write weekPlans[member][weekStart] with a patched WeekPlan.
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {string} memberId
+ * @param {string} weekStartISO
+ * @param {WeekPlan} plan
+ */
+function putWeekPlan(state, memberId, weekStartISO, plan) {
+	const weekStartsOn = state.settings?.weekStartsOn ?? 1;
+	const key = canonicalWeekStartISO(weekStartISO, weekStartsOn);
+	const memberPlans = { ...(state.weekPlans?.[memberId] || {}) };
+	for (const existingKey of Object.keys(memberPlans)) {
+		if (
+			existingKey !== key &&
+			canonicalWeekStartISO(existingKey, weekStartsOn) === key
+		) {
+			delete memberPlans[existingKey];
+		}
+	}
+	memberPlans[key] = { ...plan, weekStartISO: key, memberId };
+	return {
+		...state,
+		weekPlans: {
+			...(state.weekPlans || {}),
+			[memberId]: memberPlans,
+		},
+	};
+}
+
+/**
  * Save / replace a week plan (does not touch calendars).
+ * Preserves date→day-plan assignments for slots that still exist.
  * @param {import("../../domain/types.js").DietAssistantStateV2} state
  * @param {string} weekStartISO
  * @param {DayPlan[]} dayPlans
@@ -121,24 +173,15 @@ export function saveWeekPlan(state, weekStartISO, dayPlans, memberId) {
 	const mid = memberId || state.household.activeMemberId;
 	const weekStartsOn = state.settings?.weekStartsOn ?? 1;
 	const key = canonicalWeekStartISO(weekStartISO, weekStartsOn);
-	const plan = createWeekPlan(key, mid, dayPlans);
-	const memberPlans = { ...(state.weekPlans?.[mid] || {}) };
-	// Drop stale keys that resolve to the same week
-	for (const existingKey of Object.keys(memberPlans)) {
-		if (
-			existingKey !== key &&
-			canonicalWeekStartISO(existingKey, weekStartsOn) === key
-		) {
-			delete memberPlans[existingKey];
-		}
-	}
-	memberPlans[key] = plan;
+	const existing = getWeekPlan(state, key, mid);
+	const plan = createWeekPlan(
+		key,
+		mid,
+		dayPlans,
+		pruneAssignments(existing?.assignments, dayPlans),
+	);
 	return {
-		...state,
-		weekPlans: {
-			...(state.weekPlans || {}),
-			[mid]: memberPlans,
-		},
+		...putWeekPlan(state, mid, key, plan),
 		ui: { ...state.ui, onboardingDismissed: true },
 	};
 }
@@ -318,9 +361,25 @@ export function applyDayPlanToDate(
 		draftMealToScheduled(meal, dateISO, mid),
 	);
 
+	const nextPlan = {
+		...(plan || createWeekPlan(key, mid, [])),
+		assignments: {
+			...(plan?.assignments || {}),
+			[dateISO]: dayPlanId,
+		},
+		updatedAt: new Date().toISOString(),
+	};
+
 	return {
-		...state,
-		calendars: { ...state.calendars, [mid]: memberCal },
+		...putWeekPlan(
+			{
+				...state,
+				calendars: { ...state.calendars, [mid]: memberCal },
+			},
+			mid,
+			key,
+			nextPlan,
+		),
 		ui: { ...state.ui, calendarCursorDate: dateISO },
 	};
 }
@@ -349,26 +408,44 @@ export function applyWeekPlanToCalendar(
 		(plan.dayPlans || []).map((dp) => [dp.id, dp]),
 	);
 	const memberCal = { ...(state.calendars[mid] || {}) };
+	/** @type {{ [dateISO: string]: string | null }} */
+	const nextAssignments = { ...(plan.assignments || {}) };
 
 	for (const dateISO of weekDates) {
 		const dayPlanId = assignment?.[dateISO];
 		if (!dayPlanId) {
 			memberCal[dateISO] = [];
+			delete nextAssignments[dateISO];
 			continue;
 		}
 		const dayPlan = dayById[dayPlanId];
 		if (!dayPlan) {
 			memberCal[dateISO] = [];
+			delete nextAssignments[dateISO];
 			continue;
 		}
 		memberCal[dateISO] = (dayPlan.meals || []).map((meal) =>
 			draftMealToScheduled(meal, dateISO, mid),
 		);
+		nextAssignments[dateISO] = dayPlanId;
 	}
 
+	const nextPlan = {
+		...plan,
+		assignments: nextAssignments,
+		updatedAt: new Date().toISOString(),
+	};
+
 	return {
-		...state,
-		calendars: { ...state.calendars, [mid]: memberCal },
+		...putWeekPlan(
+			{
+				...state,
+				calendars: { ...state.calendars, [mid]: memberCal },
+			},
+			mid,
+			weekStartISO,
+			nextPlan,
+		),
 		ui: {
 			...state.ui,
 			calendarCursorDate: weekStartISO,
@@ -376,6 +453,51 @@ export function applyWeekPlanToCalendar(
 			onboardingDismissed: true,
 		},
 	};
+}
+
+/**
+ * Clear the day-plan assignment for a calendar date (does not touch meals).
+ * @param {import("../../domain/types.js").DietAssistantStateV2} state
+ * @param {string} dateISO
+ * @param {string} [memberId]
+ * @param {number} [weekStartsOn]
+ */
+export function clearDayPlanAssignment(
+	state,
+	dateISO,
+	memberId,
+	weekStartsOn = 1,
+) {
+	const mid = memberId || state.household.activeMemberId;
+	const key = canonicalWeekStartISO(dateISO, weekStartsOn);
+	const plan = getWeekPlan(state, key, mid);
+	if (!plan?.assignments?.[dateISO]) return state;
+
+	const assignments = { ...(plan.assignments || {}) };
+	delete assignments[dateISO];
+	return putWeekPlan(state, mid, key, {
+		...plan,
+		assignments,
+		updatedAt: new Date().toISOString(),
+	});
+}
+
+/**
+ * Resolve which day plan a calendar date points to.
+ * Prefers stored assignment; falls back to meal matching for older data.
+ * @param {WeekPlan | null | undefined} weekPlan
+ * @param {string} dateISO
+ * @param {{ mealId?: string | null, name?: string }[]} [meals]
+ * @returns {DayPlan | null}
+ */
+export function resolveDayPlanForDate(weekPlan, dateISO, meals) {
+	if (!weekPlan) return null;
+	const assignedId = weekPlan.assignments?.[dateISO];
+	if (assignedId) {
+		const byId = (weekPlan.dayPlans || []).find((dp) => dp.id === assignedId);
+		if (byId) return byId;
+	}
+	return matchDayPlanForMeals(weekPlan.dayPlans, meals || []);
 }
 
 /**
@@ -393,6 +515,67 @@ export function weekPlanExists(plan) {
 export function weekPlanHasContent(plan) {
 	if (!weekPlanExists(plan)) return false;
 	return plan.dayPlans.some((dp) => (dp.meals || []).length > 0);
+}
+
+/**
+ * Stable identity keys for matching a scheduled/draft meal to a day-plan meal.
+ * Includes both mealId and name so library-link updates still match.
+ * @param {{ mealId?: string | null, name?: string }} meal
+ * @returns {Set<string>}
+ */
+function mealIdentityKeys(meal) {
+	const keys = new Set();
+	if (meal?.mealId) keys.add(`id:${meal.mealId}`);
+	const name = (meal?.name || "").trim().toLowerCase();
+	if (name) keys.add(`name:${name}`);
+	return keys;
+}
+
+/**
+ * Whether two meal lists represent the same day-plan slot (order-insensitive).
+ * @param {{ mealId?: string | null, name?: string }[]} a
+ * @param {{ mealId?: string | null, name?: string }[]} b
+ */
+function mealsMatchAsSet(a, b) {
+	if (a.length !== b.length) return false;
+	const used = new Set();
+	for (const mealA of a) {
+		const keysA = mealIdentityKeys(mealA);
+		let found = -1;
+		for (let i = 0; i < b.length; i++) {
+			if (used.has(i)) continue;
+			const keysB = mealIdentityKeys(b[i]);
+			let overlap = false;
+			for (const key of keysA) {
+				if (keysB.has(key)) {
+					overlap = true;
+					break;
+				}
+			}
+			if (overlap) {
+				found = i;
+				break;
+			}
+		}
+		if (found === -1) return false;
+		used.add(found);
+	}
+	return true;
+}
+
+/**
+ * Find the week-plan day slot whose meals match a calendar day's scheduled meals.
+ * @param {DayPlan[] | null | undefined} dayPlans
+ * @param {{ mealId?: string | null, name?: string }[]} meals
+ * @returns {DayPlan | null}
+ */
+export function matchDayPlanForMeals(dayPlans, meals) {
+	if (!meals?.length) return null;
+	for (const dp of dayPlans || []) {
+		const planMeals = dp.meals || [];
+		if (mealsMatchAsSet(planMeals, meals)) return dp;
+	}
+	return null;
 }
 
 /**

@@ -73,10 +73,6 @@ export default function CalendarPage() {
 		setCalendarCursorDate(dateISO);
 	};
 
-	const handleOpenMeal = (meal) => {
-		handleSelectDate(meal.dateISO);
-	};
-
 	return (
 		<div>
 			{showOnboarding ? <FirstRun /> : null}
@@ -106,7 +102,6 @@ export default function CalendarPage() {
 					<WeekView
 						selectedDateISO={selectedDateISO}
 						onSelectDate={handleSelectDate}
-						onOpenMeal={handleOpenMeal}
 					/>
 					<DayView dateISO={selectedDateISO} />
 				</>

@@ -31,6 +31,7 @@ import {
 	applyLibrarySaveToDayPlans,
 	applyDayPlanToDate as applyDayPlanToDateInState,
 	applyWeekPlanToCalendar as applyWeekPlanToCalendarInState,
+	clearDayPlanAssignment as clearDayPlanAssignmentInState,
 	copyWeekPlan as copyWeekPlanInState,
 	getWeekPlan as getWeekPlanFromState,
 	listWeekPlans as listWeekPlansFromState,
@@ -366,27 +367,103 @@ export function AppStateProvider({ children }) {
 	}, []);
 
 	const clearCalendarDay = useCallback((dateISO) => {
-		setState((prev) => clearCalendarDayInState(prev, dateISO));
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			return clearDayPlanAssignmentInState(
+				clearCalendarDayInState(prev, dateISO),
+				dateISO,
+				undefined,
+				weekStartsOn,
+			);
+		});
 	}, []);
 
 	const scheduleMeal = useCallback((mealId, dateISO) => {
-		setState((prev) => scheduleLibraryMealInState(prev, mealId, dateISO));
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			return clearDayPlanAssignmentInState(
+				scheduleLibraryMealInState(prev, mealId, dateISO),
+				dateISO,
+				undefined,
+				weekStartsOn,
+			);
+		});
 	}, []);
 
 	const replaceMeal = useCallback((instanceId, mealId) => {
-		setState((prev) =>
-			replaceScheduledMealInState(prev, instanceId, mealId),
-		);
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			const mid = prev.household.activeMemberId;
+			const cal = prev.calendars[mid] || {};
+			const dateISO = Object.keys(cal).find((d) =>
+				(cal[d] || []).some((m) => m.instanceId === instanceId),
+			);
+			let next = replaceScheduledMealInState(prev, instanceId, mealId);
+			if (dateISO) {
+				next = clearDayPlanAssignmentInState(
+					next,
+					dateISO,
+					undefined,
+					weekStartsOn,
+				);
+			}
+			return next;
+		});
 	}, []);
 
 	const removeMealInstance = useCallback((instanceId) => {
-		setState((prev) => removeScheduledMealInState(prev, instanceId));
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			const mid = prev.household.activeMemberId;
+			const cal = prev.calendars[mid] || {};
+			const dateISO = Object.keys(cal).find((d) =>
+				(cal[d] || []).some((m) => m.instanceId === instanceId),
+			);
+			let next = removeScheduledMealInState(prev, instanceId);
+			if (dateISO) {
+				next = clearDayPlanAssignmentInState(
+					next,
+					dateISO,
+					undefined,
+					weekStartsOn,
+				);
+			}
+			return next;
+		});
 	}, []);
 
 	const moveMealInstance = useCallback((instanceId, toDateISO, toIndex) => {
-		setState((prev) =>
-			moveScheduledMealInState(prev, instanceId, toDateISO, toIndex),
-		);
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			const mid = prev.household.activeMemberId;
+			const cal = prev.calendars[mid] || {};
+			const fromDateISO = Object.keys(cal).find((d) =>
+				(cal[d] || []).some((m) => m.instanceId === instanceId),
+			);
+			let next = moveScheduledMealInState(
+				prev,
+				instanceId,
+				toDateISO,
+				toIndex,
+			);
+			if (fromDateISO) {
+				next = clearDayPlanAssignmentInState(
+					next,
+					fromDateISO,
+					undefined,
+					weekStartsOn,
+				);
+			}
+			if (toDateISO && toDateISO !== fromDateISO) {
+				next = clearDayPlanAssignmentInState(
+					next,
+					toDateISO,
+					undefined,
+					weekStartsOn,
+				);
+			}
+			return next;
+		});
 	}, []);
 
 	const substituteIngredient = useCallback((payload) => {
@@ -394,7 +471,24 @@ export function AppStateProvider({ children }) {
 	}, []);
 
 	const updateScheduledMeal = useCallback((instanceId, patch) => {
-		setState((prev) => updateScheduledMealInState(prev, instanceId, patch));
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			const mid = prev.household.activeMemberId;
+			const cal = prev.calendars[mid] || {};
+			const dateISO = Object.keys(cal).find((d) =>
+				(cal[d] || []).some((m) => m.instanceId === instanceId),
+			);
+			let next = updateScheduledMealInState(prev, instanceId, patch);
+			if (dateISO) {
+				next = clearDayPlanAssignmentInState(
+					next,
+					dateISO,
+					undefined,
+					weekStartsOn,
+				);
+			}
+			return next;
+		});
 	}, []);
 
 	const applyMealSaveDisposition = useCallback((opts) => {

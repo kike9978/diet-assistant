@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
+import { createDraftMeal } from "./weekDraft.js";
 import {
 	applyDayPlanToDate,
 	applyWeekPlanToCalendar,
+	clearDayPlanAssignment,
 	copyWeekPlan,
 	createDayPlan,
-	createDraftMeal,
 	createWeekPlan,
 	dayPlansFromDietJson,
 	defaultAssignment,
 	getWeekPlan,
+	matchDayPlanForMeals,
+	resolveDayPlanForDate,
 	saveWeekPlan,
 	weekPlanExists,
 	weekPlanHasContent,
@@ -163,6 +166,9 @@ describe("weekPlanModel", () => {
 		expect(state.calendars.m1["2026-09-02"][0].name).toBe("Desayuno: Huevos");
 		expect(state.calendars.m1["2026-09-01"][0].name).toBe("Existing");
 		expect(state.ui.calendarCursorDate).toBe("2026-09-02");
+		expect(getWeekPlan(state, "2026-08-31").assignments["2026-09-02"]).toBe(
+			plan.dayPlans[0].id,
+		);
 	});
 
 	it("applyWeekPlanToCalendar writes scheduled meals by assignment", () => {
@@ -203,6 +209,10 @@ describe("weekPlanModel", () => {
 		expect(state.calendars.m1["2026-09-01"][0].name).toBe("Comida: Sopa");
 		expect(state.calendars.m1["2026-09-02"]).toEqual([]);
 		expect(state.ui.calendarView).toBe("week");
+		const saved = getWeekPlan(state, "2026-08-31");
+		expect(saved.assignments["2026-08-31"]).toBe(plan.dayPlans[0].id);
+		expect(saved.assignments["2026-09-01"]).toBe(plan.dayPlans[1].id);
+		expect(saved.assignments["2026-09-02"]).toBeUndefined();
 	});
 
 	it("getWeekPlan finds plan via canonical week key", () => {
@@ -221,5 +231,103 @@ describe("weekPlanModel", () => {
 		expect(getWeekPlan(state, "2026-08-31")?.dayPlans[0].name).toBe("Día 1");
 		expect(getWeekPlan(state, "2026-09-05")?.dayPlans[0].name).toBe("Día 1");
 		expect(weekPlanExists(getWeekPlan(state, "2026-09-03"))).toBe(true);
+	});
+
+	it("matchDayPlanForMeals finds the day plan by meal names", () => {
+		const dayPlans = [
+			createDayPlan({
+				name: "Día 1",
+				meals: [
+					createDraftMeal({
+						name: "Desayuno: Pan con aguacate",
+						ingredients: [{ name: "Pan", quantity: "2" }],
+					}),
+					createDraftMeal({
+						name: "Comida: Bowl de quinoa",
+						ingredients: [{ name: "Quinoa", quantity: "1 taza" }],
+					}),
+				],
+			}),
+			createDayPlan({
+				name: "Día 2",
+				meals: [
+					createDraftMeal({
+						name: "Cena: Pescado",
+						ingredients: [{ name: "Pescado", quantity: "150g" }],
+					}),
+				],
+			}),
+		];
+		const matched = matchDayPlanForMeals(dayPlans, [
+			{ name: "Comida: Bowl de quinoa", mealId: null },
+			{ name: "Desayuno: Pan con aguacate", mealId: null },
+		]);
+		expect(matched?.name).toBe("Día 1");
+		expect(matchDayPlanForMeals(dayPlans, [{ name: "Other" }])).toBeNull();
+		expect(matchDayPlanForMeals(dayPlans, [])).toBeNull();
+	});
+
+	it("matchDayPlanForMeals matches when only one side has mealId", () => {
+		const dayPlans = [
+			createDayPlan({
+				name: "Día 1",
+				meals: [
+					createDraftMeal({
+						name: "Desayuno: Huevos",
+						mealId: "lib-1",
+						ingredients: [{ name: "Huevo", quantity: "2" }],
+					}),
+				],
+			}),
+		];
+		expect(
+			matchDayPlanForMeals(dayPlans, [
+				{ name: "Desayuno: Huevos", mealId: null },
+			])?.name,
+		).toBe("Día 1");
+	});
+
+	it("resolveDayPlanForDate prefers stored assignment over meal matching", () => {
+		const dayPlans = [
+			createDayPlan({
+				name: "Día A",
+				meals: [
+					createDraftMeal({
+						name: "A",
+						ingredients: [{ name: "x", quantity: "1" }],
+					}),
+				],
+			}),
+			createDayPlan({
+				name: "Día B",
+				meals: [
+					createDraftMeal({
+						name: "B",
+						ingredients: [{ name: "y", quantity: "1" }],
+					}),
+				],
+			}),
+		];
+		let state = saveWeekPlan(baseState(), "2026-08-31", dayPlans);
+		const plan = getWeekPlan(state, "2026-08-31");
+		state = applyDayPlanToDate(
+			state,
+			"2026-08-31",
+			plan.dayPlans[1].id,
+			"2026-09-01",
+		);
+		const resolved = resolveDayPlanForDate(
+			getWeekPlan(state, "2026-08-31"),
+			"2026-09-01",
+			[{ name: "A", mealId: null }],
+		);
+		expect(resolved?.name).toBe("Día B");
+
+		state = clearDayPlanAssignment(state, "2026-09-01");
+		expect(
+			resolveDayPlanForDate(getWeekPlan(state, "2026-08-31"), "2026-09-01", [
+				{ name: "B", mealId: null },
+			])?.name,
+		).toBe("Día B");
 	});
 });
