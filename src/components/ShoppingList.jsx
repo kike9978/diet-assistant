@@ -762,9 +762,9 @@ function ShoppingList() {
 			/>
 
 			{showFullScreenChecklist ? (
-				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto">
-					<div className="max-w-4xl mx-auto">
-						<div className="sticky top-0 z-10 px-4 pt-4 pb-3 mb-4 bg-surface/95 backdrop-blur border-b border-border">
+				<div className="fixed inset-0 z-50 bg-surface flex flex-col">
+					<div className="shrink-0 px-4 pt-4 pb-3 bg-surface/95 backdrop-blur border-b border-border">
+						<div className="max-w-4xl mx-auto">
 							<div className="flex items-center justify-between gap-2">
 								<h2 className="font-display text-2xl min-w-0 truncate">
 									{fuseSelectMode ? (
@@ -853,7 +853,10 @@ function ShoppingList() {
 								</p>
 							) : null}
 						</div>
-						<div className="px-4">
+					</div>
+
+					<div className="flex-1 min-h-0 overflow-y-auto">
+						<div className="max-w-4xl mx-auto px-4 py-4">
 							{uncheckedCategories.length > 0 ? (
 								<section className="mb-2">
 									<h2 className="font-display text-xl text-ink mb-4">
@@ -873,7 +876,7 @@ function ShoppingList() {
 								</section>
 							) : null}
 							{checkedCategories.length > 0 ? (
-								<section className="mt-8">
+								<section className={uncheckedCategories.length > 0 ? "mt-8" : undefined}>
 									<h2 className="font-display text-xl text-ink mb-4">
 										<Trans>Marcados</Trans>
 									</h2>
@@ -894,7 +897,7 @@ function ShoppingList() {
 					</div>
 
 					{fuseSelectMode && fuseSelectedCount >= 2 ? (
-						<div className="fixed bottom-0 inset-x-0 z-[60] border-t border-border bg-surface/95 backdrop-blur px-4 py-3">
+						<div className="shrink-0 border-t border-border bg-surface/95 backdrop-blur px-4 py-3">
 							<div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
 								<p className="text-sm text-ink-muted">
 									<Plural
@@ -911,7 +914,7 @@ function ShoppingList() {
 					) : null}
 
 					{!fuseSelectMode && checkedShoppingItems.length > 0 ? (
-						<div className="fixed bottom-0 inset-x-0 z-[60] border-t border-border bg-surface/95 backdrop-blur px-4 py-3">
+						<div className="shrink-0 border-t border-border bg-surface/95 backdrop-blur px-4 py-3">
 							<div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
 								<p className="text-sm text-ink-muted">
 									<Plural
