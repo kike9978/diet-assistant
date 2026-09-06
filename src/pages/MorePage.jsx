@@ -2,6 +2,7 @@ import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router-dom";
 
 const LINKS = [
+	{ to: "/meals", label: <Trans>Comidas</Trans> },
 	{ to: "/family", label: <Trans>Familia</Trans> },
 	{ to: "/tools", label: <Trans>Herramientas</Trans> },
 	{ to: "/plans", label: <Trans>Planes</Trans> },
@@ -15,7 +16,7 @@ export default function MorePage() {
 				<Trans>Más</Trans>
 			</h1>
 			<p className="text-sm text-ink-muted">
-				<Trans>Familia, herramientas, planes y ajustes.</Trans>
+				<Trans>Comidas, familia, herramientas, planes y ajustes.</Trans>
 			</p>
 			<ul className="border border-border rounded-app bg-surface overflow-hidden divide-y divide-border">
 				{LINKS.map((item) => (

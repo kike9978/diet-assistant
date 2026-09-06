@@ -9,15 +9,14 @@ import Button from "../components/ui/Button";
 import Sheet from "../components/ui/Sheet";
 import MealForm from "../features/meals/MealForm";
 import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
-import { MEAL_TYPE_COLOR } from "../features/calendar/mealTypeColors.js";
 import {
 	parseDateISO,
 	weekDateISOs,
 } from "../features/calendar/dateUtils.js";
-import { quantityLabel } from "../features/calendar/calendarActions.js";
 import { EditDraftMealSheet } from "../features/weekplan/EditScheduledMealSheet";
 import ImportJsonSheet from "../features/weekplan/ImportJsonSheet";
 import SaveImportedMealsSheet from "../features/weekplan/SaveImportedMealsSheet";
+import SortableDayMeals from "../features/weekplan/SortableDayMeals";
 import {
 	createDraftMeal,
 	ingredientsFromRows,
@@ -374,8 +373,9 @@ export default function WeekPlanPage() {
 
 			<p className="text-sm text-ink-muted">
 				<Trans>
-					Arma los planes de día (comidas por slot). Los cambios se guardan
-					solos. Luego, en Semana, asigna cada plan a un día.
+					Arma los planes de día (comidas por slot). Arrastra para reordenar.
+					Los cambios se guardan solos. Luego, en Semana, asigna cada plan a un
+					día.
 				</Trans>
 			</p>
 
@@ -434,127 +434,22 @@ export default function WeekPlanPage() {
 								<Trans>Sin comidas en este plan de día.</Trans>
 							</p>
 						) : (
-							<ul className="space-y-2">
-								{slot.meals.map((meal) => {
-									const mealKey = `${slot.id}:${meal.tempId}`;
-									const ingredients = meal.ingredients || [];
-									const isExpanded = expandedMealKey === mealKey;
-									const ingredientCount = ingredients.length;
-
-									return (
-										<li
-											key={meal.tempId}
-											className="border border-border rounded-app overflow-hidden"
-										>
-											<div className="flex items-start justify-between gap-2 px-3 py-2">
-												<button
-													type="button"
-													className="min-w-0 flex-1 flex items-start gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] rounded-md"
-													aria-expanded={isExpanded}
-													onClick={() =>
-														setExpandedMealKey(
-															isExpanded ? null : mealKey,
-														)
-													}
-												>
-													<svg
-														className={`w-4 h-4 shrink-0 text-ink-muted mt-1 transition-transform ${
-															isExpanded ? "rotate-180" : ""
-														}`}
-														fill="none"
-														viewBox="0 0 24 24"
-														stroke="currentColor"
-														aria-hidden
-													>
-														<path
-															strokeLinecap="round"
-															strokeLinejoin="round"
-															strokeWidth={2}
-															d="M19 9l-7 7-7-7"
-														/>
-													</svg>
-													<span
-														className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5"
-														style={{
-															backgroundColor:
-																MEAL_TYPE_COLOR[meal.mealType] ||
-																MEAL_TYPE_COLOR.otro,
-														}}
-														aria-hidden
-													/>
-													<div className="min-w-0">
-														<p className="font-semibold text-ink truncate">
-															{meal.name}
-														</p>
-														<p className="text-xs text-ink-muted">
-															{_(
-																MEAL_TYPE_MSG[meal.mealType] ||
-																	MEAL_TYPE_MSG.otro,
-															)}
-															{ingredientCount > 0 ? (
-																<>
-																	{" · "}
-																	{ingredientCount}{" "}
-																	<Trans>ingredientes</Trans>
-																</>
-															) : null}
-														</p>
-													</div>
-												</button>
-												<div className="flex gap-1 shrink-0">
-													<Button
-														variant="ghost"
-														className="!min-h-9 !px-2 text-xs"
-														onClick={() =>
-															setEditing({ slotId: slot.id, meal })
-														}
-													>
-														<Trans>Editar</Trans>
-													</Button>
-													<Button
-														variant="ghost"
-														className="!min-h-9 !px-2 text-xs text-[var(--color-danger)]"
-														onClick={() =>
-															updateSlot(slot.id, (dp) => ({
-																...dp,
-																meals: dp.meals.filter(
-																	(m) => m.tempId !== meal.tempId,
-																),
-															}))
-														}
-													>
-														<Trans>Quitar</Trans>
-													</Button>
-												</div>
-											</div>
-
-											{isExpanded ? (
-												<ul className="border-t border-border bg-surface-2/40 px-3 py-3 text-sm text-ink-muted space-y-1">
-													{ingredientCount === 0 ? (
-														<li>
-															<Trans>Sin ingredientes</Trans>
-														</li>
-													) : (
-														ingredients.map((ing) => (
-															<li
-																key={
-																	ing.id ||
-																	`${ing.name}-${quantityLabel(ing.quantity)}`
-																}
-															>
-																{ing.name}
-																{quantityLabel(ing.quantity)
-																	? ` (${quantityLabel(ing.quantity)})`
-																	: ""}
-															</li>
-														))
-													)}
-												</ul>
-											) : null}
-										</li>
-									);
-								})}
-							</ul>
+							<SortableDayMeals
+								slotId={slot.id}
+								meals={slot.meals}
+								expandedMealKey={expandedMealKey}
+								onExpandedMealKeyChange={setExpandedMealKey}
+								onEdit={(meal) => setEditing({ slotId: slot.id, meal })}
+								onRemove={(tempId) =>
+									updateSlot(slot.id, (dp) => ({
+										...dp,
+										meals: dp.meals.filter((m) => m.tempId !== tempId),
+									}))
+								}
+								onReorder={(meals) =>
+									updateSlot(slot.id, (dp) => ({ ...dp, meals }))
+								}
+							/>
 						)}
 
 						<div className="flex gap-2 mt-3">

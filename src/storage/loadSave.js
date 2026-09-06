@@ -160,36 +160,6 @@ export function saveState(state, storage = localStorage) {
 }
 
 /**
- * Reiniciar: clears calendars, weekPlans, checkedItems, mealPrep, shoppingExtras.
- * Keeps household, mealLibrary, templates, pantry, settings.
- * @param {import("../domain/types.js").DietAssistantStateV2} state
- */
-export function resetActivePlanning(state) {
-	const calendars = {};
-	const weekPlans = {};
-	for (const member of state.household.members) {
-		calendars[member.id] = {};
-		weekPlans[member.id] = {};
-	}
-	return {
-		...state,
-		calendars,
-		weekPlans,
-		checkedItems: {},
-		shoppingExtras: [],
-		mealPrep: {
-			weekStartISO: state.mealPrep?.weekStartISO || state.ui.calendarCursorDate,
-			selectedInstanceIds: [],
-			unselectedVisible: true,
-		},
-		meta: {
-			...state.meta,
-			lastSavedAt: new Date().toISOString(),
-		},
-	};
-}
-
-/**
  * Export full state JSON string (Phase 4 polish; available early for backup).
  */
 export function exportState(state) {

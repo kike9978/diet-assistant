@@ -134,7 +134,7 @@ export default function DayView({ dateISO }) {
 										aria-hidden
 									/>
 									<div className="min-w-0 flex-1">
-										<h3 className="font-semibold text-ink truncate">
+										<h3 className="font-semibold text-ink line-clamp-2">
 											{meal.name}
 										</h3>
 										<p className="text-xs text-ink-muted">

@@ -1,7 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAppState } from "../context/AppState";
 import { activateLocale } from "../i18n";
 import { useToast } from "../components/Toast";
@@ -9,17 +8,9 @@ import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 export default function SettingsPage() {
-	const {
-		state,
-		saveSettings,
-		reiniciar,
-		saveCurrentAsTemplate,
-		prunePastWeeks,
-	} = useAppState();
+	const { state, saveSettings, prunePastWeeks } = useAppState();
 	const toast = useToast();
-	const [confirmOpen, setConfirmOpen] = useState(false);
 	const [pruneOpen, setPruneOpen] = useState(false);
-	const navigate = useNavigate();
 
 	const [draft, setDraft] = useState(() => ({
 		locale: state.settings.locale,
@@ -61,12 +52,6 @@ export default function SettingsPage() {
 		toast?.success?.(
 			nextLocale === "en" ? t`Ajustes guardados` : t`Ajustes guardados`,
 		);
-	};
-
-	const confirmReset = () => {
-		reiniciar();
-		setConfirmOpen(false);
-		navigate("/");
 	};
 
 	return (
@@ -157,24 +142,6 @@ export default function SettingsPage() {
 
 			<div className="space-y-2 pt-2 border-t border-border">
 				<p className="text-sm font-semibold">
-					<Trans>Plantilla y reinicio</Trans>
-				</p>
-				<Button variant="secondary" onClick={() => saveCurrentAsTemplate()}>
-					<Trans>Guardar plantilla</Trans>
-				</Button>
-				<p className="text-xs text-ink-muted">
-					<Trans>
-						Reiniciar limpia el calendario y la lista de compras, pero conserva
-						biblioteca, plantillas, despensa y ajustes.
-					</Trans>
-				</p>
-				<Button variant="danger" onClick={() => setConfirmOpen(true)}>
-					<Trans>Reiniciar plan</Trans>
-				</Button>
-			</div>
-
-			<div className="space-y-2 pt-2 border-t border-border">
-				<p className="text-sm font-semibold">
 					<Trans>Retención del calendario</Trans>
 				</p>
 				<p className="text-xs text-ink-muted">
@@ -187,21 +154,6 @@ export default function SettingsPage() {
 					<Trans>Limpiar semanas pasadas</Trans>
 				</Button>
 			</div>
-
-			<ConfirmDialog
-				open={confirmOpen}
-				danger
-				title={<Trans>Reiniciar plan</Trans>}
-				description={
-					<Trans>
-						¿Seguro? Se borrarán calendarios, checklist, prep y extras. La
-						biblioteca y las plantillas se quedan.
-					</Trans>
-				}
-				confirmLabel={<Trans>Reiniciar</Trans>}
-				onConfirm={confirmReset}
-				onCancel={() => setConfirmOpen(false)}
-			/>
 
 			<ConfirmDialog
 				open={pruneOpen}

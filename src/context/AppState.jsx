@@ -36,12 +36,7 @@ import {
 	listWeekPlans as listWeekPlansFromState,
 	saveWeekPlan as saveWeekPlanInState,
 } from "../features/weekplan/weekPlanModel.js";
-import {
-	loadState,
-	resetActivePlanning,
-	saveState,
-	saveStateImmediate,
-} from "../storage/loadSave.js";
+import { loadState, saveState, saveStateImmediate } from "../storage/loadSave.js";
 import {
 	addMember as addMemberInState,
 	removeMember as removeMemberInState,
@@ -95,27 +90,7 @@ export function AppStateProvider({ children }) {
 		setState((prev) => importDietPlanIntoState(prev, dietPlan, name));
 	}, []);
 
-	const saveCurrentAsTemplate = useCallback((name) => {
-		setState((prev) => {
-			const legacy = dietTemplatesToLegacyDietPlan(prev);
-			if (!legacy) return prev;
-			return importDietPlanIntoState(
-				prev,
-				legacy,
-				name || `Plantilla ${prev.dietTemplates.length + 1}`,
-			);
-		});
-	}, []);
-
 	const loadDietTemplate = useCallback((_templateId) => {}, []);
-
-	const reiniciar = useCallback(() => {
-		setState((prev) => {
-			const next = resetActivePlanning(prev);
-			saveStateImmediate(next);
-			return next;
-		});
-	}, []);
 
 	const createMealAndSchedule = useCallback(
 		({ name, ingredients, dateISO, mealType, servings, schedule = true }) => {
@@ -621,9 +596,7 @@ export function AppStateProvider({ children }) {
 			activeMember,
 			setWeekPlan,
 			importDietPlan,
-			saveCurrentAsTemplate,
 			loadDietTemplate,
-			reiniciar,
 			createMealAndSchedule,
 			createMeal,
 			updateMeal,
@@ -680,9 +653,7 @@ export function AppStateProvider({ children }) {
 			activeMember,
 			setWeekPlan,
 			importDietPlan,
-			saveCurrentAsTemplate,
 			loadDietTemplate,
-			reiniciar,
 			createMealAndSchedule,
 			createMeal,
 			updateMeal,

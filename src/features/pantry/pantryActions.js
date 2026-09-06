@@ -260,24 +260,71 @@ function normalizeUnit(unit) {
 	if (!unit) return "";
 	const u = String(unit).toLowerCase().trim();
 	const aliases = {
+		// mass
 		g: "g",
 		gr: "g",
 		gramos: "g",
 		gramo: "g",
+		gram: "g",
+		grams: "g",
 		kg: "kg",
+		kilogram: "kg",
+		kilograms: "kg",
+		kilogramo: "kg",
+		kilogramos: "kg",
+		// volume metric
 		ml: "ml",
+		milliliter: "ml",
+		milliliters: "ml",
+		millilitre: "ml",
+		millilitres: "ml",
 		l: "l",
+		lt: "l",
+		litro: "l",
+		litros: "l",
+		liter: "l",
+		liters: "l",
+		litre: "l",
+		litres: "l",
+		// cups / tazas
 		tza: "tza",
 		taza: "tza",
 		tazas: "tza",
+		cup: "tza",
+		cups: "tza",
+		// teaspoons
 		cdita: "cdita",
 		cucharadita: "cdita",
+		cucharaditas: "cdita",
+		tsp: "cdita",
+		teaspoon: "cdita",
+		teaspoons: "cdita",
+		// tablespoons
 		cda: "cda",
 		cucharada: "cda",
+		cucharadas: "cda",
+		tbsp: "cda",
+		tablespoon: "cda",
+		tablespoons: "cda",
+		// pieces
 		pza: "pza",
 		pieza: "pza",
 		piezas: "pza",
 		pz: "pza",
+		pc: "pza",
+		pcs: "pza",
+		piece: "pza",
+		pieces: "pza",
+		// slices / rebanadas
+		rebanada: "rebanada",
+		rebanadas: "rebanada",
+		slice: "rebanada",
+		slices: "rebanada",
+		// cloves / dientes
+		diente: "diente",
+		dientes: "diente",
+		clove: "diente",
+		cloves: "diente",
 	};
 	return aliases[u] || u;
 }

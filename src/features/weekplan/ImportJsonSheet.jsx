@@ -3,6 +3,8 @@ import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
 import Sheet from "../../components/ui/Sheet";
+import { useToast } from "../../components/Toast";
+import { DIET_PLAN_IMPORT_PROMPT } from "./dietPlanImportPrompt";
 
 function validateDietPlan(plan) {
 	if (!plan.days || !Array.isArray(plan.days) || plan.days.length === 0) {
@@ -94,9 +96,11 @@ export default function ImportJsonSheet({
 	onImport,
 	hasExistingDayPlans = false,
 }) {
+	const toast = useToast();
 	const [jsonInput, setJsonInput] = useState("");
 	const [error, setError] = useState(null);
 	const [showExample, setShowExample] = useState(false);
+	const [promptHelpOpen, setPromptHelpOpen] = useState(false);
 	/** @type {[object | null, function]} */
 	const [pendingPlan, setPendingPlan] = useState(null);
 
@@ -104,6 +108,7 @@ export default function ImportJsonSheet({
 		if (!open) {
 			setPendingPlan(null);
 			setError(null);
+			setPromptHelpOpen(false);
 		}
 	}, [open]);
 
@@ -138,12 +143,24 @@ export default function ImportJsonSheet({
 		}
 	};
 
+	const handleCopyPrompt = async () => {
+		try {
+			await navigator.clipboard.writeText(DIET_PLAN_IMPORT_PROMPT);
+			setPromptHelpOpen(false);
+			toast.success(t`Prompt copiado. Pégalo en un LLM con tu plan.`);
+		} catch {
+			toast.error(t`No se pudo copiar el prompt.`);
+		}
+	};
+
 	const handleClose = () => {
 		setPendingPlan(null);
+		setPromptHelpOpen(false);
 		onClose();
 	};
 
 	return (
+		<>
 		<Sheet
 			open={open}
 			onClose={handleClose}
@@ -175,15 +192,23 @@ export default function ImportJsonSheet({
 					</div>
 				) : (
 					<div className="flex flex-wrap gap-2 justify-between">
-						<Button
-							variant="secondary"
-							onClick={() => {
-								setJsonInput(JSON.stringify(SAMPLE, null, 2));
-								setError(null);
-							}}
-						>
-							<Trans>Usar ejemplo</Trans>
-						</Button>
+						<div className="flex flex-wrap gap-2">
+							<Button
+								variant="secondary"
+								onClick={() => {
+									setJsonInput(JSON.stringify(SAMPLE, null, 2));
+									setError(null);
+								}}
+							>
+								<Trans>Usar ejemplo</Trans>
+							</Button>
+							<Button
+								variant="ghost"
+								onClick={() => setPromptHelpOpen(true)}
+							>
+								<Trans>Copiar prompt</Trans>
+							</Button>
+						</div>
 						<Button onClick={handleSubmit}>
 							<Trans>Cargar al borrador</Trans>
 						</Button>
@@ -204,8 +229,8 @@ export default function ImportJsonSheet({
 				<>
 					<p className="text-sm text-ink-muted mb-3">
 						<Trans>
-							Pega un plan con días y comidas. Se mapeará a esta semana; podrás
-							editarlo antes de aplicar y elegir qué guardar en la biblioteca.
+							Pega un plan con días y comidas. Copia el prompt, úsalo en un LLM
+							externo con tu PDF o notas, y pega aquí el JSON generado.
 						</Trans>
 					</p>
 					<button
@@ -250,5 +275,70 @@ export default function ImportJsonSheet({
 				</>
 			)}
 		</Sheet>
+
+		{promptHelpOpen ? (
+			<div className="fixed inset-0 z-[60] overflow-y-auto">
+				<div className="flex items-center justify-center min-h-screen p-4 text-center">
+					<button
+						type="button"
+						className="fixed inset-0 bg-ink/40"
+						aria-label={t`Cerrar`}
+						onClick={() => setPromptHelpOpen(false)}
+					/>
+					<div
+						role="dialog"
+						aria-modal="true"
+						className="relative bg-surface rounded-app shadow-soft max-w-md w-full p-6 text-left"
+					>
+						<h3 className="font-display text-xl text-ink mb-2">
+							<Trans>Cómo generar el JSON</Trans>
+						</h3>
+						<p className="text-sm text-ink-muted mb-4">
+							<Trans>
+								Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu
+								plan en el formato que esta app entiende.
+							</Trans>
+						</p>
+						<ol className="list-decimal list-inside space-y-3 text-sm text-ink mb-6">
+							<li>
+								<Trans>
+									Copia el prompt con el botón de abajo.
+								</Trans>
+							</li>
+							<li>
+								<Trans>
+									Ábrelo en el LLM y pega el prompt. En el mismo mensaje,
+									adjunta tu PDF o imagen del plan de comidas (o pega el texto
+									del plan).
+								</Trans>
+							</li>
+							<li>
+								<Trans>
+									Pide al LLM que responda solo con el JSON del plan.
+								</Trans>
+							</li>
+							<li>
+								<Trans>
+									Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa
+									“Cargar al borrador”.
+								</Trans>
+							</li>
+						</ol>
+						<div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+							<Button
+								variant="secondary"
+								onClick={() => setPromptHelpOpen(false)}
+							>
+								<Trans>Cancelar</Trans>
+							</Button>
+							<Button onClick={handleCopyPrompt}>
+								<Trans>Copiar prompt y continuar</Trans>
+							</Button>
+						</div>
+					</div>
+				</div>
+			</div>
+		) : null}
+		</>
 	);
 }

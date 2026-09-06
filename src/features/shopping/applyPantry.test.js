@@ -31,6 +31,18 @@ describe("formatShoppingQuantities", () => {
 		).toBe("1 1/2 taza");
 	});
 
+	it("sums ES/EN equivalent units", () => {
+		expect(formatShoppingQuantities(["1 1/2 taza", "1/2 cup"])).toBe(
+			"2 taza",
+		);
+		expect(formatShoppingQuantities(["1 tbsp", "1 cucharada"])).toBe(
+			"2 tbsp",
+		);
+		expect(formatShoppingQuantities(["2 slices", "1 rebanada"])).toBe(
+			"3 slices",
+		);
+	});
+
 	it("returns empty for no quantities", () => {
 		expect(formatShoppingQuantities([])).toBe("");
 	});

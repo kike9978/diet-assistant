@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Trans } from "@lingui/react/macro";
 import MemberSwitcher from "../../features/family/MemberSwitcher";
 
-export default function AppHeader({ actions }) {
+export default function AppHeader() {
 	return (
 		<header className="shrink-0 bg-brand text-[var(--color-surface)] shadow-soft">
 			<div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -20,9 +20,6 @@ export default function AppHeader({ actions }) {
 						<MemberSwitcher />
 					</div>
 				</div>
-				{actions ? (
-					<div className="flex items-center gap-2 shrink-0">{actions}</div>
-				) : null}
 			</div>
 			<div className="sm:hidden border-t border-white/15 px-3 py-1.5 overflow-x-auto">
 				<MemberSwitcher />

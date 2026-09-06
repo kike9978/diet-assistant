@@ -30,6 +30,12 @@ describe("quantityForPantryStock", () => {
 		);
 	});
 
+	it("sums cup with taza", () => {
+		expect(
+			quantityForPantryStock({ quantities: ["1 taza", "1/2 cup"] }),
+		).toBe("1 1/2 taza");
+	});
+
 	it("falls back when empty", () => {
 		expect(quantityForPantryStock({ quantities: [] })).toBe("1 pza");
 	});

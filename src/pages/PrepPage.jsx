@@ -1,14 +1,14 @@
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router-dom";
 import { useLingui } from "@lingui/react";
-import { useAppState } from "../../context/AppState";
-import ShoppingList from "../../components/ShoppingList";
-import { parseDateISO } from "../calendar/dateUtils.js";
+import { useAppState } from "../context/AppState";
+import PrepMode from "../features/shopping/PrepMode";
+import { parseDateISO } from "../features/calendar/dateUtils.js";
 
 /**
- * Compras page: shopping list for the visible week.
+ * Standalone meal-prep page for the visible calendar week.
  */
-export default function ShoppingPage() {
+export default function PrepPage() {
 	const { visibleWeekDates } = useAppState();
 	const { i18n } = useLingui();
 	const locale = i18n.locale === "en" ? "en-US" : "es-MX";
@@ -23,7 +23,7 @@ export default function ShoppingPage() {
 		<div className="space-y-4">
 			<div>
 				<h1 className="font-display text-2xl text-ink">
-					<Trans>Compras</Trans>
+					<Trans>Preparar</Trans>
 				</h1>
 				{weekLabel ? (
 					<p className="text-sm text-ink-muted mt-0.5">
@@ -35,9 +35,15 @@ export default function ShoppingPage() {
 						</Link>
 					</p>
 				) : null}
+				<p className="text-sm text-ink-muted mt-1">
+					<Trans>
+						Elige qué comidas de la semana vas a preparar y revisa los
+						ingredientes agregados.
+					</Trans>
+				</p>
 			</div>
 
-			<ShoppingList />
+			<PrepMode />
 		</div>
 	);
 }

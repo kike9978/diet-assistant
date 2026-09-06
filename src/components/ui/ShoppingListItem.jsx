@@ -9,6 +9,7 @@ function ShoppingListItem({
 	formatQuantity,
 	weekPlan,
 	showSources,
+	checked = false,
 }) {
 	const { _ } = useLingui();
 	const [expandedSources, setExpandedSources] = useState(false);
@@ -47,16 +48,20 @@ function ShoppingListItem({
 
 	return (
 		<div>
-			<div className="flex justify-between">
-				<div>
-					<span className="font-medium">{item.name}</span>
+			<div className="flex justify-between gap-2">
+				<div className="min-w-0">
+					<span
+						className={`font-medium ${checked ? "line-through text-ink-muted" : ""}`}
+					>
+						{item.name}
+					</span>
 					{item.variations && item.variations.length > 1 && (
 						<div className="text-xs text-gray-500 mt-1">
 							<Trans>Incluye:</Trans> {item.variations.join(", ")}
 						</div>
 					)}
 				</div>
-				<div className="text-right">
+				<div className="text-right shrink-0">
 					<span className="text-gray-600">{formatQuantity(item)}</span>
 					{priceEstimate?.price != null ? (
 						<div className="text-xs text-gray-500">
@@ -70,7 +75,11 @@ function ShoppingListItem({
 				<div className="mt-1">
 					<button
 						type="button"
-						onClick={() => setExpandedSources(!expandedSources)}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							setExpandedSources(!expandedSources);
+						}}
 						className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center"
 					>
 						<svg

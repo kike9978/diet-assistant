@@ -2,14 +2,13 @@ import { Trans } from "@lingui/react/macro";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "../context/AppState";
 import DietPlanUploader from "../components/DietPlanUploader";
-import Button from "../components/ui/Button";
 import {
 	startOfWeek,
 	toDateISO,
 } from "../features/calendar/dateUtils.js";
 
 export default function PlansPage() {
-	const { importDietPlan, state, saveCurrentAsTemplate } = useAppState();
+	const { importDietPlan, state } = useAppState();
 	const navigate = useNavigate();
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const weekStartISO = toDateISO(
@@ -58,14 +57,9 @@ export default function PlansPage() {
 
 			{state.dietTemplates.length > 0 ? (
 				<div>
-					<div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-						<h2 className="font-display text-lg">
-							<Trans>Plantillas guardadas</Trans>
-						</h2>
-						<Button variant="secondary" onClick={() => saveCurrentAsTemplate()}>
-							<Trans>Duplicar plantilla activa</Trans>
-						</Button>
-					</div>
+					<h2 className="font-display text-lg mb-3">
+						<Trans>Plantillas guardadas</Trans>
+					</h2>
 					<ul className="space-y-2">
 						{state.dietTemplates.map((tmpl) => (
 							<li

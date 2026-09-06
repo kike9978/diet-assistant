@@ -480,6 +480,17 @@ function ShoppingList() {
 							>
 								<Trans>Desmarcar todo</Trans>
 							</button>
+							<button
+								type="button"
+								onClick={() => setShowSources(!showSources)}
+								className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
+							>
+								{showSources ? (
+									<Trans>Ocultar fuentes</Trans>
+								) : (
+									<Trans>Mostrar fuentes</Trans>
+								)}
+							</button>
 						</div>
 						{Object.entries(groupedShoppingList).map(([category, items]) => (
 							<div key={category} className="mb-6">
@@ -495,24 +506,25 @@ function ShoppingList() {
 												key={key}
 												className={`py-2 px-3 rounded-app ${isChecked ? "bg-[var(--color-accent-leaf)]/10" : "bg-surface-2"}`}
 											>
-												<label className="flex items-start gap-3 cursor-pointer">
+												<div className="flex items-start gap-3">
 													<input
 														type="checkbox"
 														checked={isChecked}
 														onChange={() => toggleItem(key)}
-														className="mt-1 h-5 w-5 accent-[var(--color-brand)]"
+														className="mt-1 h-5 w-5 accent-[var(--color-brand)] shrink-0"
+														aria-label={item.name}
 													/>
-													<span className="flex-1">
-														<span
-															className={`font-medium ${isChecked ? "line-through text-ink-muted" : ""}`}
-														>
-															{item.name}
-														</span>
-														<div className="text-sm text-ink-muted">
-															{formatItemQuantity(item)}
-														</div>
-													</span>
-												</label>
+													<div className="flex-1 min-w-0">
+														<ShoppingListItem
+															item={item}
+															priceEstimate={estimatePrice(item)}
+															formatQuantity={formatItemQuantity}
+															weekPlan={shoppingWeekPlan}
+															showSources={showSources}
+															checked={isChecked}
+														/>
+													</div>
+												</div>
 												{!item.isExtra && !item.pantryCovered ? (
 													<button
 														type="button"
