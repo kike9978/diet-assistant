@@ -30,6 +30,7 @@ export default function CalendarPage() {
 	const {
 		hasContent,
 		state,
+		activeMember,
 		setCalendarCursorDate,
 		setCalendarView,
 		prunePastWeeks,
@@ -112,6 +113,7 @@ export default function CalendarPage() {
 				onViewChange={(v) => setCalendarView(normalizeCalendarView(v))}
 				onCursorChange={setCalendarCursorDate}
 				onToday={(iso) => setSelectedDateISO(iso)}
+				activeMember={activeMember}
 			/>
 
 			{view === "month" ? (

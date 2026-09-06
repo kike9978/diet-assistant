@@ -45,15 +45,28 @@ export default function MonthView({ onSelectDate }) {
 					const isToday = dateISO === today;
 					const count = meals.length;
 					const d = parseDateISO(dateISO);
+					const activeMember = state.household.members.find(
+						(m) => m.id === memberId,
+					);
+					const tint =
+						count > 0 && activeMember?.color
+							? {
+									backgroundColor: `${activeMember.color}18`,
+									borderColor: `${activeMember.color}55`,
+								}
+							: undefined;
 
 					return (
 						<button
 							type="button"
 							key={dateISO}
 							onClick={() => onSelectDate(dateISO, "week")}
+							style={inMonth ? tint : undefined}
 							className={`min-h-16 sm:min-h-20 rounded-app border p-1.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] ${
 								inMonth
-									? "bg-surface border-border hover:border-ink-muted"
+									? tint
+										? "hover:opacity-95"
+										: "bg-surface border-border hover:border-ink-muted"
 									: "bg-transparent border-transparent opacity-45"
 							} ${isToday ? "ring-1 ring-[var(--color-brand)]" : ""}`}
 						>

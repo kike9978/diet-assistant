@@ -4,6 +4,7 @@ import {
 	normalizeIngredientName,
 	OTHER_CATEGORY_NAME,
 } from "../../domain/ingredient.js";
+import { applyPantryToShoppingMap } from "./applyPantry.js";
 
 /**
  * Aggregate ingredients from a legacy weekPlan into a shopping map.
@@ -48,6 +49,22 @@ export function buildShoppingMap(weekPlan) {
 	});
 
 	return shoppingList;
+}
+
+/**
+ * Build shopping map from week + extras, then subtract pantry.
+ * @param {Record<string, object[]>} weekPlan
+ * @param {import("../../domain/types.js").ShoppingExtra[]} extras
+ * @param {import("../../domain/types.js").PantryItem[]} pantry
+ */
+export function buildShoppingListWithPantry(
+	weekPlan,
+	extras = [],
+	pantry = [],
+) {
+	const base = buildShoppingMap(weekPlan);
+	const withExtras = mergeExtrasIntoShoppingMap(base, extras);
+	return applyPantryToShoppingMap(withExtras, pantry);
 }
 
 /**

@@ -26,6 +26,7 @@ export default function CalendarChrome({
 	onViewChange,
 	onCursorChange,
 	onToday,
+	activeMember = null,
 }) {
 	const { i18n } = useLingui();
 	const locale = i18n.locale === "en" ? "en-US" : "es-MX";
@@ -62,6 +63,19 @@ export default function CalendarChrome({
 
 	return (
 		<div className="flex flex-col gap-3 mb-4">
+			{activeMember ? (
+				<p className="inline-flex items-center gap-2 text-sm text-ink-muted">
+					<span
+						className="w-2.5 h-2.5 rounded-full"
+						style={{ backgroundColor: activeMember.color }}
+						aria-hidden
+					/>
+					<span>
+						<Trans>Semana de</Trans>{" "}
+						<span className="font-semibold text-ink">{activeMember.name}</span>
+					</span>
+				</p>
+			) : null}
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<p className="font-display text-lg sm:text-xl text-ink capitalize">
 					{rangeLabel}

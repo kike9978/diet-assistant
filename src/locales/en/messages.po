@@ -27,9 +27,23 @@ msgstr "Delete everything on the calendar older than about 4 months? Library and
 msgid "¿Eliminar esta comida de la biblioteca?"
 msgstr "Delete this meal from the library?"
 
+#: src/pages/PantryPage.jsx
+msgid "¿Eliminar este item del inventario?"
+msgstr "Remove this item from inventory?"
+
 #: src/pages/SettingsPage.jsx
 msgid "¿Seguro? Se borrarán calendarios, checklist, prep y extras. La biblioteca y las plantillas se quedan."
 msgstr "Are you sure? Calendars, checklist, prep, and extras will be cleared. Your library and templates stay."
+
+#. placeholder {0}: checkedShoppingItems.length
+#: src/components/ShoppingList.jsx
+msgid "{0, plural, one {# item marcado} other {# items marcados}}"
+msgstr "# item checked"
+
+#. placeholder {0}: checkedShoppingItems.length
+#: src/components/ShoppingList.jsx
+msgid "{0, plural, one {Se guardará # item marcado en la despensa.} other {Se guardarán # items marcados en la despensa.}}"
+msgstr "# checked item will be saved to the pantry."
 
 #. placeholder {0}: meals.length
 #: src/features/calendar/DayView.jsx
@@ -40,6 +54,10 @@ msgstr "{0} meals"
 #: src/pages/MealDetailPage.jsx
 msgid "{0} porciones"
 msgstr "{0} servings"
+
+#: src/components/ShoppingList.jsx
+msgid "{count} items guardados en despensa"
+msgstr "{count} items saved to pantry"
 
 #: src/components/ui/Button.jsx
 msgid "{fallback}"
@@ -65,6 +83,10 @@ msgstr "1/2 cup"
 msgid "Abrir herramientas"
 msgstr "Open tools"
 
+#: src/pages/FamilyPage.jsx
+msgid "activo"
+msgstr "active"
+
 #: src/pages/MealDetailPage.jsx
 msgid "Agendar"
 msgstr "Schedule"
@@ -86,8 +108,8 @@ msgstr "Add meals to your weekly plan or extras to the list."
 #~ msgstr "Add meals to your weekly plan or an extra above."
 
 #: src/components/ShoppingList.jsx
-#~ msgid "Agregar"
-#~ msgstr "Add"
+msgid "Agregar"
+msgstr "Add"
 
 #: src/components/shopping/AddExtrasSheet.jsx
 msgid "Agregar a la lista"
@@ -115,6 +137,10 @@ msgstr "Settings"
 msgid "Ajustes guardados"
 msgstr "Settings saved"
 
+#: src/pages/ToolsPage.jsx
+msgid "Alimento"
+msgstr "Food"
+
 #: src/components/shopping/AddExtrasSheet.jsx
 msgid "Añade al menos un extra con nombre y cantidad."
 msgstr "Add at least one extra with a name and quantity."
@@ -122,6 +148,28 @@ msgstr "Add at least one extra with a name and quantity."
 #: src/features/meals/MealForm.jsx
 msgid "Añade al menos un ingrediente con cantidad."
 msgstr "Add at least one ingredient with a quantity."
+
+#: src/pages/FamilyPage.jsx
+msgid "Añade perfiles del hogar en este dispositivo."
+msgstr "Add household profiles on this device."
+
+#: src/features/pantry/PantryFormSheet.jsx
+#: src/pages/FamilyPage.jsx
+#: src/pages/PantryPage.jsx
+msgid "Añadir"
+msgstr "Add"
+
+#: src/features/pantry/PantryFormSheet.jsx
+msgid "Añadir a la despensa"
+msgstr "Add to pantry"
+
+#: src/pages/PantryPage.jsx
+msgid "Añadir item"
+msgstr "Add item"
+
+#: src/pages/FamilyPage.jsx
+msgid "Añadir persona"
+msgstr "Add person"
 
 #: src/features/calendar/CalendarChrome.jsx
 msgid "Anterior"
@@ -134,6 +182,10 @@ msgstr "Build your week"
 #: src/features/calendar/WeekView.jsx
 msgid "Arrastra comidas entre días"
 msgstr "Drag meals between days"
+
+#: src/components/ShoppingList.jsx
+msgid "Así la próxima lista restará lo que acabas de comprar. Los extras marcados se quitan de la lista persistente."
+msgstr "The next list will subtract what you just bought. Checked extras are removed from the persistent list."
 
 #: src/pages/CalendarPage.jsx
 #~ msgid "Asignar plantillas al plan semanal"
@@ -159,6 +211,10 @@ msgstr "Removes scheduled meals older than ~4 months. Library and templates are 
 msgid "Buscar comida…"
 msgstr "Search meals…"
 
+#: src/pages/FamilyPage.jsx
+msgid "Cada persona tiene su propio calendario. En Compras puedes combinar varios."
+msgstr "Each person has their own calendar. In Shopping you can merge several."
+
 #: src/components/shell/BottomNav.jsx
 #: src/pages/CalendarPage.jsx
 msgid "Calendario"
@@ -168,22 +224,38 @@ msgstr "Calendar"
 msgid "Cambiar en calendario"
 msgstr "Change in calendar"
 
+#: src/features/family/MemberSwitcher.jsx
+msgid "Cambiar persona"
+msgstr "Switch person"
+
 #: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ui/base/Modal.jsx
 #: src/components/ui/ConfirmDialog.jsx
 #: src/features/calendar/SubstituteSheet.jsx
 #: src/features/meals/MealForm.jsx
+#: src/features/pantry/PantryFormSheet.jsx
+#: src/pages/FamilyPage.jsx
 #: src/pages/MealDetailPage.jsx
 msgid "Cancelar"
 msgstr "Cancel"
 
 #: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ToolsSidebar.jsx
+#: src/features/pantry/PantryFormSheet.jsx
 msgid "Cantidad"
 msgstr "Quantity"
 
+#: src/pages/ToolsPage.jsx
+msgid "Cantidad cocida"
+msgstr "Cooked amount"
+
+#: src/pages/ToolsPage.jsx
+msgid "Cantidad cruda"
+msgstr "Raw amount"
+
 #: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ToolsSidebar.jsx
+#: src/features/pantry/PantryFormSheet.jsx
 msgid "Categoría"
 msgstr "Category"
 
@@ -198,13 +270,29 @@ msgstr "Dinner"
 msgid "Cerrar"
 msgstr "Close"
 
+#: src/pages/ToolsPage.jsx
+msgid "Cocido → crudo"
+msgstr "Cooked → raw"
+
 #: src/features/meals/mealTypeLabels.js
 msgid "Colación"
 msgstr "Snack"
 
+#: src/pages/FamilyPage.jsx
+msgid "Color"
+msgstr "Color"
+
+#: src/pages/FamilyPage.jsx
+msgid "Color {c}"
+msgstr "Color {c}"
+
 #: src/features/meals/mealTypeLabels.js
 msgid "Comida"
 msgstr "Lunch"
+
+#: src/pages/FamilyPage.jsx
+msgid "comida agendada"
+msgstr "scheduled meal"
 
 #: src/pages/MealDetailPage.jsx
 msgid "Comida no encontrada."
@@ -218,6 +306,10 @@ msgstr "Custom meal"
 #: src/pages/MealsPage.jsx
 msgid "Comidas"
 msgstr "Meals"
+
+#: src/pages/FamilyPage.jsx
+msgid "comidas agendadas"
+msgstr "scheduled meals"
 
 #: src/components/FirstRun.jsx
 msgid "Compra y prepara"
@@ -237,6 +329,14 @@ msgstr "Shopping builds the list for the visible week. Prep lives there too — 
 #: src/features/calendar/SubstituteSheet.jsx
 msgid "Confirmar"
 msgstr "Confirm"
+
+#: src/pages/ToolsPage.jsx
+msgid "Convertidor de rendimiento"
+msgstr "Yield converter"
+
+#: src/pages/ToolsPage.jsx
+msgid "Convierte pesos crudo ↔ cocido para comprar y porcionar con menos adivinanzas."
+msgstr "Convert raw ↔ cooked weights to shop and portion with less guesswork."
 
 #: src/components/FirstRun.jsx
 msgid "Crea tu primera comida"
@@ -261,6 +361,14 @@ msgstr "Create meal"
 msgid "Crear comida nueva"
 msgstr "Create new meal"
 
+#: src/pages/ToolsPage.jsx
+msgid "Crudo → cocido"
+msgstr "Raw → cooked"
+
+#: src/components/ShoppingList.jsx
+msgid "Cubierto por despensa"
+msgstr "Covered by pantry"
+
 #: src/features/calendar/DayView.jsx
 msgid "De biblioteca"
 msgstr "From library"
@@ -282,9 +390,19 @@ msgid "Desmarcar todo"
 msgstr "Uncheck all"
 
 #: src/components/shell/BottomNav.jsx
+#: src/components/ShoppingList.jsx
 #: src/pages/PantryPage.jsx
 msgid "Despensa"
 msgstr "Pantry"
+
+#. placeholder {0}: item.pantrySubtracted
+#: src/components/ShoppingList.jsx
+msgid "Despensa cubre {0}"
+msgstr "Pantry covers {0}"
+
+#: src/pages/PantryPage.jsx
+msgid "Despensa vacía"
+msgstr "Empty pantry"
 
 #: src/components/MealPrepPage.jsx
 msgid "Detalles"
@@ -303,6 +421,10 @@ msgstr "Selected day"
 msgid "días"
 msgstr "days"
 
+#: src/pages/ToolsPage.jsx
+msgid "Dirección"
+msgstr "Direction"
+
 #: src/i18n/weekDayLabels.js
 msgid "Dom"
 msgstr "Sun"
@@ -316,6 +438,8 @@ msgstr "Sunday"
 msgid "Duplicar plantilla activa"
 msgstr "Duplicate active template"
 
+#: src/components/ShoppingList.jsx
+#: src/pages/FamilyPage.jsx
 #: src/pages/MealDetailPage.jsx
 msgid "Editar"
 msgstr "Edit"
@@ -323,6 +447,18 @@ msgstr "Edit"
 #: src/pages/MealDetailPage.jsx
 msgid "Editar comida"
 msgstr "Edit meal"
+
+#: src/features/pantry/PantryFormSheet.jsx
+msgid "Editar en despensa"
+msgstr "Edit pantry item"
+
+#: src/components/ShoppingList.jsx
+msgid "Editar extra"
+msgstr "Edit extra"
+
+#: src/pages/FamilyPage.jsx
+msgid "Editar perfil"
+msgstr "Edit profile"
 
 #: src/components/ToolsSidebar.jsx
 msgid "Ej: 2 pzas, 1/2 tza, 250 g"
@@ -332,25 +468,50 @@ msgstr "E.g. 2 pcs, 1/2 cup, 250 g"
 msgid "Ej: Manzana"
 msgstr "E.g. Apple"
 
+#: src/features/pantry/PantryFormSheet.jsx
+msgid "Ej. 2 tza"
+msgstr "e.g. 2 cups"
+
+#: src/pages/FamilyPage.jsx
+msgid "Ej. Ana"
+msgstr "e.g. Ana"
+
+#: src/features/pantry/PantryFormSheet.jsx
+msgid "Ej. Arroz"
+msgstr "e.g. Rice"
+
 #: src/pages/ToolsPage.jsx
-msgid "El convertidor crudo ↔ cocido llega en la fase 3. Las sustituciones siguen disponibles al planear la semana."
-msgstr "The raw ↔ cooked converter arrives in phase 3. Substitutions are still available while planning the week."
+#~ msgid "El convertidor crudo ↔ cocido llega en la fase 3. Las sustituciones siguen disponibles al planear la semana."
+#~ msgstr "The raw ↔ cooked converter arrives in phase 3. Substitutions are still available while planning the week."
 
 #: src/pages/MealDetailPage.jsx
 #~ msgid "El editor completo llega en la siguiente fase. Por ahora puedes crear más comidas desde"
 #~ msgstr "The full editor arrives in the next phase. For now you can create more meals from"
 
 #: src/pages/PantryPage.jsx
-msgid "El inventario llega en la fase 3. Mientras tanto, marca “ya lo tengo” en la lista de compras."
-msgstr "Inventory arrives in phase 3. Meanwhile, mark “already have it” on the shopping list."
+#~ msgid "El inventario llega en la fase 3. Mientras tanto, marca “ya lo tengo” en la lista de compras."
+#~ msgstr "Inventory arrives in phase 3. Meanwhile, mark “already have it” on the shopping list."
 
+#: src/pages/FamilyPage.jsx
 #: src/pages/MealDetailPage.jsx
+#: src/pages/PantryPage.jsx
 msgid "Eliminar"
 msgstr "Delete"
+
+#. placeholder {0}: item.name
+#. placeholder {0}: member.name
+#: src/pages/FamilyPage.jsx
+#: src/pages/PantryPage.jsx
+msgid "Eliminar {0}"
+msgstr "Delete {0}"
 
 #: src/pages/MealDetailPage.jsx
 msgid "Eliminar comida"
 msgstr "Delete meal"
+
+#: src/pages/FamilyPage.jsx
+msgid "Eliminar perfil"
+msgstr "Delete profile"
 
 #: src/pages/CalendarPage.jsx
 msgid "Empieza por una comida"
@@ -390,9 +551,26 @@ msgid "Estás sustituyendo <0>{0}{1}</0> en <1>{mealName}</1>."
 msgstr "You are substituting <0>{0}{1}</0> in <1>{mealName}</1>."
 
 #: src/components/ShoppingList.jsx
+msgid "Estos items no se borran al regenerar la lista desde el calendario."
+msgstr "These items are not cleared when the list regenerates from the calendar."
+
+#: src/components/ShoppingList.jsx
 msgid "Exportar a PDF"
 msgstr "Export to PDF"
 
+#: src/components/ShoppingList.jsx
+msgid "Extra"
+msgstr "Extra"
+
+#: src/components/ShoppingList.jsx
+msgid "Extras persistentes"
+msgstr "Persistent extras"
+
+#: src/pages/ToolsPage.jsx
+msgid "Factor"
+msgstr "Factor"
+
+#: src/features/family/MemberSwitcher.jsx
 #: src/pages/FamilyPage.jsx
 #: src/pages/MorePage.jsx
 msgid "Familia"
@@ -424,6 +602,10 @@ msgstr "JSON generator"
 msgid "Generando PDF…"
 msgstr "Generating PDF…"
 
+#: src/features/family/MemberSwitcher.jsx
+msgid "Gestionar familia"
+msgstr "Manage family"
+
 #: src/pages/MealsPage.jsx
 #~ msgid "Guarda comidas reutilizables aquí. Empieza con el creador mínimo."
 #~ msgstr "Save reusable meals here. Start with the minimal creator."
@@ -431,6 +613,20 @@ msgstr "Generating PDF…"
 #: src/pages/MealsPage.jsx
 msgid "Guarda comidas reutilizables aquí. Empieza con el creador o importa un plan."
 msgstr "Save reusable meals here. Start with the builder or import a plan."
+
+#: src/pages/PantryPage.jsx
+msgid "Guarda lo que ya tienes en casa. La lista de compras lo restará automáticamente."
+msgstr "Save what you already have at home. The shopping list will subtract it automatically."
+
+#: src/components/ShoppingList.jsx
+msgid "Guardado en despensa"
+msgstr "Saved to pantry"
+
+#: src/components/shopping/AddExtrasSheet.jsx
+#: src/features/pantry/PantryFormSheet.jsx
+#: src/pages/FamilyPage.jsx
+msgid "Guardar"
+msgstr "Save"
 
 #: src/pages/SettingsPage.jsx
 msgid "Guardar ajustes"
@@ -443,6 +639,10 @@ msgstr "Save changes"
 #: src/pages/CreateMealPage.jsx
 msgid "Guardar en biblioteca"
 msgstr "Save to library"
+
+#: src/components/ShoppingList.jsx
+msgid "Guardar en despensa"
+msgstr "Save to pantry"
 
 #: src/App.jsx
 #: src/pages/SettingsPage.jsx
@@ -480,6 +680,10 @@ msgstr "Import a JSON plan or save the current template. Templates are not clear
 #: src/pages/MealsPage.jsx
 msgid "Importar plan"
 msgstr "Import plan"
+
+#: src/features/shopping/ShoppingMemberPicker.jsx
+msgid "Incluir en la compra"
+msgstr "Include in shopping"
 
 #: src/components/ui/ShoppingListItem.jsx
 msgid "Incluye:"
@@ -576,9 +780,17 @@ msgstr "Shopping list"
 msgid "Lista de Compras — Checklist"
 msgstr "Shopping list — Checklist"
 
+#: src/pages/PantryPage.jsx
+msgid "Lo que ya tienes se resta de la lista de compras."
+msgstr "What you already have is subtracted from the shopping list."
+
 #: src/components/ShoppingList.jsx
 #~ msgid "Los extras se guardan aparte y no se borran al regenerar la lista."
 #~ msgstr "Extras are saved separately and survive list regeneration."
+
+#: src/pages/ToolsPage.jsx
+msgid "Los factores son promedios de cocina; ajusta según tu método."
+msgstr "Factors are kitchen averages; adjust for your method."
 
 #: src/i18n/weekDayLabels.js
 msgid "Lun"
@@ -695,8 +907,14 @@ msgid "No hay plantillas. <0>Importa un plan</0> o crea comidas sueltas."
 msgstr "No templates yet. <0>Import a plan</0> or add individual meals."
 
 #: src/features/meals/MealForm.jsx
+#: src/features/pantry/PantryFormSheet.jsx
+#: src/pages/FamilyPage.jsx
 msgid "Nombre"
 msgstr "Name"
+
+#: src/features/pantry/PantryFormSheet.jsx
+msgid "Nombre y cantidad son obligatorios."
+msgstr "Name and quantity are required."
 
 #: src/pages/CreateMealPage.jsx
 msgid "Nombre, tipo e ingredientes. Se guarda en la biblioteca y se agenda para el día seleccionado."
@@ -709,6 +927,10 @@ msgstr "Name, type, and ingredients. Saved to the library and scheduled for toda
 #: src/pages/MealsPage.jsx
 msgid "Nueva comida"
 msgstr "New meal"
+
+#: src/pages/FamilyPage.jsx
+msgid "Nueva persona"
+msgstr "New person"
 
 #: src/pages/CalendarPage.jsx
 msgid "O importa un plan JSON"
@@ -731,6 +953,10 @@ msgstr "Hide example"
 #: src/components/ShoppingList.jsx
 msgid "Ocultar fuentes"
 msgstr "Hide sources"
+
+#: src/components/ShoppingList.jsx
+msgid "Ocultar lo que ya está en despensa"
+msgstr "Hide items already in the pantry"
 
 #: src/components/MealPrepPage.jsx
 #: src/features/shopping/PrepMode.jsx
@@ -768,8 +994,8 @@ msgid "Pega tu plan en formato JSON o usa los datos de ejemplo para empezar."
 msgstr "Paste your plan as JSON or use the sample data to get started."
 
 #: src/pages/FamilyPage.jsx
-msgid "Perfiles del hogar y calendarios por miembro llegan en la fase 3. Por ahora trabajas como “Yo”."
-msgstr "Household profiles and per-member calendars arrive in phase 3. For now you work as “Me”."
+#~ msgid "Perfiles del hogar y calendarios por miembro llegan en la fase 3. Por ahora trabajas como “Yo”."
+#~ msgstr "Household profiles and per-member calendars arrive in phase 3. For now you work as “Me”."
 
 #: src/components/DietPlanUploader.jsx
 msgid "Plan alimenticio JSON"
@@ -800,6 +1026,10 @@ msgstr "Saved templates"
 msgid "Ponle un nombre a la comida."
 msgstr "Give the meal a name."
 
+#: src/pages/FamilyPage.jsx
+msgid "Ponle un nombre al perfil."
+msgstr "Give the profile a name."
+
 #: src/features/meals/MealForm.jsx
 msgid "Porciones"
 msgstr "Servings"
@@ -820,9 +1050,19 @@ msgstr "You can delete scheduled meals older than ~4 months. Library and templat
 msgid "Puedes cargar varios items y guardarlos juntos. Los extras no se borran al regenerar la lista."
 msgstr "You can enter several items and save them together. Extras are not cleared when the list regenerates."
 
+#: src/components/ShoppingList.jsx
 #: src/features/calendar/DayView.jsx
 msgid "Quitar"
 msgstr "Remove"
+
+#. placeholder {0}: extra.name
+#: src/components/ShoppingList.jsx
+msgid "Quitar {0}"
+msgstr "Remove {0}"
+
+#: src/pages/PantryPage.jsx
+msgid "Quitar de la despensa"
+msgstr "Remove from pantry"
 
 #: src/components/shopping/AddExtrasSheet.jsx
 msgid "Quitar fila"
@@ -860,6 +1100,14 @@ msgstr "Reset clears the calendar and shopping list, but keeps library, template
 msgid "Reiniciar plan"
 msgstr "Reset plan"
 
+#: src/pages/ToolsPage.jsx
+msgid "Resultado cocido"
+msgstr "Cooked result"
+
+#: src/pages/ToolsPage.jsx
+msgid "Resultado crudo"
+msgstr "Raw result"
+
 #: src/pages/SettingsPage.jsx
 msgid "Retención del calendario"
 msgstr "Calendar retention"
@@ -872,6 +1120,10 @@ msgstr "Sat"
 #: src/pages/SettingsPage.jsx
 msgid "Sábado"
 msgstr "Saturday"
+
+#: src/pages/FamilyPage.jsx
+msgid "Se borrará su calendario en este dispositivo. No se puede deshacer."
+msgstr "Their calendar on this device will be deleted. This cannot be undone."
 
 #: src/App.jsx
 msgid "Se borrarán calendarios, checklist, prep y extras. Biblioteca y plantillas se conservan."
@@ -895,6 +1147,10 @@ msgstr "Select an ingredient"
 msgid "Selecciona un plan de comida de la lista de disponibles."
 msgstr "Select a meal plan from the available list."
 
+#: src/features/family/MemberSwitcher.jsx
+msgid "Selector de perfil del hogar"
+msgstr "Household profile switcher"
+
 #: src/features/calendar/CalendarChrome.jsx
 #: src/pages/SettingsPage.jsx
 msgid "Semana"
@@ -903,6 +1159,10 @@ msgstr "Week"
 #: src/features/calendar/WeekSurface.jsx
 msgid "Semana anterior"
 msgstr "Previous week"
+
+#: src/features/calendar/CalendarChrome.jsx
+msgid "Semana de"
+msgstr "Week for"
 
 #: src/features/calendar/WeekSurface.jsx
 msgid "Semana siguiente"
@@ -952,9 +1212,22 @@ msgstr "Substitute"
 msgid "Sustituir ingrediente"
 msgstr "Substitute ingredient"
 
+#: src/pages/ToolsPage.jsx
+msgid "Tabla rápida"
+msgstr "Quick table"
+
 #: src/features/calendar/SubstituteSheet.jsx
 msgid "También actualizar la comida en la biblioteca (si está vinculada)"
 msgstr "Also update the meal in the library (if linked)"
+
+#. placeholder {0}: item.pantryNote
+#: src/components/ShoppingList.jsx
+msgid "También en despensa ({0})"
+msgstr "Also in pantry ({0})"
+
+#: src/components/ShoppingList.jsx
+msgid "Terminar compra"
+msgstr "Finish shopping"
 
 #: src/features/meals/MealForm.jsx
 msgid "Tipo"
@@ -975,6 +1248,10 @@ msgstr "All types"
 #: src/components/shell/AppHeader.jsx
 msgid "Tu cocina, organizada"
 msgstr "Your kitchen, organized"
+
+#: src/pages/ToolsPage.jsx
+msgid "Unidad"
+msgstr "Unit"
 
 #: src/features/calendar/DayView.jsx
 msgid "Usar"
@@ -1029,3 +1306,12 @@ msgstr "Back"
 #: src/pages/MealDetailPage.jsx
 msgid "Volver a comidas"
 msgstr "Back to meals"
+
+#: src/components/ShoppingList.jsx
+msgid "Ya lo tengo"
+msgstr "Already have it"
+
+#: src/components/ShoppingList.jsx
+msgid "Ya lo tengo → despensa"
+msgstr "Already have it → pantry"
+

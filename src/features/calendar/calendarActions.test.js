@@ -53,6 +53,7 @@ function baseState() {
 			calendarCursorDate: "2026-09-05",
 			calendarView: "week",
 			onboardingDismissed: true,
+			shoppingMemberIds: ["m1"],
 		},
 		meta: { lastSavedAt: "" },
 	};

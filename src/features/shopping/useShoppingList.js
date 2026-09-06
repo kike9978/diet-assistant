@@ -1,18 +1,32 @@
 import { useMemo } from "react";
 import {
-	buildShoppingMap,
+	buildShoppingListWithPantry,
 	groupIngredientsByCategory,
-	mergeExtrasIntoShoppingMap,
 } from "./buildShoppingList.js";
 
 /**
- * Derived shopping list from weekPlan + shoppingExtras.
+ * Derived shopping list from weekPlan + shoppingExtras − pantry.
  */
-export function useShoppingList(weekPlan, shoppingExtras = []) {
+export function useShoppingList(
+	weekPlan,
+	shoppingExtras = [],
+	pantry = [],
+	{ hidePantryCovered = false } = {},
+) {
 	return useMemo(() => {
-		const base = buildShoppingMap(weekPlan);
-		const withExtras = mergeExtrasIntoShoppingMap(base, shoppingExtras);
-		const grouped = groupIngredientsByCategory(withExtras);
-		return { shoppingList: withExtras, groupedShoppingList: grouped };
-	}, [weekPlan, shoppingExtras]);
+		const withPantry = buildShoppingListWithPantry(
+			weekPlan,
+			shoppingExtras,
+			pantry,
+		);
+		const filtered = hidePantryCovered
+			? Object.fromEntries(
+					Object.entries(withPantry).filter(
+						([, item]) => !item.pantryCovered,
+					),
+				)
+			: withPantry;
+		const grouped = groupIngredientsByCategory(filtered);
+		return { shoppingList: filtered, groupedShoppingList: grouped };
+	}, [weekPlan, shoppingExtras, pantry, hidePantryCovered]);
 }

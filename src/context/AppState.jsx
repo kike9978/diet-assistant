@@ -29,7 +29,22 @@ import {
 	saveStateImmediate,
 } from "../storage/loadSave.js";
 import {
+	addMember as addMemberInState,
+	removeMember as removeMemberInState,
+	setActiveMember as setActiveMemberInState,
+	setShoppingMemberIds as setShoppingMemberIdsInState,
+	updateMember as updateMemberInState,
+} from "../features/family/familyActions.js";
+import {
+	addPantryItem as addPantryItemInState,
+	finishShoppingToPantry as finishShoppingToPantryInState,
+	removePantryItem as removePantryItemInState,
+	updatePantryItem as updatePantryItemInState,
+	upsertPantryFromShopping as upsertPantryFromShoppingInState,
+} from "../features/pantry/pantryActions.js";
+import {
 	applyWeekPlanToState,
+	calendarsToShoppingWeekPlan,
 	calendarsToWeekPlan,
 	dietTemplatesToLegacyDietPlan,
 	importDietPlanIntoState,
@@ -206,13 +221,14 @@ export function AppStateProvider({ children }) {
 		});
 	}, []);
 
-	const addShoppingExtra = useCallback(({ name, quantity, category }) => {
+	const addShoppingExtra = useCallback(({ name, quantity, category, note }) => {
 		setState((prev) => {
 			const extra = {
 				id: createId(),
 				name,
 				quantity: parseQuantity(quantity),
 				category,
+				...(note ? { note } : {}),
 				createdAt: new Date().toISOString(),
 			};
 			return {
@@ -220,6 +236,26 @@ export function AppStateProvider({ children }) {
 				shoppingExtras: [...prev.shoppingExtras, extra],
 			};
 		});
+	}, []);
+
+	const updateShoppingExtra = useCallback((id, patch) => {
+		setState((prev) => ({
+			...prev,
+			shoppingExtras: prev.shoppingExtras.map((e) => {
+				if (e.id !== id) return e;
+				return {
+					...e,
+					...(patch.name != null
+						? { name: String(patch.name).trim() || e.name }
+						: {}),
+					...(patch.quantity != null
+						? { quantity: parseQuantity(patch.quantity) }
+						: {}),
+					...(patch.category != null ? { category: patch.category } : {}),
+					...(patch.note != null ? { note: patch.note } : {}),
+				};
+			}),
+		}));
 	}, []);
 
 	const removeShoppingExtra = useCallback((id) => {
@@ -230,6 +266,52 @@ export function AppStateProvider({ children }) {
 				Object.entries(prev.checkedItems).filter(([k]) => k !== `extra:${id}`),
 			),
 		}));
+	}, []);
+
+	const addPantryItem = useCallback((payload) => {
+		setState((prev) => addPantryItemInState(prev, payload));
+	}, []);
+
+	const updatePantryItem = useCallback((id, patch) => {
+		setState((prev) => updatePantryItemInState(prev, id, patch));
+	}, []);
+
+	const removePantryItem = useCallback((id) => {
+		setState((prev) => removePantryItemInState(prev, id));
+	}, []);
+
+	const moveToPantryFromShopping = useCallback((payload) => {
+		setState((prev) => upsertPantryFromShoppingInState(prev, payload));
+	}, []);
+
+	const finishShoppingToPantry = useCallback((items) => {
+		let addedCount = 0;
+		setState((prev) => {
+			const result = finishShoppingToPantryInState(prev, items);
+			addedCount = result.addedCount;
+			return result.state;
+		});
+		return addedCount;
+	}, []);
+
+	const addHouseholdMember = useCallback((payload) => {
+		setState((prev) => addMemberInState(prev, payload));
+	}, []);
+
+	const updateHouseholdMember = useCallback((memberId, patch) => {
+		setState((prev) => updateMemberInState(prev, memberId, patch));
+	}, []);
+
+	const removeHouseholdMember = useCallback((memberId) => {
+		setState((prev) => removeMemberInState(prev, memberId));
+	}, []);
+
+	const setActiveMember = useCallback((memberId) => {
+		setState((prev) => setActiveMemberInState(prev, memberId));
+	}, []);
+
+	const setShoppingMemberIds = useCallback((memberIds) => {
+		setState((prev) => setShoppingMemberIdsInState(prev, memberIds));
 	}, []);
 
 	const dismissOnboarding = useCallback(() => {
@@ -381,6 +463,10 @@ export function AppStateProvider({ children }) {
 	}, []);
 
 	const weekPlan = useMemo(() => calendarsToWeekPlan(state), [state]);
+	const shoppingWeekPlan = useMemo(
+		() => calendarsToShoppingWeekPlan(state),
+		[state],
+	);
 	const dietPlan = useMemo(() => dietTemplatesToLegacyDietPlan(state), [state]);
 
 	const visibleWeekDates = useMemo(() => {
@@ -389,6 +475,14 @@ export function AppStateProvider({ children }) {
 			state.settings.weekStartsOn ?? 1,
 		);
 	}, [state.ui.calendarCursorDate, state.settings.weekStartsOn]);
+
+	const activeMember = useMemo(() => {
+		return (
+			state.household.members.find(
+				(m) => m.id === state.household.activeMemberId,
+			) || state.household.members[0]
+		);
+	}, [state.household]);
 
 	const hasContent = useMemo(() => {
 		const memberId = state.household.activeMemberId;
@@ -406,8 +500,10 @@ export function AppStateProvider({ children }) {
 			state,
 			updateState,
 			weekPlan,
+			shoppingWeekPlan,
 			dietPlan,
 			visibleWeekDates,
+			activeMember,
 			setWeekPlan,
 			importDietPlan,
 			saveCurrentAsTemplate,
@@ -419,7 +515,18 @@ export function AppStateProvider({ children }) {
 			deleteMeal,
 			setCheckedItems,
 			addShoppingExtra,
+			updateShoppingExtra,
 			removeShoppingExtra,
+			addPantryItem,
+			updatePantryItem,
+			removePantryItem,
+			moveToPantryFromShopping,
+			finishShoppingToPantry,
+			addHouseholdMember,
+			updateHouseholdMember,
+			removeHouseholdMember,
+			setActiveMember,
+			setShoppingMemberIds,
 			dismissOnboarding,
 			setLocale,
 			setWeekStartsOn,
@@ -443,8 +550,10 @@ export function AppStateProvider({ children }) {
 			state,
 			updateState,
 			weekPlan,
+			shoppingWeekPlan,
 			dietPlan,
 			visibleWeekDates,
+			activeMember,
 			setWeekPlan,
 			importDietPlan,
 			saveCurrentAsTemplate,
@@ -456,7 +565,18 @@ export function AppStateProvider({ children }) {
 			deleteMeal,
 			setCheckedItems,
 			addShoppingExtra,
+			updateShoppingExtra,
 			removeShoppingExtra,
+			addPantryItem,
+			updatePantryItem,
+			removePantryItem,
+			moveToPantryFromShopping,
+			finishShoppingToPantry,
+			addHouseholdMember,
+			updateHouseholdMember,
+			removeHouseholdMember,
+			setActiveMember,
+			setShoppingMemberIds,
 			dismissOnboarding,
 			setLocale,
 			setWeekStartsOn,

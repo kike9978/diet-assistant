@@ -46,6 +46,7 @@ export function createEmptyState() {
 			calendarCursorDate: today,
 			calendarView: "week",
 			onboardingDismissed: false,
+			shoppingMemberIds: [memberId],
 		},
 		meta: {
 			lastSavedAt: now,

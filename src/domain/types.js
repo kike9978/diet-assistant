@@ -84,7 +84,8 @@
  * @typedef {{
  *   calendarCursorDate: string,
  *   calendarView: "month" | "week",
- *   onboardingDismissed: boolean
+ *   onboardingDismissed: boolean,
+ *   shoppingMemberIds?: string[]
  * }} UiState
  *
  * @typedef {{

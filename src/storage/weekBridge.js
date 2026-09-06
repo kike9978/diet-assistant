@@ -10,18 +10,39 @@ import {
 } from "../features/calendar/dateUtils.js";
 
 /**
+ * Resolve which member calendars feed shopping / weekPlan merge.
+ * @param {import("../domain/types.js").DietAssistantStateV2} state
+ * @param {string[] | null | undefined} memberIds
+ * @returns {string[]}
+ */
+export function resolveShoppingMemberIds(state, memberIds) {
+	const valid = new Set(state.household.members.map((m) => m.id));
+	const requested =
+		memberIds && memberIds.length > 0
+			? memberIds
+			: state.ui.shoppingMemberIds?.length
+				? state.ui.shoppingMemberIds
+				: [state.household.activeMemberId];
+	const next = [...new Set(requested)].filter((id) => valid.has(id));
+	return next.length > 0 ? next : [state.household.activeMemberId];
+}
+
+/**
  * Legacy weekPlan shape from calendars for the visible week.
  * Meals use string quantities for existing ShoppingList / MealPlanner.
  *
  * @param {import("../domain/types.js").DietAssistantStateV2} state
+ * @param {string[] | null} [memberIds] — when omitted, uses active member only
  * @returns {Record<string, object[]>}
  */
-export function calendarsToWeekPlan(state) {
-	const memberId = state.household.activeMemberId;
+export function calendarsToWeekPlan(state, memberIds = null) {
+	const ids =
+		memberIds == null
+			? [state.household.activeMemberId]
+			: resolveShoppingMemberIds(state, memberIds);
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const cursor = state.ui.calendarCursorDate;
 	const dateByWeekday = weekdayKeysToDateISO(cursor, weekStartsOn);
-	const memberCal = state.calendars[memberId] || {};
 
 	/** @type {Record<string, object[]>} */
 	const weekPlan = {};
@@ -30,24 +51,39 @@ export function calendarsToWeekPlan(state) {
 	}
 
 	for (const [weekday, dateISO] of Object.entries(dateByWeekday)) {
-		const meals = memberCal[dateISO] || [];
-		weekPlan[weekday] = meals.map((m) => ({
-			id: m.instanceId,
-			instanceId: m.instanceId,
-			mealId: m.mealId,
-			name: m.name,
-			ingredients: (m.ingredients || []).map((ing) => ({
-				id: ing.id,
-				name: ing.name,
-				quantity:
-					typeof ing.quantity === "string"
-						? ing.quantity
-						: formatQuantity(ing.quantity),
-			})),
-		}));
+		const meals = [];
+		for (const memberId of ids) {
+			const memberCal = state.calendars[memberId] || {};
+			for (const m of memberCal[dateISO] || []) {
+				meals.push({
+					id: m.instanceId,
+					instanceId: m.instanceId,
+					mealId: m.mealId,
+					memberId,
+					name: m.name,
+					ingredients: (m.ingredients || []).map((ing) => ({
+						id: ing.id,
+						name: ing.name,
+						quantity:
+							typeof ing.quantity === "string"
+								? ing.quantity
+								: formatQuantity(ing.quantity),
+					})),
+				});
+			}
+		}
+		weekPlan[weekday] = meals;
 	}
 
 	return weekPlan;
+}
+
+/**
+ * Week plan merged from shopping-selected household members.
+ * @param {import("../domain/types.js").DietAssistantStateV2} state
+ */
+export function calendarsToShoppingWeekPlan(state) {
+	return calendarsToWeekPlan(state, resolveShoppingMemberIds(state));
 }
 
 /**

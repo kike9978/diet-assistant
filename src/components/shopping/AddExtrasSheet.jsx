@@ -12,17 +12,33 @@ function emptyRow() {
 }
 
 /**
- * Modal to add one or more shopping extras before submitting.
+ * Modal to add or edit shopping extras.
  */
-export default function AddExtrasSheet({ open, onClose, onSubmit }) {
+export default function AddExtrasSheet({
+	open,
+	onClose,
+	onSubmit,
+	initialRows,
+	single = false,
+	title,
+}) {
 	const [rows, setRows] = useState([emptyRow()]);
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
-		if (open) {
-			setRows([emptyRow()]);
-			setError(null);
-		}
+		if (!open) return;
+		setRows(
+			initialRows?.length
+				? initialRows.map((r) => ({
+						name: r.name || "",
+						quantity: r.quantity || "",
+						category: r.category || DEFAULT_CATEGORY,
+					}))
+				: [emptyRow()],
+		);
+		setError(null);
+		// Reset only when the sheet opens (not on every parent render).
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
 	}, [open]);
 
 	const updateRow = (index, field, value) => {
@@ -62,24 +78,30 @@ export default function AddExtrasSheet({ open, onClose, onSubmit }) {
 		<Sheet
 			open={open}
 			onClose={onClose}
-			title={<Trans>Agregar extras</Trans>}
+			title={title || <Trans>Agregar extras</Trans>}
 			footer={
 				<div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
 					<Button variant="secondary" onClick={onClose}>
 						<Trans>Cancelar</Trans>
 					</Button>
 					<Button type="submit" form="add-extras-form">
-						<Trans>Agregar a la lista</Trans>
+						{single ? (
+							<Trans>Guardar</Trans>
+						) : (
+							<Trans>Agregar a la lista</Trans>
+						)}
 					</Button>
 				</div>
 			}
 		>
-			<p className="text-sm text-ink-muted mb-4">
-				<Trans>
-					Puedes cargar varios items y guardarlos juntos. Los extras no se
-					borran al regenerar la lista.
-				</Trans>
-			</p>
+			{!single ? (
+				<p className="text-sm text-ink-muted mb-4">
+					<Trans>
+						Puedes cargar varios items y guardarlos juntos. Los extras no se
+						borran al regenerar la lista.
+					</Trans>
+				</p>
+			) : null}
 
 			<form id="add-extras-form" onSubmit={handleSubmit} className="space-y-3">
 				{rows.map((row, index) => (
@@ -114,21 +136,25 @@ export default function AddExtrasSheet({ open, onClose, onSubmit }) {
 								</option>
 							))}
 						</select>
-						<Button
-							type="button"
-							variant="ghost"
-							className="!px-2"
-							aria-label={t`Quitar fila`}
-							onClick={() => removeRow(index)}
-						>
-							×
-						</Button>
+						{!single ? (
+							<Button
+								type="button"
+								variant="ghost"
+								className="!px-2"
+								aria-label={t`Quitar fila`}
+								onClick={() => removeRow(index)}
+							>
+								×
+							</Button>
+						) : null}
 					</div>
 				))}
 
-				<Button type="button" variant="secondary" onClick={addRow}>
-					<Trans>Otro item</Trans>
-				</Button>
+				{!single ? (
+					<Button type="button" variant="secondary" onClick={addRow}>
+						<Trans>Otro item</Trans>
+					</Button>
+				) : null}
 
 				{error ? (
 					<p className="text-sm text-[var(--color-danger)]">{error}</p>

@@ -48,6 +48,44 @@ function snapshotV1(storage) {
 }
 
 /**
+ * Soft-normalize older v2 documents (fill missing Phase 3 fields).
+ * @param {import("../domain/types.js").DietAssistantStateV2} state
+ */
+export function normalizeV2State(state) {
+	const members = state.household?.members || [];
+	const activeMemberId =
+		state.household?.activeMemberId || members[0]?.id || null;
+	let shoppingMemberIds = state.ui?.shoppingMemberIds;
+	if (!Array.isArray(shoppingMemberIds) || shoppingMemberIds.length === 0) {
+		shoppingMemberIds = activeMemberId ? [activeMemberId] : [];
+	} else {
+		const valid = new Set(members.map((m) => m.id));
+		shoppingMemberIds = shoppingMemberIds.filter((id) => valid.has(id));
+		if (shoppingMemberIds.length === 0 && activeMemberId) {
+			shoppingMemberIds = [activeMemberId];
+		}
+	}
+
+	const calendars = { ...(state.calendars || {}) };
+	for (const m of members) {
+		if (!calendars[m.id]) calendars[m.id] = {};
+	}
+
+	return {
+		...state,
+		pantry: Array.isArray(state.pantry) ? state.pantry : [],
+		shoppingExtras: Array.isArray(state.shoppingExtras)
+			? state.shoppingExtras
+			: [],
+		calendars,
+		ui: {
+			...state.ui,
+			shoppingMemberIds,
+		},
+	};
+}
+
+/**
  * Load v2 state. One-shot migrate from legacy keys if needed.
  * @param {Storage} [storage]
  * @returns {import("../domain/types.js").DietAssistantStateV2}
@@ -55,14 +93,16 @@ function snapshotV1(storage) {
 export function loadState(storage = localStorage) {
 	const existing = safeParse(storage.getItem(STORAGE_KEY_V2));
 	if (isValidV2State(existing)) {
-		return /** @type {import("../domain/types.js").DietAssistantStateV2} */ (
-			existing
+		return normalizeV2State(
+			/** @type {import("../domain/types.js").DietAssistantStateV2} */ (
+				existing
+			),
 		);
 	}
 
 	const { hasAny, legacy } = readLegacyFromStorage(storage);
 	if (hasAny) {
-		const migrated = migrateV1toV2(legacy);
+		const migrated = normalizeV2State(migrateV1toV2(legacy));
 		try {
 			storage.setItem(STORAGE_KEY_V1_BACKUP, JSON.stringify(snapshotV1(storage)));
 		} catch (err) {
