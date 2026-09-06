@@ -11,10 +11,17 @@ import { ingredientFromLegacy } from "../domain/ingredient.js";
 import { inferMealType } from "../domain/mealType.js";
 import { parseQuantity } from "../domain/quantity.js";
 import {
+	applyIngredientSubstitution,
 	assignDayTemplateToDate,
+	buildLibraryMeal,
 	clearCalendarDay as clearCalendarDayInState,
+	moveScheduledMeal as moveScheduledMealInState,
+	prunePastCalendarDays,
+	removeScheduledMeal as removeScheduledMealInState,
+	replaceScheduledMeal as replaceScheduledMealInState,
+	scheduleLibraryMeal as scheduleLibraryMealInState,
 } from "../features/calendar/calendarActions.js";
-import { todayISO } from "../features/calendar/dateUtils.js";
+import { todayISO, weekDateISOs } from "../features/calendar/dateUtils.js";
 import {
 	loadState,
 	resetActivePlanning,
@@ -59,10 +66,6 @@ export function AppStateProvider({ children }) {
 		setState((prev) => importDietPlanIntoState(prev, dietPlan, name));
 	}, []);
 
-	/**
-	 * Guardar plantilla: snapshot diet/day templates only (not calendar).
-	 * Pins are dietTemplates going forward.
-	 */
 	const saveCurrentAsTemplate = useCallback((name) => {
 		setState((prev) => {
 			const legacy = dietTemplatesToLegacyDietPlan(prev);
@@ -75,15 +78,7 @@ export function AppStateProvider({ children }) {
 		});
 	}, []);
 
-	/**
-	 * Load a diet template — does NOT wipe calendar (pin→calendar restore fix:
-	 * loading a template only switches template focus; calendar stays).
-	 * For Phase 1 "load pinned plan" UX: optionally apply first day template to today.
-	 */
-	const loadDietTemplate = useCallback((_templateId) => {
-		// Templates are already in state; calendar is independent.
-		// No-op for selection; Plans page uses templates directly.
-	}, []);
+	const loadDietTemplate = useCallback((_templateId) => {}, []);
 
 	const reiniciar = useCallback(() => {
 		setState((prev) => {
@@ -93,11 +88,8 @@ export function AppStateProvider({ children }) {
 		});
 	}, []);
 
-	/**
-	 * Minimal create meal → library + schedule onto a date (default today).
-	 */
 	const createMealAndSchedule = useCallback(
-		({ name, ingredients, dateISO, mealType }) => {
+		({ name, ingredients, dateISO, mealType, servings, schedule = true }) => {
 			const now = new Date().toISOString();
 			const mealId = createId();
 			const date = dateISO || todayISO();
@@ -117,30 +109,38 @@ export function AppStateProvider({ children }) {
 					mealType: type,
 					ingredients: structuredIngredients,
 					tags: [],
-					servings: 1,
+					servings: servings ?? 1,
 					source: "user",
 					createdAt: now,
 					updatedAt: now,
 				};
-				const scheduled = {
-					instanceId: createId(),
-					dateISO: date,
-					memberId,
-					mealId,
-					name,
-					mealType: type,
-					ingredients: structuredIngredients.map((i) => ({ ...i, id: createId() })),
-				};
-				const memberCal = { ...(prev.calendars[memberId] || {}) };
-				memberCal[date] = [...(memberCal[date] || []), scheduled];
+
+				let calendars = prev.calendars;
+				if (schedule) {
+					const scheduled = {
+						instanceId: createId(),
+						dateISO: date,
+						memberId,
+						mealId,
+						name,
+						mealType: type,
+						ingredients: structuredIngredients.map((i) => ({
+							...i,
+							id: createId(),
+						})),
+					};
+					const memberCal = { ...(prev.calendars[memberId] || {}) };
+					memberCal[date] = [...(memberCal[date] || []), scheduled];
+					calendars = { ...prev.calendars, [memberId]: memberCal };
+				}
 
 				return {
 					...prev,
 					mealLibrary: [...prev.mealLibrary, meal],
-					calendars: { ...prev.calendars, [memberId]: memberCal },
+					calendars,
 					ui: {
 						...prev.ui,
-						calendarCursorDate: date,
+						calendarCursorDate: schedule ? date : prev.ui.calendarCursorDate,
 						onboardingDismissed: true,
 					},
 				};
@@ -150,6 +150,51 @@ export function AppStateProvider({ children }) {
 		},
 		[],
 	);
+
+	const createMeal = useCallback((payload) => {
+		const meal = buildLibraryMeal(payload);
+		setState((prev) => ({
+			...prev,
+			mealLibrary: [...prev.mealLibrary, meal],
+			ui: { ...prev.ui, onboardingDismissed: true },
+		}));
+		return meal.id;
+	}, []);
+
+	const updateMeal = useCallback((mealId, payload) => {
+		setState((prev) => {
+			const existing = prev.mealLibrary.find((m) => m.id === mealId);
+			if (!existing) return prev;
+			const updated = buildLibraryMeal(payload, existing);
+			return {
+				...prev,
+				mealLibrary: prev.mealLibrary.map((m) =>
+					m.id === mealId ? updated : m,
+				),
+			};
+		});
+	}, []);
+
+	const deleteMeal = useCallback((mealId) => {
+		setState((prev) => {
+			const inUse = Object.values(prev.calendars || {}).some((days) =>
+				Object.values(days || {}).some((meals) =>
+					(meals || []).some((m) => m.mealId === mealId),
+				),
+			);
+			if (inUse) {
+				// Soft-delete from library only; scheduled snapshots stay.
+			}
+			return {
+				...prev,
+				mealLibrary: prev.mealLibrary.filter((m) => m.id !== mealId),
+				dayTemplates: prev.dayTemplates.map((dt) => ({
+					...dt,
+					mealIds: (dt.mealIds || []).filter((id) => id !== mealId),
+				})),
+			};
+		});
+	}, []);
 
 	const setCheckedItems = useCallback((checkedOrUpdater) => {
 		setState((prev) => {
@@ -208,19 +253,24 @@ export function AppStateProvider({ children }) {
 		}));
 	}, []);
 
-	/**
-	 * Persist settings immediately (Ajustes → Guardar).
-	 * @param {Partial<import("../domain/types.js").Settings>} patch
-	 */
 	const saveSettings = useCallback((patch) => {
 		setState((prev) => {
+			const settingsPatch = { ...patch };
+			if (settingsPatch.calendarDefaultView === "day") {
+				settingsPatch.calendarDefaultView = "week";
+			}
 			const next = {
 				...prev,
-				settings: { ...prev.settings, ...patch },
+				settings: { ...prev.settings, ...settingsPatch },
 				ui: {
 					...prev.ui,
-					...(patch.calendarDefaultView
-						? { calendarView: patch.calendarDefaultView }
+					...(settingsPatch.calendarDefaultView
+						? {
+								calendarView:
+									settingsPatch.calendarDefaultView === "month"
+										? "month"
+										: "week",
+							}
 						: {}),
 				},
 			};
@@ -236,6 +286,14 @@ export function AppStateProvider({ children }) {
 		}));
 	}, []);
 
+	const setCalendarView = useCallback((calendarView) => {
+		const next = calendarView === "month" ? "month" : "week";
+		setState((prev) => ({
+			...prev,
+			ui: { ...prev.ui, calendarView: next },
+		}));
+	}, []);
+
 	const assignDayTemplate = useCallback((dayTemplateId, dateISO) => {
 		setState((prev) => assignDayTemplateToDate(prev, dayTemplateId, dateISO));
 	}, []);
@@ -244,8 +302,93 @@ export function AppStateProvider({ children }) {
 		setState((prev) => clearCalendarDayInState(prev, dateISO));
 	}, []);
 
+	const scheduleMeal = useCallback((mealId, dateISO) => {
+		setState((prev) => scheduleLibraryMealInState(prev, mealId, dateISO));
+	}, []);
+
+	const replaceMeal = useCallback((instanceId, mealId) => {
+		setState((prev) =>
+			replaceScheduledMealInState(prev, instanceId, mealId),
+		);
+	}, []);
+
+	const removeMealInstance = useCallback((instanceId) => {
+		setState((prev) => removeScheduledMealInState(prev, instanceId));
+	}, []);
+
+	const moveMealInstance = useCallback((instanceId, toDateISO, toIndex) => {
+		setState((prev) =>
+			moveScheduledMealInState(prev, instanceId, toDateISO, toIndex),
+		);
+	}, []);
+
+	const substituteIngredient = useCallback((payload) => {
+		setState((prev) => applyIngredientSubstitution(prev, payload));
+	}, []);
+
+	const prunePastWeeks = useCallback((opts) => {
+		setState((prev) => {
+			const next = prunePastCalendarDays(prev, opts);
+			saveStateImmediate(next);
+			return next;
+		});
+	}, []);
+
+	const setMealPrepSelection = useCallback((selectedInstanceIds) => {
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			const weekStartISO = weekDateISOs(
+				prev.ui.calendarCursorDate,
+				weekStartsOn,
+			)[0];
+			return {
+				...prev,
+				mealPrep: {
+					...prev.mealPrep,
+					weekStartISO,
+					selectedInstanceIds: [...selectedInstanceIds],
+				},
+			};
+		});
+	}, []);
+
+	const toggleMealPrepInstance = useCallback((instanceId) => {
+		setState((prev) => {
+			const weekStartsOn = prev.settings.weekStartsOn ?? 1;
+			const weekStartISO = weekDateISOs(
+				prev.ui.calendarCursorDate,
+				weekStartsOn,
+			)[0];
+			const current = new Set(prev.mealPrep.selectedInstanceIds || []);
+			if (current.has(instanceId)) current.delete(instanceId);
+			else current.add(instanceId);
+			return {
+				...prev,
+				mealPrep: {
+					...prev.mealPrep,
+					weekStartISO,
+					selectedInstanceIds: [...current],
+				},
+			};
+		});
+	}, []);
+
+	const setMealPrepUnselectedVisible = useCallback((unselectedVisible) => {
+		setState((prev) => ({
+			...prev,
+			mealPrep: { ...prev.mealPrep, unselectedVisible },
+		}));
+	}, []);
+
 	const weekPlan = useMemo(() => calendarsToWeekPlan(state), [state]);
 	const dietPlan = useMemo(() => dietTemplatesToLegacyDietPlan(state), [state]);
+
+	const visibleWeekDates = useMemo(() => {
+		return weekDateISOs(
+			state.ui.calendarCursorDate,
+			state.settings.weekStartsOn ?? 1,
+		);
+	}, [state.ui.calendarCursorDate, state.settings.weekStartsOn]);
 
 	const hasContent = useMemo(() => {
 		const memberId = state.household.activeMemberId;
@@ -264,12 +407,16 @@ export function AppStateProvider({ children }) {
 			updateState,
 			weekPlan,
 			dietPlan,
+			visibleWeekDates,
 			setWeekPlan,
 			importDietPlan,
 			saveCurrentAsTemplate,
 			loadDietTemplate,
 			reiniciar,
 			createMealAndSchedule,
+			createMeal,
+			updateMeal,
+			deleteMeal,
 			setCheckedItems,
 			addShoppingExtra,
 			removeShoppingExtra,
@@ -278,8 +425,18 @@ export function AppStateProvider({ children }) {
 			setWeekStartsOn,
 			saveSettings,
 			setCalendarCursorDate,
+			setCalendarView,
 			assignDayTemplate,
 			clearCalendarDay,
+			scheduleMeal,
+			replaceMeal,
+			removeMealInstance,
+			moveMealInstance,
+			substituteIngredient,
+			prunePastWeeks,
+			setMealPrepSelection,
+			toggleMealPrepInstance,
+			setMealPrepUnselectedVisible,
 			hasContent,
 		}),
 		[
@@ -287,12 +444,16 @@ export function AppStateProvider({ children }) {
 			updateState,
 			weekPlan,
 			dietPlan,
+			visibleWeekDates,
 			setWeekPlan,
 			importDietPlan,
 			saveCurrentAsTemplate,
 			loadDietTemplate,
 			reiniciar,
 			createMealAndSchedule,
+			createMeal,
+			updateMeal,
+			deleteMeal,
 			setCheckedItems,
 			addShoppingExtra,
 			removeShoppingExtra,
@@ -301,8 +462,18 @@ export function AppStateProvider({ children }) {
 			setWeekStartsOn,
 			saveSettings,
 			setCalendarCursorDate,
+			setCalendarView,
 			assignDayTemplate,
 			clearCalendarDay,
+			scheduleMeal,
+			replaceMeal,
+			removeMealInstance,
+			moveMealInstance,
+			substituteIngredient,
+			prunePastWeeks,
+			setMealPrepSelection,
+			toggleMealPrepInstance,
+			setMealPrepUnselectedVisible,
 			hasContent,
 		],
 	);

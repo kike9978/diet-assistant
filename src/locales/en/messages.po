@@ -16,27 +16,48 @@ msgid "¡PDF generado exitosamente!"
 msgstr "PDF generated successfully!"
 
 #: src/pages/SettingsPage.jsx
+msgid "¿Borrar del calendario todo lo anterior a hace unos 4 meses?"
+msgstr "Delete everything on the calendar older than about 4 months?"
+
+#: src/pages/CalendarPage.jsx
+msgid "¿Borrar del calendario todo lo anterior a hace unos 4 meses? No afecta biblioteca ni plantillas."
+msgstr "Delete everything on the calendar older than about 4 months? Library and templates are kept."
+
+#: src/pages/MealDetailPage.jsx
+msgid "¿Eliminar esta comida de la biblioteca?"
+msgstr "Delete this meal from the library?"
+
+#: src/pages/SettingsPage.jsx
 msgid "¿Seguro? Se borrarán calendarios, checklist, prep y extras. La biblioteca y las plantillas se quedan."
 msgstr "Are you sure? Calendars, checklist, prep, and extras will be cleared. Your library and templates stay."
 
 #. placeholder {0}: meals.length
-#: src/features/calendar/DayDetail.jsx
+#: src/features/calendar/DayView.jsx
 msgid "{0} comidas"
 msgstr "{0} meals"
+
+#. placeholder {0}: meal.servings
+#: src/pages/MealDetailPage.jsx
+msgid "{0} porciones"
+msgstr "{0} servings"
 
 #: src/components/ui/Button.jsx
 msgid "{fallback}"
 msgstr "{fallback}"
 
-#: src/features/calendar/DayDetail.jsx
+#: src/features/calendar/DayView.jsx
 msgid "{mealCount} comidas"
 msgstr "{mealCount} meals"
 
-#: src/features/calendar/DayDetail.jsx
+#: src/features/calendar/DayView.jsx
 msgid "1 comida"
 msgstr "1 meal"
 
-#: src/pages/CreateMealPage.jsx
+#: src/pages/MealDetailPage.jsx
+msgid "1 porción"
+msgstr "1 serving"
+
+#: src/features/meals/MealForm.jsx
 msgid "1/2 tza"
 msgstr "1/2 cup"
 
@@ -44,13 +65,42 @@ msgstr "1/2 cup"
 msgid "Abrir herramientas"
 msgstr "Open tools"
 
-#: src/components/ShoppingList.jsx
-msgid "Agrega comidas a tu plan semanal o un extra arriba."
-msgstr "Add meals to your weekly plan or an extra above."
+#: src/pages/MealDetailPage.jsx
+msgid "Agendar"
+msgstr "Schedule"
+
+#: src/pages/MealDetailPage.jsx
+msgid "Agendar comida"
+msgstr "Schedule meal"
+
+#: src/pages/MealDetailPage.jsx
+msgid "Agendar hoy"
+msgstr "Schedule today"
 
 #: src/components/ShoppingList.jsx
-msgid "Agregar"
-msgstr "Add"
+msgid "Agrega comidas a tu plan semanal o extras a la lista."
+msgstr "Add meals to your weekly plan or extras to the list."
+
+#: src/components/ShoppingList.jsx
+#~ msgid "Agrega comidas a tu plan semanal o un extra arriba."
+#~ msgstr "Add meals to your weekly plan or an extra above."
+
+#: src/components/ShoppingList.jsx
+#~ msgid "Agregar"
+#~ msgstr "Add"
+
+#: src/components/shopping/AddExtrasSheet.jsx
+msgid "Agregar a la lista"
+msgstr "Add to list"
+
+#: src/features/calendar/ScheduleMealSheet.jsx
+msgid "Agregar de la biblioteca"
+msgstr "Add from library"
+
+#: src/components/shopping/AddExtrasSheet.jsx
+#: src/components/ShoppingList.jsx
+msgid "Agregar extras"
+msgstr "Add extras"
 
 #: src/components/ToolsSidebar.jsx
 msgid "Agregar ingrediente"
@@ -65,13 +115,25 @@ msgstr "Settings"
 msgid "Ajustes guardados"
 msgstr "Settings saved"
 
-#: src/pages/CreateMealPage.jsx
+#: src/components/shopping/AddExtrasSheet.jsx
+msgid "Añade al menos un extra con nombre y cantidad."
+msgstr "Add at least one extra with a name and quantity."
+
+#: src/features/meals/MealForm.jsx
 msgid "Añade al menos un ingrediente con cantidad."
 msgstr "Add at least one ingredient with a quantity."
+
+#: src/features/calendar/CalendarChrome.jsx
+msgid "Anterior"
+msgstr "Previous"
 
 #: src/components/FirstRun.jsx
 msgid "Arma tu semana"
 msgstr "Build your week"
+
+#: src/features/calendar/WeekView.jsx
+msgid "Arrastra comidas entre días"
+msgstr "Drag meals between days"
 
 #: src/pages/CalendarPage.jsx
 #~ msgid "Asignar plantillas al plan semanal"
@@ -81,35 +143,68 @@ msgstr "Build your week"
 msgid "Aún no hay comidas"
 msgstr "No meals yet"
 
+#: src/components/ShoppingList.jsx
+msgid "Basada en la semana"
+msgstr "Based on week"
+
 #: src/pages/MealsPage.jsx
 msgid "Biblioteca vacía"
 msgstr "Empty library"
+
+#: src/pages/CalendarPage.jsx
+msgid "Borra comidas agendadas de hace más de ~4 meses. Biblioteca y plantillas no se tocan."
+msgstr "Removes scheduled meals older than ~4 months. Library and templates are untouched."
+
+#: src/features/calendar/ScheduleMealSheet.jsx
+msgid "Buscar comida…"
+msgstr "Search meals…"
 
 #: src/components/shell/BottomNav.jsx
 #: src/pages/CalendarPage.jsx
 msgid "Calendario"
 msgstr "Calendar"
 
+#: src/features/shopping/ShoppingPage.jsx
+msgid "Cambiar en calendario"
+msgstr "Change in calendar"
+
+#: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ui/base/Modal.jsx
 #: src/components/ui/ConfirmDialog.jsx
-#: src/pages/CreateMealPage.jsx
+#: src/features/calendar/SubstituteSheet.jsx
+#: src/features/meals/MealForm.jsx
+#: src/pages/MealDetailPage.jsx
 msgid "Cancelar"
 msgstr "Cancel"
 
-#: src/components/ShoppingList.jsx
+#: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ToolsSidebar.jsx
 msgid "Cantidad"
 msgstr "Quantity"
 
+#: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ToolsSidebar.jsx
 msgid "Categoría"
 msgstr "Category"
 
+#: src/features/meals/mealTypeLabels.js
+msgid "Cena"
+msgstr "Dinner"
+
 #: src/components/ShoppingList.jsx
 #: src/components/ToolsSidebar.jsx
 #: src/components/ui/ConfirmDialog.jsx
+#: src/components/ui/Sheet.jsx
 msgid "Cerrar"
 msgstr "Close"
+
+#: src/features/meals/mealTypeLabels.js
+msgid "Colación"
+msgstr "Snack"
+
+#: src/features/meals/mealTypeLabels.js
+msgid "Comida"
+msgstr "Lunch"
 
 #: src/pages/MealDetailPage.jsx
 msgid "Comida no encontrada."
@@ -139,6 +234,7 @@ msgstr "Shopping builds the list for the visible week. Prep lives there too — 
 
 #: src/components/ui/base/Modal.jsx
 #: src/components/ui/ConfirmDialog.jsx
+#: src/features/calendar/SubstituteSheet.jsx
 msgid "Confirmar"
 msgstr "Confirm"
 
@@ -150,15 +246,30 @@ msgstr "Create your first meal"
 msgid "Crea una comida mínima o importa un plan JSON. Luego la verás en tu semana."
 msgstr "Create a simple meal or import a JSON plan. Then you'll see it on your week."
 
+#: src/features/calendar/DayView.jsx
+msgid "Crear"
+msgstr "Create"
+
 #: src/components/FirstRun.jsx
-#: src/features/calendar/DayDetail.jsx
 #: src/pages/CalendarPage.jsx
 #: src/pages/CreateMealPage.jsx
 #: src/pages/MealsPage.jsx
 msgid "Crear comida"
 msgstr "Create meal"
 
-#: src/pages/CreateMealPage.jsx
+#: src/features/calendar/ScheduleMealSheet.jsx
+msgid "Crear comida nueva"
+msgstr "Create new meal"
+
+#: src/features/calendar/DayView.jsx
+msgid "De biblioteca"
+msgstr "From library"
+
+#: src/features/meals/mealTypeLabels.js
+msgid "Desayuno"
+msgstr "Breakfast"
+
+#: src/features/meals/MealForm.jsx
 msgid "Desayuno: Avena con fruta"
 msgstr "Breakfast: Oatmeal with fruit"
 
@@ -179,9 +290,10 @@ msgstr "Pantry"
 msgid "Detalles"
 msgstr "Details"
 
+#: src/features/calendar/CalendarChrome.jsx
 #: src/pages/SettingsPage.jsx
-msgid "Día"
-msgstr "Day"
+#~ msgid "Día"
+#~ msgstr "Day"
 
 #: src/components/MealPlanner.jsx
 msgid "Día seleccionado"
@@ -204,6 +316,14 @@ msgstr "Sunday"
 msgid "Duplicar plantilla activa"
 msgstr "Duplicate active template"
 
+#: src/pages/MealDetailPage.jsx
+msgid "Editar"
+msgstr "Edit"
+
+#: src/pages/MealDetailPage.jsx
+msgid "Editar comida"
+msgstr "Edit meal"
+
 #: src/components/ToolsSidebar.jsx
 msgid "Ej: 2 pzas, 1/2 tza, 250 g"
 msgstr "E.g. 2 pcs, 1/2 cup, 250 g"
@@ -217,12 +337,20 @@ msgid "El convertidor crudo ↔ cocido llega en la fase 3. Las sustituciones sig
 msgstr "The raw ↔ cooked converter arrives in phase 3. Substitutions are still available while planning the week."
 
 #: src/pages/MealDetailPage.jsx
-msgid "El editor completo llega en la siguiente fase. Por ahora puedes crear más comidas desde"
-msgstr "The full editor arrives in the next phase. For now you can create more meals from"
+#~ msgid "El editor completo llega en la siguiente fase. Por ahora puedes crear más comidas desde"
+#~ msgstr "The full editor arrives in the next phase. For now you can create more meals from"
 
 #: src/pages/PantryPage.jsx
 msgid "El inventario llega en la fase 3. Mientras tanto, marca “ya lo tengo” en la lista de compras."
 msgstr "Inventory arrives in phase 3. Meanwhile, mark “already have it” on the shopping list."
+
+#: src/pages/MealDetailPage.jsx
+msgid "Eliminar"
+msgstr "Delete"
+
+#: src/pages/MealDetailPage.jsx
+msgid "Eliminar comida"
+msgstr "Delete meal"
 
 #: src/pages/CalendarPage.jsx
 msgid "Empieza por una comida"
@@ -236,6 +364,14 @@ msgstr "Submit"
 msgid "Equivalencias comunes"
 msgstr "Common equivalents"
 
+#: src/pages/MealDetailPage.jsx
+msgid "Esta comida está en el calendario. Se quitará de la biblioteca; las instancias agendadas se quedan como snapshot."
+msgstr "This meal is on the calendar. It will be removed from the library; scheduled instances stay as snapshots."
+
+#: src/features/calendar/DayView.jsx
+msgid "Esta plantilla no tiene comidas."
+msgstr "This template has no meals."
+
 #: src/features/calendar/WeekSurface.jsx
 msgid "Esta semana"
 msgstr "This week"
@@ -246,6 +382,12 @@ msgstr "This week"
 #: src/components/MealPlanner.jsx
 msgid "Estás sustituyendo <0>{0} ({1})</0> de la comida <1>{2}</1>."
 msgstr "You are replacing <0>{0} ({1})</0> from the meal <1>{2}</1>."
+
+#. placeholder {0}: ingredient.name
+#. placeholder {1}: quantityLabel(ingredient.quantity) ? ` (${quantityLabel(ingredient.quantity)})` : ""
+#: src/features/calendar/SubstituteSheet.jsx
+msgid "Estás sustituyendo <0>{0}{1}</0> en <1>{mealName}</1>."
+msgstr "You are substituting <0>{0}{1}</0> in <1>{mealName}</1>."
 
 #: src/components/ShoppingList.jsx
 msgid "Exportar a PDF"
@@ -260,12 +402,17 @@ msgstr "Family"
 msgid "Familia, herramientas, planes y ajustes."
 msgstr "Family, tools, plans, and settings."
 
+#: src/pages/MealDetailPage.jsx
+msgid "Fecha"
+msgstr "Date"
+
 #: src/components/DietPlanUploader.jsx
 msgid "Formato de plan inválido. Revisa el ejemplo para el formato correcto."
 msgstr "Invalid plan format. Check the example for the correct format."
 
 #. placeholder {0}: ingredient.sources.length
 #: src/components/MealPrepPage.jsx
+#: src/features/shopping/PrepMode.jsx
 msgid "Fuentes ({0})"
 msgstr "Sources ({0})"
 
@@ -278,12 +425,24 @@ msgid "Generando PDF…"
 msgstr "Generating PDF…"
 
 #: src/pages/MealsPage.jsx
-msgid "Guarda comidas reutilizables aquí. Empieza con el creador mínimo."
-msgstr "Save reusable meals here. Start with the minimal creator."
+#~ msgid "Guarda comidas reutilizables aquí. Empieza con el creador mínimo."
+#~ msgstr "Save reusable meals here. Start with the minimal creator."
+
+#: src/pages/MealsPage.jsx
+msgid "Guarda comidas reutilizables aquí. Empieza con el creador o importa un plan."
+msgstr "Save reusable meals here. Start with the builder or import a plan."
 
 #: src/pages/SettingsPage.jsx
 msgid "Guardar ajustes"
 msgstr "Save settings"
+
+#: src/pages/MealDetailPage.jsx
+msgid "Guardar cambios"
+msgstr "Save changes"
+
+#: src/pages/CreateMealPage.jsx
+msgid "Guardar en biblioteca"
+msgstr "Save to library"
 
 #: src/App.jsx
 #: src/pages/SettingsPage.jsx
@@ -304,7 +463,9 @@ msgstr "You have unsaved changes."
 msgid "Herramientas"
 msgstr "Tools"
 
+#: src/features/calendar/CalendarChrome.jsx
 #: src/features/calendar/WeekSurface.jsx
+#: src/features/calendar/WeekView.jsx
 msgid "Hoy"
 msgstr "Today"
 
@@ -316,12 +477,17 @@ msgstr "Language"
 msgid "Importa un plan JSON o guarda la plantilla actual. Las plantillas no se borran al reiniciar el plan semanal."
 msgstr "Import a JSON plan or save the current template. Templates are not cleared when you reset the weekly plan."
 
+#: src/pages/MealsPage.jsx
+msgid "Importar plan"
+msgstr "Import plan"
+
 #: src/components/ui/ShoppingListItem.jsx
 msgid "Incluye:"
 msgstr "Includes:"
 
+#: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ToolsSidebar.jsx
-#: src/pages/CreateMealPage.jsx
+#: src/features/meals/MealForm.jsx
 msgid "Ingrediente"
 msgstr "Ingredient"
 
@@ -330,21 +496,26 @@ msgid "Ingrediente a sustituir"
 msgstr "Ingredient to replace"
 
 #: src/components/ShoppingList.jsx
-msgid "Ingrediente extra"
-msgstr "Extra ingredient"
+#~ msgid "Ingrediente extra"
+#~ msgstr "Extra ingredient"
 
 #. placeholder {0}: substitutionModal.ingredientName
 #: src/components/MealPlanner.jsx
 msgid "Ingrediente sustituido: {0} por {name}"
 msgstr "Ingredient replaced: {0} with {name}"
 
+#: src/features/calendar/ScheduleMealSheet.jsx
 #: src/pages/MealsPage.jsx
 msgid "ingredientes"
 msgstr "ingredients"
 
-#: src/pages/CreateMealPage.jsx
+#: src/features/meals/MealForm.jsx
 msgid "Ingredientes"
 msgstr "Ingredients"
+
+#: src/features/shopping/PrepMode.jsx
+msgid "Ingredientes para prep"
+msgstr "Ingredients for prep"
 
 #: src/components/MealPrepPage.jsx
 msgid "Ingredientes Totales"
@@ -357,6 +528,10 @@ msgstr "Ingredients:"
 #: src/pages/CalendarPage.jsx
 msgid "Ir a compras"
 msgstr "Go to shopping"
+
+#: src/features/shopping/PrepMode.jsx
+msgid "Ir al calendario"
+msgstr "Go to calendar"
 
 #: src/components/DietPlanUploader.jsx
 msgid "JSON inválido. Revisa la sintaxis."
@@ -374,10 +549,20 @@ msgstr "Thursday"
 msgid "La semana empieza en"
 msgstr "Week starts on"
 
+#: src/pages/CalendarPage.jsx
+#: src/pages/SettingsPage.jsx
+msgid "Limpiar"
+msgstr "Clean up"
+
 #: src/components/MealPlanner.jsx
-#: src/features/calendar/DayDetail.jsx
+#: src/features/calendar/DayView.jsx
 msgid "Limpiar día"
 msgstr "Clear day"
+
+#: src/pages/CalendarPage.jsx
+#: src/pages/SettingsPage.jsx
+msgid "Limpiar semanas pasadas"
+msgstr "Clear past weeks"
 
 #: src/features/shopping/ShoppingPage.jsx
 msgid "Lista"
@@ -392,8 +577,8 @@ msgid "Lista de Compras — Checklist"
 msgstr "Shopping list — Checklist"
 
 #: src/components/ShoppingList.jsx
-msgid "Los extras se guardan aparte y no se borran al regenerar la lista."
-msgstr "Extras are saved separately and survive list regeneration."
+#~ msgid "Los extras se guardan aparte y no se borran al regenerar la lista."
+#~ msgstr "Extras are saved separately and survive list regeneration."
 
 #: src/i18n/weekDayLabels.js
 msgid "Lun"
@@ -421,6 +606,11 @@ msgstr "Tuesday"
 msgid "Más"
 msgstr "More"
 
+#: src/features/meals/mealTypeLabels.js
+msgid "Merienda"
+msgstr "Afternoon snack"
+
+#: src/features/calendar/CalendarChrome.jsx
 #: src/pages/SettingsPage.jsx
 msgid "Mes"
 msgstr "Month"
@@ -434,15 +624,16 @@ msgid "Miércoles"
 msgstr "Wednesday"
 
 #: src/pages/CreateMealPage.jsx
-msgid "Mínimo: nombre + ingredientes. Se guarda en la biblioteca y se agenda para el día seleccionado."
-msgstr "Minimum: name + ingredients. Saved to the library and scheduled on the selected day."
+#~ msgid "Mínimo: nombre + ingredientes. Se guarda en la biblioteca y se agenda para el día seleccionado."
+#~ msgstr "Minimum: name + ingredients. Saved to the library and scheduled on the selected day."
 
 #: src/pages/CreateMealPage.jsx
-msgid "Mínimo: nombre + ingredientes. Se guarda en la biblioteca y se agenda para hoy."
-msgstr "Minimum: name + ingredients. Saved to the library and scheduled for today."
+#~ msgid "Mínimo: nombre + ingredientes. Se guarda en la biblioteca y se agenda para hoy."
+#~ msgstr "Minimum: name + ingredients. Saved to the library and scheduled for today."
 
 #: src/components/MealPrepPage.jsx
 #: src/components/ToolsSidebar.jsx
+#: src/features/shopping/PrepMode.jsx
 msgid "Mostrar"
 msgstr "Show"
 
@@ -459,12 +650,25 @@ msgid "Mostrar fuentes"
 msgstr "Show sources"
 
 #: src/components/MealPrepPage.jsx
+#: src/features/shopping/PrepMode.jsx
 msgid "Mostrar no seleccionados"
 msgstr "Show unselected"
 
 #: src/components/MealPlanner.jsx
 msgid "Mostrar u ocultar planes de comida disponibles"
 msgstr "Show or hide available meal plans"
+
+#: src/features/shopping/PrepMode.jsx
+msgid "No hay comidas en la semana visible ({weekLabel}). Agenda algo en el calendario primero."
+msgstr "No meals in the visible week ({weekLabel}). Schedule something on the calendar first."
+
+#: src/features/calendar/ScheduleMealSheet.jsx
+msgid "No hay comidas. <0>Crea una</0>."
+msgstr "No meals. <0>Create one</0>."
+
+#: src/features/calendar/SubstituteSheet.jsx
+msgid "No hay equivalentes sugeridos para este ingrediente. Prueba otra categoría o edita la comida en la biblioteca."
+msgstr "No suggested equivalents for this ingredient. Try another category or edit the meal in the library."
 
 #: src/components/ShoppingList.jsx
 msgid "No hay ingredientes en tu lista de compras."
@@ -486,15 +690,22 @@ msgstr "No meal plans available."
 #~ msgid "No hay plantillas de días. Puedes <0>importar un plan</0> o seguir añadiendo comidas sueltas."
 #~ msgstr "No day templates yet. You can <0>import a plan</0> or keep adding individual meals."
 
-#: src/features/calendar/DayDetail.jsx
+#: src/features/calendar/DayView.jsx
 msgid "No hay plantillas. <0>Importa un plan</0> o crea comidas sueltas."
 msgstr "No templates yet. <0>Import a plan</0> or add individual meals."
 
-#: src/pages/CreateMealPage.jsx
+#: src/features/meals/MealForm.jsx
 msgid "Nombre"
 msgstr "Name"
 
-#: src/pages/MealDetailPage.jsx
+#: src/pages/CreateMealPage.jsx
+msgid "Nombre, tipo e ingredientes. Se guarda en la biblioteca y se agenda para el día seleccionado."
+msgstr "Name, type, and ingredients. Saved to the library and scheduled on the selected day."
+
+#: src/pages/CreateMealPage.jsx
+msgid "Nombre, tipo e ingredientes. Se guarda en la biblioteca y se agenda para hoy."
+msgstr "Name, type, and ingredients. Saved to the library and scheduled for today."
+
 #: src/pages/MealsPage.jsx
 msgid "Nueva comida"
 msgstr "New meal"
@@ -505,6 +716,7 @@ msgstr "Or import a JSON plan"
 
 #: src/components/MealPrepPage.jsx
 #: src/components/ToolsSidebar.jsx
+#: src/features/shopping/PrepMode.jsx
 msgid "Ocultar"
 msgstr "Hide"
 
@@ -521,6 +733,7 @@ msgid "Ocultar fuentes"
 msgstr "Hide sources"
 
 #: src/components/MealPrepPage.jsx
+#: src/features/shopping/PrepMode.jsx
 msgid "Ocultar no seleccionados"
 msgstr "Hide unselected"
 
@@ -528,9 +741,17 @@ msgstr "Hide unselected"
 msgid "Omitir"
 msgstr "Skip"
 
-#: src/pages/CreateMealPage.jsx
+#: src/features/meals/mealTypeLabels.js
+msgid "Otro"
+msgstr "Other"
+
+#: src/features/meals/MealForm.jsx
 msgid "Otro ingrediente"
 msgstr "Another ingredient"
+
+#: src/components/shopping/AddExtrasSheet.jsx
+msgid "Otro item"
+msgstr "Another item"
 
 #. placeholder {0}: step + 1
 #. placeholder {1}: STEPS.length
@@ -575,9 +796,13 @@ msgstr "Template and reset"
 msgid "Plantillas guardadas"
 msgstr "Saved templates"
 
-#: src/pages/CreateMealPage.jsx
+#: src/features/meals/MealForm.jsx
 msgid "Ponle un nombre a la comida."
 msgstr "Give the meal a name."
+
+#: src/features/meals/MealForm.jsx
+msgid "Porciones"
+msgstr "Servings"
 
 #: src/features/shopping/ShoppingPage.jsx
 msgid "Prep"
@@ -587,8 +812,37 @@ msgstr "Prep"
 msgid "Presupuesto est. ~{totalBudget} MXN"
 msgstr "Est. budget ~{totalBudget} MXN"
 
+#: src/pages/SettingsPage.jsx
+msgid "Puedes borrar comidas agendadas de hace más de ~4 meses. Biblioteca y plantillas no se tocan."
+msgstr "You can delete scheduled meals older than ~4 months. Library and templates are untouched."
+
+#: src/components/shopping/AddExtrasSheet.jsx
+msgid "Puedes cargar varios items y guardarlos juntos. Los extras no se borran al regenerar la lista."
+msgstr "You can enter several items and save them together. Extras are not cleared when the list regenerates."
+
+#: src/features/calendar/DayView.jsx
+msgid "Quitar"
+msgstr "Remove"
+
+#: src/components/shopping/AddExtrasSheet.jsx
+msgid "Quitar fila"
+msgstr "Remove row"
+
+#: src/features/meals/MealForm.jsx
+msgid "Quitar ingrediente"
+msgstr "Remove ingredient"
+
+#: src/features/calendar/DayView.jsx
+msgid "Reemplazar"
+msgstr "Replace"
+
+#: src/features/calendar/ScheduleMealSheet.jsx
+msgid "Reemplazar comida"
+msgstr "Replace meal"
+
 #: src/components/MealPlanner.jsx
 #: src/components/ToolsSidebar.jsx
+#: src/features/calendar/SubstituteSheet.jsx
 msgid "Reemplazar con"
 msgstr "Replace with"
 
@@ -606,6 +860,10 @@ msgstr "Reset clears the calendar and shopping list, but keeps library, template
 msgid "Reiniciar plan"
 msgstr "Reset plan"
 
+#: src/pages/SettingsPage.jsx
+msgid "Retención del calendario"
+msgstr "Calendar retention"
+
 #: src/i18n/weekDayLabels.js
 msgid "Sáb"
 msgstr "Sat"
@@ -619,8 +877,13 @@ msgstr "Saturday"
 msgid "Se borrarán calendarios, checklist, prep y extras. Biblioteca y plantillas se conservan."
 msgstr "Calendars, checklist, prep, and extras will be cleared. Library and templates are kept."
 
+#: src/pages/CreateMealPage.jsx
+msgid "Se guarda en la biblioteca sin agendarla en el calendario."
+msgstr "Saved to the library without scheduling it on the calendar."
+
 #: src/components/MealPlanner.jsx
 #: src/components/ToolsSidebar.jsx
+#: src/features/calendar/SubstituteSheet.jsx
 msgid "Selecciona un equivalente"
 msgstr "Select an equivalent"
 
@@ -632,6 +895,7 @@ msgstr "Select an ingredient"
 msgid "Selecciona un plan de comida de la lista de disponibles."
 msgstr "Select a meal plan from the available list."
 
+#: src/features/calendar/CalendarChrome.jsx
 #: src/pages/SettingsPage.jsx
 msgid "Semana"
 msgstr "Week"
@@ -644,40 +908,75 @@ msgstr "Previous week"
 msgid "Semana siguiente"
 msgstr "Next week"
 
+#: src/features/shopping/ShoppingPage.jsx
+msgid "Semana visible:"
+msgstr "Visible week:"
+
+#: src/pages/SettingsPage.jsx
+msgid "Semanas pasadas limpiadas"
+msgstr "Past weeks cleared"
+
 #: src/components/FirstRun.jsx
+#: src/features/calendar/CalendarChrome.jsx
 msgid "Siguiente"
 msgstr "Next"
 
+#: src/features/calendar/DayView.jsx
+msgid "Sin comidas. Aplica una plantilla o agrega de la biblioteca."
+msgstr "No meals. Apply a template or add from the library."
+
 #: src/features/calendar/DayDetail.jsx
-msgid "Sin comidas. Aplica una plantilla o crea una comida."
-msgstr "No meals. Apply a template or create a meal."
+#~ msgid "Sin comidas. Aplica una plantilla o crea una comida."
+#~ msgstr "No meals. Apply a template or create a meal."
 
 #: src/components/FirstRun.jsx
 msgid "Sin pegar JSON: escribe un nombre y unos ingredientes. La verás en tu semana al instante."
 msgstr "No JSON paste: enter a name and a few ingredients. You'll see it on your week right away."
+
+#: src/pages/CreateMealPage.jsx
+msgid "Solo biblioteca"
+msgstr "Library only"
 
 #: src/components/DietPlanUploader.jsx
 msgid "Sube tu plan alimenticio"
 msgstr "Upload your diet plan"
 
 #: src/components/ui/meal-planner/ExpandableDayCard.jsx
+#: src/features/calendar/DayView.jsx
 msgid "Sustituir"
 msgstr "Substitute"
 
 #: src/components/MealPlanner.jsx
 #: src/components/ToolsSidebar.jsx
+#: src/features/calendar/SubstituteSheet.jsx
 msgid "Sustituir ingrediente"
 msgstr "Substitute ingredient"
+
+#: src/features/calendar/SubstituteSheet.jsx
+msgid "También actualizar la comida en la biblioteca (si está vinculada)"
+msgstr "Also update the meal in the library (if linked)"
+
+#: src/features/meals/MealForm.jsx
+msgid "Tipo"
+msgstr "Type"
+
+#: src/features/shopping/PrepMode.jsx
+msgid "Toca las comidas que vas a preparar esta semana."
+msgstr "Tap the meals you will prep this week."
 
 #: src/pages/SettingsPage.jsx
 msgid "Todos los cambios están guardados."
 msgstr "All changes are saved."
 
+#: src/features/calendar/ScheduleMealSheet.jsx
+msgid "Todos los tipos"
+msgstr "All types"
+
 #: src/components/shell/AppHeader.jsx
 msgid "Tu cocina, organizada"
 msgstr "Your kitchen, organized"
 
-#: src/features/calendar/DayDetail.jsx
+#: src/features/calendar/DayView.jsx
 msgid "Usar"
 msgstr "Use"
 
@@ -689,11 +988,13 @@ msgstr "Use sample data"
 msgid "Usar este plan"
 msgstr "Use this plan"
 
-#: src/features/calendar/DayDetail.jsx
+#: src/features/calendar/DayView.jsx
 msgid "Usar plantilla de día"
 msgstr "Use day template"
 
+#: src/features/calendar/MonthView.jsx
 #: src/features/calendar/WeekSurface.jsx
+#: src/features/calendar/WeekView.jsx
 msgid "Vacío"
 msgstr "Empty"
 
@@ -713,6 +1014,10 @@ msgstr "Fri"
 msgid "Viernes"
 msgstr "Friday"
 
+#: src/features/calendar/CalendarChrome.jsx
+msgid "Vista de calendario"
+msgstr "Calendar view"
+
 #: src/pages/SettingsPage.jsx
 msgid "Vista de calendario por defecto"
 msgstr "Default calendar view"
@@ -720,3 +1025,7 @@ msgstr "Default calendar view"
 #: src/pages/MealDetailPage.jsx
 msgid "Volver"
 msgstr "Back"
+
+#: src/pages/MealDetailPage.jsx
+msgid "Volver a comidas"
+msgstr "Back to meals"

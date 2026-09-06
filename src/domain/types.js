@@ -78,13 +78,12 @@
  * @typedef {{
  *   locale: "es" | "en",
  *   weekStartsOn: 0|1|2|3|4|5|6,
- *   calendarDefaultView: "month" | "week" | "day",
- *   currency: "MXN"
+ *   calendarDefaultView: "month" | "week",
  * }} Settings
  *
  * @typedef {{
  *   calendarCursorDate: string,
- *   calendarView: "month" | "week" | "day",
+ *   calendarView: "month" | "week",
  *   onboardingDismissed: boolean
  * }} UiState
  *

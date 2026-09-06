@@ -1,8 +1,9 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react";
 import { useRef, useState } from "react";
 import { useAppState } from "../context/AppState";
-import { INGREDIENT_CATEGORIES } from "../domain/ingredient.js";
+import { parseDateISO } from "../features/calendar/dateUtils.js";
 import {
 	extraChecklistKey,
 	ingredientChecklistKey,
@@ -10,7 +11,9 @@ import {
 import { useBudget, estimatePrice } from "../features/shopping/useBudget.js";
 import { usePdfExport } from "../features/shopping/usePdfExport.js";
 import { useShoppingList } from "../features/shopping/useShoppingList.js";
+import Button from "./ui/Button";
 import ShoppingListItem from "./ui/ShoppingListItem";
+import AddExtrasSheet from "./shopping/AddExtrasSheet";
 
 function formatItemQuantity(item) {
 	if (!item.quantities?.length) return "";
@@ -26,9 +29,11 @@ function ShoppingList() {
 	const {
 		weekPlan,
 		state,
+		visibleWeekDates,
 		setCheckedItems,
 		addShoppingExtra,
 	} = useAppState();
+	const { i18n } = useLingui();
 	const checkedItems = state.checkedItems || {};
 	const { shoppingList, groupedShoppingList } = useShoppingList(
 		weekPlan,
@@ -37,28 +42,20 @@ function ShoppingList() {
 	const totalBudget = useBudget(groupedShoppingList);
 	const { pdfState, exportToPDF } = usePdfExport();
 	const pdfContentRef = useRef(null);
+	const locale = i18n.locale === "en" ? "en-US" : "es-MX";
+	const weekLabel =
+		visibleWeekDates?.length >= 7
+			? `${parseDateISO(visibleWeekDates[0]).toLocaleDateString(locale, { day: "numeric", month: "short" })} – ${parseDateISO(visibleWeekDates[6]).toLocaleDateString(locale, { day: "numeric", month: "short" })}`
+			: "";
 
 	const [showFullScreenChecklist, setShowFullScreenChecklist] = useState(false);
 	const [showSources, setShowSources] = useState(false);
-	const [newIngredient, setNewIngredient] = useState({
-		name: "",
-		quantity: "",
-		category: "Verduras",
-	});
+	const [extrasOpen, setExtrasOpen] = useState(false);
 
-	const handleAddExtra = (e) => {
-		e.preventDefault();
-		if (!newIngredient.name.trim() || !newIngredient.quantity.trim()) return;
-		addShoppingExtra({
-			name: newIngredient.name.trim(),
-			quantity: newIngredient.quantity.trim(),
-			category: newIngredient.category,
-		});
-		setNewIngredient((prev) => ({
-			name: "",
-			quantity: "",
-			category: prev.category,
-		}));
+	const handleAddExtras = (items) => {
+		for (const item of items) {
+			addShoppingExtra(item);
+		}
 	};
 
 	const handleCheckAll = () => {
@@ -80,75 +77,40 @@ function ShoppingList() {
 	return (
 		<div className="flex flex-col gap-6 relative">
 			<div className="bg-surface p-6 rounded-app shadow-soft border border-border flex flex-col overflow-hidden max-h-[90dvh]">
-				<div className="flex items-baseline justify-between gap-3 mb-4 flex-wrap">
-					<h2 className="font-display text-2xl text-ink">
-						<Trans>Lista de Compras</Trans>
-					</h2>
-					{totalBudget > 0 ? (
-						<p className="text-sm text-ink-muted">
-							<Trans>Presupuesto est. ~{totalBudget} MXN</Trans>
-						</p>
-					) : null}
+				<div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
+					<div>
+						<h2 className="font-display text-2xl text-ink">
+							<Trans>Lista de Compras</Trans>
+						</h2>
+						{weekLabel ? (
+							<p className="text-sm text-ink-muted mt-0.5">
+								<Trans>Basada en la semana</Trans> {weekLabel}
+							</p>
+						) : null}
+						{totalBudget > 0 ? (
+							<p className="text-sm text-ink-muted mt-0.5">
+								<Trans>Presupuesto est. ~{totalBudget} MXN</Trans>
+							</p>
+						) : null}
+					</div>
+					<Button variant="secondary" onClick={() => setExtrasOpen(true)}>
+						<Trans>Agregar extras</Trans>
+					</Button>
 				</div>
-
-				<form
-					onSubmit={handleAddExtra}
-					className="mb-4 grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto_auto] gap-2"
-				>
-					<input
-						type="text"
-						placeholder={t`Ingrediente extra`}
-						value={newIngredient.name}
-						onChange={(e) =>
-							setNewIngredient((p) => ({ ...p, name: e.target.value }))
-						}
-						className="min-h-11 px-3 rounded-app border border-border bg-bg"
-					/>
-					<input
-						type="text"
-						placeholder={t`Cantidad`}
-						value={newIngredient.quantity}
-						onChange={(e) =>
-							setNewIngredient((p) => ({ ...p, quantity: e.target.value }))
-						}
-						className="min-h-11 px-3 rounded-app border border-border bg-bg"
-					/>
-					<select
-						value={newIngredient.category}
-						onChange={(e) =>
-							setNewIngredient((p) => ({ ...p, category: e.target.value }))
-						}
-						className="min-h-11 px-3 rounded-app border border-border bg-bg"
-					>
-						{Object.keys(INGREDIENT_CATEGORIES).map((cat) => (
-							<option key={cat} value={cat}>
-								{cat}
-							</option>
-						))}
-					</select>
-					<button
-						type="submit"
-						className="min-h-11 px-4 rounded-app bg-brand text-white font-semibold"
-					>
-						<Trans>Agregar</Trans>
-					</button>
-				</form>
-				<p className="text-xs text-ink-muted mb-4">
-					<Trans>
-						Los extras se guardan aparte y no se borran al regenerar la lista.
-					</Trans>
-				</p>
 
 				{Object.keys(shoppingList).length === 0 ? (
 					<div className="text-center py-8">
 						<p className="text-ink-muted mb-2">
 							<Trans>No hay ingredientes en tu lista de compras.</Trans>
 						</p>
-						<p className="text-ink-muted text-sm">
+						<p className="text-ink-muted text-sm mb-4">
 							<Trans>
-								Agrega comidas a tu plan semanal o un extra arriba.
+								Agrega comidas a tu plan semanal o extras a la lista.
 							</Trans>
 						</p>
+						<Button onClick={() => setExtrasOpen(true)}>
+							<Trans>Agregar extras</Trans>
+						</Button>
 					</div>
 				) : (
 					<>
@@ -227,6 +189,12 @@ function ShoppingList() {
 					</>
 				)}
 			</div>
+
+			<AddExtrasSheet
+				open={extrasOpen}
+				onClose={() => setExtrasOpen(false)}
+				onSubmit={handleAddExtras}
+			/>
 
 			{showFullScreenChecklist && (
 				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto p-4">

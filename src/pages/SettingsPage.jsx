@@ -9,22 +9,31 @@ import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 export default function SettingsPage() {
-	const { state, saveSettings, reiniciar, saveCurrentAsTemplate } = useAppState();
+	const {
+		state,
+		saveSettings,
+		reiniciar,
+		saveCurrentAsTemplate,
+		prunePastWeeks,
+	} = useAppState();
 	const toast = useToast();
 	const [confirmOpen, setConfirmOpen] = useState(false);
+	const [pruneOpen, setPruneOpen] = useState(false);
 	const navigate = useNavigate();
 
 	const [draft, setDraft] = useState(() => ({
 		locale: state.settings.locale,
 		weekStartsOn: state.settings.weekStartsOn,
-		calendarDefaultView: state.settings.calendarDefaultView,
+		calendarDefaultView:
+			state.settings.calendarDefaultView === "month" ? "month" : "week",
 	}));
 
 	useEffect(() => {
 		setDraft({
 			locale: state.settings.locale,
 			weekStartsOn: state.settings.weekStartsOn,
-			calendarDefaultView: state.settings.calendarDefaultView,
+			calendarDefaultView:
+				state.settings.calendarDefaultView === "month" ? "month" : "week",
 		});
 	}, [
 		state.settings.locale,
@@ -133,9 +142,6 @@ export default function SettingsPage() {
 					<option value="month">
 						<Trans>Mes</Trans>
 					</option>
-					<option value="day">
-						<Trans>Día</Trans>
-					</option>
 				</select>
 			</label>
 
@@ -167,6 +173,21 @@ export default function SettingsPage() {
 				</Button>
 			</div>
 
+			<div className="space-y-2 pt-2 border-t border-border">
+				<p className="text-sm font-semibold">
+					<Trans>Retención del calendario</Trans>
+				</p>
+				<p className="text-xs text-ink-muted">
+					<Trans>
+						Puedes borrar comidas agendadas de hace más de ~4 meses. Biblioteca
+						y plantillas no se tocan.
+					</Trans>
+				</p>
+				<Button variant="secondary" onClick={() => setPruneOpen(true)}>
+					<Trans>Limpiar semanas pasadas</Trans>
+				</Button>
+			</div>
+
 			<ConfirmDialog
 				open={confirmOpen}
 				danger
@@ -180,6 +201,24 @@ export default function SettingsPage() {
 				confirmLabel={<Trans>Reiniciar</Trans>}
 				onConfirm={confirmReset}
 				onCancel={() => setConfirmOpen(false)}
+			/>
+
+			<ConfirmDialog
+				open={pruneOpen}
+				danger
+				title={<Trans>Limpiar semanas pasadas</Trans>}
+				description={
+					<Trans>
+						¿Borrar del calendario todo lo anterior a hace unos 4 meses?
+					</Trans>
+				}
+				confirmLabel={<Trans>Limpiar</Trans>}
+				onConfirm={() => {
+					prunePastWeeks({ keepMonths: 4 });
+					setPruneOpen(false);
+					toast?.success?.(t`Semanas pasadas limpiadas`);
+				}}
+				onCancel={() => setPruneOpen(false)}
 			/>
 		</div>
 	);

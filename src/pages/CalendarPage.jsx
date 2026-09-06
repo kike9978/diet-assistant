@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Trans } from "@lingui/react/macro";
 import { Link, useNavigate } from "react-router-dom";
 import { useAppState } from "../context/AppState";
-import DayDetail from "../features/calendar/DayDetail";
-import WeekSurface from "../features/calendar/WeekSurface";
+import CalendarChrome from "../features/calendar/CalendarChrome";
+import DayView from "../features/calendar/DayView";
+import MonthView from "../features/calendar/MonthView";
+import WeekView from "../features/calendar/WeekView";
 import {
 	todayISO,
 	weekDateISOs,
@@ -11,6 +13,11 @@ import {
 import FirstRun from "../components/FirstRun";
 import EmptyState from "../components/ui/EmptyState";
 import Button from "../components/ui/Button";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
+
+function normalizeCalendarView(view) {
+	return view === "month" ? "month" : "week";
+}
 
 function defaultSelectedDate(cursorDate, weekStartsOn) {
 	const today = todayISO();
@@ -20,27 +27,41 @@ function defaultSelectedDate(cursorDate, weekStartsOn) {
 }
 
 export default function CalendarPage() {
-	const { hasContent, state, setCalendarCursorDate } = useAppState();
+	const {
+		hasContent,
+		state,
+		setCalendarCursorDate,
+		setCalendarView,
+		prunePastWeeks,
+	} = useAppState();
 	const navigate = useNavigate();
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const cursor = state.ui.calendarCursorDate;
+	const view = normalizeCalendarView(
+		state.ui.calendarView || state.settings.calendarDefaultView || "week",
+	);
 	const showOnboarding = !state.ui.onboardingDismissed && !hasContent;
 
 	const [selectedDateISO, setSelectedDateISO] = useState(() =>
 		defaultSelectedDate(cursor, weekStartsOn),
 	);
+	const [pruneOpen, setPruneOpen] = useState(false);
 
-	// Keep selection inside the visible week when cursor / weekStartsOn changes
 	useEffect(() => {
 		const week = weekDateISOs(cursor, weekStartsOn);
-		if (!week.includes(selectedDateISO)) {
+		if (view === "week" && !week.includes(selectedDateISO)) {
 			setSelectedDateISO(defaultSelectedDate(cursor, weekStartsOn));
 		}
-	}, [cursor, weekStartsOn, selectedDateISO]);
+	}, [cursor, weekStartsOn, selectedDateISO, view]);
 
-	const handleSelectDate = (dateISO) => {
+	const handleSelectDate = (dateISO, nextView) => {
 		setSelectedDateISO(dateISO);
 		setCalendarCursorDate(dateISO);
+		if (nextView) setCalendarView(normalizeCalendarView(nextView));
+	};
+
+	const handleOpenMeal = (meal) => {
+		handleSelectDate(meal.dateISO);
 	};
 
 	if (!hasContent) {
@@ -74,7 +95,7 @@ export default function CalendarPage() {
 				<h1 className="font-display text-2xl text-ink">
 					<Trans>Calendario</Trans>
 				</h1>
-				<div className="flex gap-2">
+				<div className="flex gap-2 flex-wrap">
 					<Button variant="secondary" onClick={() => navigate("/meals/new")}>
 						<Trans>Crear comida</Trans>
 					</Button>
@@ -84,11 +105,63 @@ export default function CalendarPage() {
 				</div>
 			</div>
 
-			<WeekSurface
-				selectedDateISO={selectedDateISO}
-				onSelectDate={handleSelectDate}
+			<CalendarChrome
+				view={view}
+				cursorDate={cursor}
+				weekStartsOn={weekStartsOn}
+				onViewChange={(v) => setCalendarView(normalizeCalendarView(v))}
+				onCursorChange={setCalendarCursorDate}
+				onToday={(iso) => setSelectedDateISO(iso)}
 			/>
-			<DayDetail dateISO={selectedDateISO} />
+
+			{view === "month" ? (
+				<MonthView
+					onSelectDate={(dateISO) => handleSelectDate(dateISO, "week")}
+				/>
+			) : (
+				<>
+					<WeekView
+						selectedDateISO={selectedDateISO}
+						onSelectDate={(iso) => handleSelectDate(iso)}
+						onOpenMeal={handleOpenMeal}
+					/>
+					<DayView dateISO={selectedDateISO} />
+				</>
+			)}
+
+			<div className="mt-6 pt-4 border-t border-border">
+				<button
+					type="button"
+					className="text-sm text-ink-muted underline hover:text-ink"
+					onClick={() => setPruneOpen(true)}
+				>
+					<Trans>Limpiar semanas pasadas</Trans>
+				</button>
+				<p className="text-xs text-ink-muted mt-1">
+					<Trans>
+						Borra comidas agendadas de hace más de ~4 meses. Biblioteca y
+						plantillas no se tocan.
+					</Trans>
+				</p>
+			</div>
+
+			<ConfirmDialog
+				open={pruneOpen}
+				danger
+				title={<Trans>Limpiar semanas pasadas</Trans>}
+				description={
+					<Trans>
+						¿Borrar del calendario todo lo anterior a hace unos 4 meses? No
+						afecta biblioteca ni plantillas.
+					</Trans>
+				}
+				confirmLabel={<Trans>Limpiar</Trans>}
+				onConfirm={() => {
+					prunePastWeeks({ keepMonths: 4 });
+					setPruneOpen(false);
+				}}
+				onCancel={() => setPruneOpen(false)}
+			/>
 		</div>
 	);
 }
