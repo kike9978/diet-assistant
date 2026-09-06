@@ -199,9 +199,8 @@ export default function FamilyPage() {
 									key={c}
 									type="button"
 									onClick={() => setColor(c)}
-									className={`w-10 h-10 rounded-full border-2 ${
-										color === c ? "border-ink scale-110" : "border-transparent"
-									}`}
+									className={`w-10 h-10 rounded-full border-2 ${color === c ? "border-ink scale-110" : "border-transparent"
+										}`}
 									style={{ backgroundColor: c }}
 									aria-label={t`Color ${c}`}
 									aria-pressed={color === c}

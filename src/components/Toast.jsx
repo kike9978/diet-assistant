@@ -42,9 +42,9 @@ export function ToastProvider({ children }) {
           <div
             key={toast.id}
             className={`px-4 py-3 rounded-md shadow-md flex items-center justify-between max-w-xs animate-fade-in ${toast.type === 'success' ? 'bg-green-200 text-green-800' :
-                toast.type === 'error' ? 'bg-red-200 text-red-800' :
-                  toast.type === 'info' ? 'bg-blue-200 text-blue-800' :
-                    'bg-yellow-500 text-white'
+              toast.type === 'error' ? 'bg-red-200 text-red-800' :
+                toast.type === 'info' ? 'bg-blue-200 text-blue-800' :
+                  'bg-yellow-500 text-white'
               }`}
           >
             <p>{toast.message}</p>

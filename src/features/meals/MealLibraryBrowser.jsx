@@ -39,15 +39,14 @@ function MealTypeTabs({ value, onChange, chrome }) {
 						aria-label={tab.label}
 						title={tab.label}
 						onClick={() => onChange(tab.id)}
-						className={`flex size-11 shrink-0 items-center justify-center rounded-app transition ${
-							inventory
+						className={`flex size-11 shrink-0 items-center justify-center rounded-app transition ${inventory
 								? selected
 									? "bg-[var(--color-accent-citrus)] text-ink"
 									: "text-white/90 hover:bg-white/10"
 								: selected
 									? "bg-[var(--color-accent-citrus)] text-ink"
 									: "bg-surface text-ink-muted border border-border hover:text-ink"
-						}`}
+							}`}
 					>
 						<Icon className="size-5" aria-hidden />
 					</button>

@@ -30,11 +30,10 @@ export default function Sheet({
 			<div
 				role="dialog"
 				aria-modal="true"
-				className={`relative w-full ${width} max-h-[90dvh] bg-surface rounded-t-app sm:rounded-app shadow-soft sm:m-4 ${
-					padded
+				className={`relative w-full ${width} max-h-[90dvh] bg-surface rounded-t-app sm:rounded-app shadow-soft sm:m-4 ${padded
 						? "overflow-y-auto p-5"
 						: "flex h-[90dvh] sm:h-[min(40rem,85dvh)] flex-col overflow-hidden"
-				}`}
+					}`}
 			>
 				{showHeader ? (
 					<div className="flex items-start justify-between gap-3 mb-4">

@@ -43,11 +43,10 @@ export default function MemberSwitcher() {
 						key={member.id}
 						type="button"
 						onClick={() => setActiveMember(member.id)}
-						className={`inline-flex items-center gap-1.5 min-h-11 px-2.5 rounded-app text-sm font-semibold shrink-0 ${
-							active
+						className={`inline-flex items-center gap-1.5 min-h-11 px-2.5 rounded-app text-sm font-semibold shrink-0 ${active
 								? "bg-white text-brand"
 								: "text-white/85 hover:bg-white/15"
-						}`}
+							}`}
 						aria-pressed={active}
 						title={member.name}
 					>

@@ -135,8 +135,8 @@ msgstr "{fuseSelectedCount, plural, one {# item seleccionado} other {# items sel
 #~ msgstr "{mealCount} comidas"
 
 #: src/features/meals/MealTile.jsx
-msgid "{servings} porciones"
-msgstr "{servings} porciones"
+#~ msgid "{servings} porciones"
+#~ msgstr "{servings} porciones"
 
 #: src/pages/WeekPlanPage.jsx
 #~ msgid "← Calendario"
@@ -159,7 +159,6 @@ msgstr "<0>{aisleQty}</0> en la lista · cantidades distintas por comida"
 msgid "1 ingrediente"
 msgstr "1 ingrediente"
 
-#: src/features/meals/MealTile.jsx
 #: src/pages/MealDetailPage.jsx
 msgid "1 porción"
 msgstr "1 porción"
@@ -714,7 +713,7 @@ msgstr "Editar extra"
 msgid "Editar perfil"
 msgstr "Editar perfil"
 
-#: src/features/calendar/WeekAssignBar.jsx
+#: src/features/calendar/CalendarChrome.jsx
 msgid "Editar plan"
 msgstr "Editar plan"
 
@@ -1647,8 +1646,8 @@ msgid "Semana anterior"
 msgstr "Semana anterior"
 
 #: src/features/calendar/CalendarChrome.jsx
-msgid "Semana de"
-msgstr "Semana de"
+#~ msgid "Semana de"
+#~ msgstr "Semana de"
 
 #: src/pages/WeekPlanPage.jsx
 msgid "Semana del"

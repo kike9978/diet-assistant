@@ -35,9 +35,8 @@ function PrepMealCard({
 		<button
 			type="button"
 			onClick={onToggleSelect}
-			className={`w-full text-left bg-surface border border-border rounded-app p-4 transition ${
-				hasAnySelection && !isSelected ? "opacity-40" : ""
-			} ${isSelected ? "ring-1 ring-[var(--color-brand)] border-[var(--color-brand)]" : ""}`}
+			className={`w-full text-left bg-surface border border-border rounded-app p-4 transition ${hasAnySelection && !isSelected ? "opacity-40" : ""
+				} ${isSelected ? "ring-1 ring-[var(--color-brand)] border-[var(--color-brand)]" : ""}`}
 		>
 			<div className="flex justify-between items-start gap-2">
 				<div className="min-w-0">

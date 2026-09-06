@@ -33,11 +33,10 @@ export default function MealIconPicker({ open, meal, onClose, onPick }) {
 							<button
 								type="button"
 								onClick={() => onPick(key)}
-								className={`flex w-full items-center justify-center rounded-app p-1 transition ${
-									selected
+								className={`flex w-full items-center justify-center rounded-app p-1 transition ${selected
 										? "ring-2 ring-[var(--color-accent-citrus)] bg-surface-2"
 										: "hover:bg-surface-2"
-								}`}
+									}`}
 								aria-pressed={selected}
 							>
 								<MealPlate meal={meal} iconKey={key} size="sm" />

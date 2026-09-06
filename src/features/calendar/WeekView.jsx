@@ -66,13 +66,13 @@ function DayColumn({ dateISO, selected, isToday, children, onSelect }) {
 					onSelect(dateISO);
 				}
 			}}
-			className={`snap-start shrink-0 w-[7.5rem] sm:w-auto text-left bg-surface border rounded-app p-3 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${
+			className={`snap-start shrink-0 w-[5.75rem] sm:w-auto text-left bg-surface border rounded-app p-2.5 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${
 				selected
 					? "border-[var(--color-brand)] ring-1 ring-inset ring-[var(--color-brand)]"
 					: "border-border hover:border-ink-muted"
 			}`}
 		>
-			<p className="text-xs font-semibold text-ink-muted mb-1.5 flex items-baseline gap-1">
+			<p className="text-xs font-semibold text-ink-muted mb-1 flex items-baseline gap-1">
 				<span>{_(DAY_SHORT_MSG[dayKey])}</span>
 				<span className={isToday ? "text-brand" : "text-ink"}>
 					{d.getDate()}

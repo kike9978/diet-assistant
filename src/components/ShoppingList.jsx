@@ -77,13 +77,12 @@ function ChecklistCategoryBlocks({
 					return (
 						<li
 							key={key}
-							className={`px-3 rounded-app ${
-								canFuseSelect && fuseSelected
+							className={`px-3 rounded-app ${canFuseSelect && fuseSelected
 									? "bg-[var(--color-accent-shopping)]/15 ring-2 ring-[var(--color-accent-shopping)]"
 									: view.checkState === "checked"
 										? "bg-[var(--color-accent-leaf)]/10"
 										: "bg-surface-2"
-							}`}
+								}`}
 						>
 							<ShoppingChecklistRow
 								item={item}

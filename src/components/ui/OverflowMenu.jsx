@@ -94,19 +94,19 @@ export default function OverflowMenu({ label, children, disabled = false }) {
 			</button>
 			{open
 				? createPortal(
-						<div
-							ref={menuRef}
-							id={menuId}
-							role="menu"
-							style={{ top: coords.top, right: coords.right }}
-							className="fixed z-[70] min-w-44 rounded-app border border-border bg-surface shadow-soft py-1"
-						>
-							{typeof children === "function"
-								? children(() => setOpen(false))
-								: children}
-						</div>,
-						document.body,
-					)
+					<div
+						ref={menuRef}
+						id={menuId}
+						role="menu"
+						style={{ top: coords.top, right: coords.right }}
+						className="fixed z-[70] min-w-44 rounded-app border border-border bg-surface shadow-soft py-1"
+					>
+						{typeof children === "function"
+							? children(() => setOpen(false))
+							: children}
+					</div>,
+					document.body,
+				)
 				: null}
 		</div>
 	);
@@ -117,9 +117,8 @@ export function OverflowMenuItem({ onClick, children, danger = false }) {
 		<button
 			type="button"
 			role="menuitem"
-			className={`w-full text-left px-3 py-2.5 min-h-11 text-sm font-semibold hover:bg-surface-2 focus:outline-none focus-visible:bg-surface-2 ${
-				danger ? "text-[var(--color-danger)]" : "text-ink"
-			}`}
+			className={`w-full text-left px-3 py-2.5 min-h-11 text-sm font-semibold hover:bg-surface-2 focus:outline-none focus-visible:bg-surface-2 ${danger ? "text-[var(--color-danger)]" : "text-ink"
+				}`}
 			onClick={onClick}
 		>
 			{children}

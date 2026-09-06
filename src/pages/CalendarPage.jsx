@@ -6,7 +6,6 @@ import CalendarChrome from "../features/calendar/CalendarChrome";
 import DayView from "../features/calendar/DayView";
 import MonthView from "../features/calendar/MonthView";
 import WeekView from "../features/calendar/WeekView";
-import WeekAssignBar from "../features/calendar/WeekAssignBar";
 import {
 	todayISO,
 	weekDateISOs,
@@ -77,11 +76,15 @@ export default function CalendarPage() {
 		<div>
 			{showOnboarding ? <FirstRun /> : null}
 
-			<div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-				<h1 className="font-display text-2xl text-ink">
+			<div className="flex items-center justify-between gap-3 mb-3">
+				<h1 className="font-display text-xl text-ink">
 					<Trans>Calendario</Trans>
 				</h1>
-				<Button onClick={() => navigate("/shopping")}>
+				<Button
+					variant="secondary"
+					onClick={() => navigate("/shopping")}
+					className="min-h-9 px-3 text-xs"
+				>
 					<Trans>Ir a compras</Trans>
 				</Button>
 			</div>
@@ -94,11 +97,11 @@ export default function CalendarPage() {
 				onCursorChange={setCalendarCursorDate}
 				onToday={(iso) => setSelectedDateISO(iso)}
 				activeMember={activeMember}
+				editPlanWeekStartISO={view === "week" ? weekStartISO : null}
 			/>
 
 			{view === "week" ? (
 				<>
-					<WeekAssignBar weekStartISO={weekStartISO} />
 					<WeekView
 						selectedDateISO={selectedDateISO}
 						onSelectDate={handleSelectDate}

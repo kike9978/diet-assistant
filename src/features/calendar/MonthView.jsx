@@ -87,11 +87,10 @@ export default function MonthView({ selectedDateISO, onSelectDate }) {
 										`/plan/week?week=${encodeURIComponent(weekStart)}`,
 									)
 								}
-								className={`min-h-[4.5rem] sm:min-h-[5.5rem] p-1.5 flex flex-col items-center justify-center gap-1 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${
-									hasCal || hasPlan
+								className={`min-h-[4.5rem] sm:min-h-[5.5rem] p-1.5 flex flex-col items-center justify-center gap-1 text-center transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${hasCal || hasPlan
 										? "bg-[var(--color-brand)]/10 hover:bg-[var(--color-brand)]/15 text-brand"
 										: "bg-surface hover:bg-surface-2 text-ink-muted"
-								}`}
+									}`}
 							>
 								<span className="text-lg leading-none" aria-hidden>
 									✎
@@ -119,22 +118,20 @@ export default function MonthView({ selectedDateISO, onSelectDate }) {
 										type="button"
 										key={dateISO}
 										onClick={() => onSelectDate(dateISO)}
-										className={`min-h-[4.5rem] sm:min-h-[5.5rem] p-1.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${
-											selected
+										className={`min-h-[4.5rem] sm:min-h-[5.5rem] p-1.5 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand)] ${selected
 												? "bg-[var(--color-brand)]/10 ring-1 ring-inset ring-[var(--color-brand)]"
 												: inMonth
 													? "bg-surface hover:bg-surface-2"
 													: "bg-surface-2/40"
-										}`}
+											}`}
 									>
 										<span
-											className={`inline-flex items-center justify-center min-w-6 h-6 text-sm font-semibold rounded-full mb-1 ${
-												isToday
+											className={`inline-flex items-center justify-center min-w-6 h-6 text-sm font-semibold rounded-full mb-1 ${isToday
 													? "bg-brand text-white"
 													: inMonth
 														? "text-ink"
 														: "text-ink-muted"
-											}`}
+												}`}
 										>
 											{d.getDate()}
 										</span>

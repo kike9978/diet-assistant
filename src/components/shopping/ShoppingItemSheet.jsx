@@ -523,7 +523,7 @@ export default function ShoppingItemSheet({
 											<span className="min-w-0 flex-1 truncate">
 												{_(
 													DAY_LABEL_MSG[source.dayKey] ||
-														DAY_LABEL_MSG.sunday,
+													DAY_LABEL_MSG.sunday,
 												)}{" "}
 												· {source.mealName}
 											</span>
@@ -560,11 +560,10 @@ export default function ShoppingItemSheet({
 							role="tab"
 							aria-selected={yieldMode === "rawToCooked"}
 							onClick={() => onSetYieldMode?.("rawToCooked")}
-							className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${
-								yieldMode === "rawToCooked"
+							className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${yieldMode === "rawToCooked"
 									? "bg-brand text-white"
 									: "text-ink-muted"
-							}`}
+								}`}
 						>
 							<Trans>Cruda</Trans>
 						</button>
@@ -573,11 +572,10 @@ export default function ShoppingItemSheet({
 							role="tab"
 							aria-selected={yieldMode === "cookedToRaw"}
 							onClick={() => onSetYieldMode?.("cookedToRaw")}
-							className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${
-								yieldMode === "cookedToRaw"
+							className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${yieldMode === "cookedToRaw"
 									? "bg-brand text-white"
 									: "text-ink-muted"
-							}`}
+								}`}
 						>
 							<Trans>Cocida</Trans>
 						</button>

@@ -53,11 +53,10 @@ export default function ShoppingChecklistRow({
 	}, [mixed, fuseSelectMode]);
 
 	const displayQty = item.pantryCovered ? "" : view?.displayQty || "";
-	const nameClass = `min-w-0 flex-1 line-clamp-2 font-semibold leading-snug ${
-		fullyChecked && !fuseSelectMode
+	const nameClass = `min-w-0 flex-1 line-clamp-2 font-semibold leading-snug ${fullyChecked && !fuseSelectMode
 			? "line-through text-ink-muted"
 			: "text-ink"
-	}`;
+		}`;
 
 	return (
 		<div>
@@ -79,11 +78,10 @@ export default function ShoppingChecklistRow({
 							if (fuseSelectMode) onToggleFuseSelect?.();
 							else onToggle?.();
 						}}
-						className={`h-5 w-5 shrink-0 ${
-							fuseSelectMode
+						className={`h-5 w-5 shrink-0 ${fuseSelectMode
 								? "accent-[var(--color-accent-shopping)]"
 								: "accent-[var(--color-brand)]"
-						}`}
+							}`}
 						aria-label={
 							fuseSelectMode
 								? t`Seleccionar ${item.name} para combinar`
@@ -94,9 +92,8 @@ export default function ShoppingChecklistRow({
 				{showCheckbox ? (
 					<label
 						htmlFor={checkboxId}
-						className={`${nameClass} py-2 ${
-							fuseDisabled ? "cursor-default" : "cursor-pointer"
-						}`}
+						className={`${nameClass} py-2 ${fuseDisabled ? "cursor-default" : "cursor-pointer"
+							}`}
 					>
 						{item.name}
 					</label>

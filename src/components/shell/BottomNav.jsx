@@ -13,8 +13,7 @@ const MORE_PATHS = ["/more", "/meals", "/family", "/tools", "/plans", "/settings
 const iconClass = "size-5";
 
 const linkClass = ({ isActive }) =>
-	`flex flex-col items-center justify-center gap-0.5 min-h-11 w-full px-1 text-xs font-semibold transition ${
-		isActive ? "text-brand" : "text-ink-muted hover:text-ink"
+	`flex flex-col items-center justify-center gap-0.5 min-h-11 w-full px-1 text-xs font-semibold transition ${isActive ? "text-brand" : "text-ink-muted hover:text-ink"
 	}`;
 
 export default function BottomNav() {

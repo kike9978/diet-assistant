@@ -75,11 +75,10 @@ export default function ToolsPage() {
 						role="tab"
 						aria-selected={direction === "rawToCooked"}
 						onClick={() => setDirection("rawToCooked")}
-						className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${
-							direction === "rawToCooked"
+						className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${direction === "rawToCooked"
 								? "bg-brand text-white"
 								: "text-ink-muted"
-						}`}
+							}`}
 					>
 						<Trans>Crudo → cocido</Trans>
 					</button>
@@ -88,11 +87,10 @@ export default function ToolsPage() {
 						role="tab"
 						aria-selected={direction === "cookedToRaw"}
 						onClick={() => setDirection("cookedToRaw")}
-						className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${
-							direction === "cookedToRaw"
+						className={`min-h-11 px-3 text-sm font-semibold rounded-[calc(var(--radius-md)-2px)] ${direction === "cookedToRaw"
 								? "bg-brand text-white"
 								: "text-ink-muted"
-						}`}
+							}`}
 					>
 						<Trans>Cocido → crudo</Trans>
 					</button>
@@ -167,9 +165,8 @@ export default function ToolsPage() {
 							<button
 								type="button"
 								onClick={() => setFoodId(y.id)}
-								className={`w-full text-left px-4 py-3 min-h-11 flex justify-between gap-3 hover:bg-surface-2 ${
-									y.id === foodId ? "bg-surface-2" : ""
-								}`}
+								className={`w-full text-left px-4 py-3 min-h-11 flex justify-between gap-3 hover:bg-surface-2 ${y.id === foodId ? "bg-surface-2" : ""
+									}`}
 							>
 								<span className="font-medium text-ink">{foodLabel(y)}</span>
 								<span className="text-sm text-ink-muted shrink-0">
