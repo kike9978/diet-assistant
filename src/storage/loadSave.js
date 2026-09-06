@@ -1,4 +1,5 @@
 import { syncAllWeekPlanAssignmentsFromCalendar } from "../features/weekplan/weekPlanModel.js";
+import { backfillCalendarFlavorText } from "../features/meals/flavorText.js";
 import { isValidV2State, createEmptyState } from "./defaults.js";
 import {
 	clearLegacyKeys,
@@ -117,7 +118,9 @@ export function normalizeV2State(state) {
 	delete next.dayTemplates;
 	delete next.dietTemplates;
 	// Calendar days are whole day-plan materializations — heal missing assignments.
-	return syncAllWeekPlanAssignmentsFromCalendar(next);
+	return syncAllWeekPlanAssignmentsFromCalendar(
+		backfillCalendarFlavorText(next),
+	);
 }
 
 /**

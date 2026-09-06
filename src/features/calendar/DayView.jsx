@@ -6,6 +6,7 @@ import { useAppState } from "../../context/AppState";
 import { DAY_LABEL_MSG } from "../../i18n/weekDayLabels";
 import Button from "../../components/ui/Button";
 import { MEAL_TYPE_MSG } from "../meals/mealTypeLabels.js";
+import MealFlavorText from "../meals/MealFlavorText";
 import {
 	canonicalWeekStartISO,
 	getWeekPlan,
@@ -148,7 +149,9 @@ export default function DayView({ dateISO }) {
 								</button>
 
 								{isExpanded ? (
-									<ul className="border-t border-border bg-surface-2/40 px-3 py-3 text-sm text-ink-muted space-y-1">
+									<div className="border-t border-border bg-surface-2/40 px-3 py-3 space-y-2">
+										<MealFlavorText text={meal.flavorText} />
+										<ul className="text-sm text-ink-muted space-y-1">
 										{ingredientCount === 0 ? (
 											<li>
 												<Trans>Sin ingredientes</Trans>
@@ -168,7 +171,8 @@ export default function DayView({ dateISO }) {
 												</li>
 											))
 										)}
-									</ul>
+										</ul>
+									</div>
 								) : null}
 							</li>
 						);
@@ -284,6 +288,10 @@ export default function DayView({ dateISO }) {
 															)}
 														</span>
 													</div>
+													<MealFlavorText
+														text={meal.flavorText}
+														className="mb-1 pl-4"
+													/>
 													<ul className="text-xs text-ink-muted pl-4 list-disc space-y-0.5">
 														{(meal.ingredients || []).map((ing) => (
 															<li

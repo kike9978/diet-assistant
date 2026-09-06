@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useAppState } from "../context/AppState";
 import { formatQuantity } from "../domain/quantity.js";
 import MealForm from "../features/meals/MealForm";
+import MealFlavorText from "../features/meals/MealFlavorText";
 import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
@@ -69,6 +70,8 @@ export default function MealDetailPage() {
 					)}
 				</p>
 			</div>
+
+			<MealFlavorText text={meal.flavorText} />
 
 			<ul className="space-y-2 border border-border rounded-app bg-surface p-4">
 				{meal.ingredients.map((ing) => (

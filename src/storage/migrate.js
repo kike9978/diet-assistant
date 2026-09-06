@@ -5,6 +5,7 @@ import {
 } from "../domain/ingredient.js";
 import { inferMealType } from "../domain/mealType.js";
 import { formatQuantity } from "../domain/quantity.js";
+import { flavorTextFields, flavorTextFromMeal } from "../features/meals/flavorText.js";
 import {
 	startOfWeek,
 	toDateISO,
@@ -53,6 +54,7 @@ function ensureLibraryMeal(meal, source, fingerprintToId, library) {
 		tags: [],
 		servings: 1,
 		source,
+		...flavorTextFields(flavorTextFromMeal(meal)),
 		createdAt: now,
 		updatedAt: now,
 	});
@@ -102,6 +104,7 @@ function mapWeekPlanToCalendar(weekPlan, memberId, calendars, fingerprintToId, l
 								: formatQuantity(ing.quantity) || "",
 					}),
 				),
+				...flavorTextFields(flavorTextFromMeal(meal)),
 			};
 		});
 		calendars[memberId][dateISO] = [

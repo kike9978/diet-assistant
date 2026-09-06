@@ -21,6 +21,7 @@
  *   tags: string[],
  *   servings: number,
  *   source: "user" | "import",
+ *   flavorText?: string,
  *   createdAt: string,
  *   updatedAt: string
  * }} Meal
@@ -33,6 +34,7 @@
  *   name: string,
  *   mealType: MealType,
  *   ingredients: Ingredient[],
+ *   flavorText?: string,
  *   notes?: string,
  *   replacedFromId?: string
  * }} ScheduledMeal
@@ -90,6 +92,7 @@
  *     name: string,
  *     mealType: MealType | string,
  *     ingredients: Ingredient[],
+ *     flavorText?: string,
  *     dirty?: boolean,
  *     source?: "library" | "create" | "import"
  *   }[]

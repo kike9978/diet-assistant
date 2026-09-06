@@ -20,6 +20,7 @@ import { useLingui } from "@lingui/react";
 import { useEffect, useId, useRef, useState } from "react";
 import Button from "../../components/ui/Button";
 import { MEAL_TYPE_MSG } from "../meals/mealTypeLabels.js";
+import MealFlavorText from "../meals/MealFlavorText";
 import { quantityLabel } from "../calendar/calendarActions.js";
 
 function DragHandle({ attributes, listeners }) {
@@ -222,7 +223,9 @@ function SortableMealRow({
 			</div>
 
 			{isExpanded ? (
-				<ul className="border-t border-border bg-surface-2/40 px-3 py-3 text-sm text-ink-muted space-y-1 rounded-b-app">
+				<div className="border-t border-border bg-surface-2/40 px-3 py-3 space-y-2 rounded-b-app">
+					<MealFlavorText text={meal.flavorText} />
+					<ul className="text-sm text-ink-muted space-y-1">
 					{ingredientCount === 0 ? (
 						<li>
 							<Trans>Sin ingredientes</Trans>
@@ -239,7 +242,8 @@ function SortableMealRow({
 							</li>
 						))
 					)}
-				</ul>
+					</ul>
+				</div>
 			) : null}
 		</li>
 	);

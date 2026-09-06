@@ -1,12 +1,17 @@
 import { t } from "@lingui/core/macro";
 import { Trans, Plural } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { CheckCheck, ChevronLeft, ChevronRight, ListChecks, X } from "lucide-react";
 import { useAppState } from "../context/AppState";
 import { useToast } from "./Toast";
-import { parseDateISO } from "../features/calendar/dateUtils.js";
+import {
+	addDays,
+	parseDateISO,
+	todayISO,
+	weekDateISOs,
+} from "../features/calendar/dateUtils.js";
 import {
 	expandFusedShoppingItem,
 	shoppingItemChecklistKey,
@@ -20,9 +25,15 @@ import {
 	boughtQuantity,
 	shoppingLineView,
 } from "../features/shopping/shoppingProgress.js";
+import {
+	getWeekPlan,
+	weekPlanHasContent,
+} from "../features/weekplan/weekPlanModel.js";
+import { resolveShoppingMemberIds } from "../storage/weekBridge.js";
 import { formatQuantity } from "../domain/quantity.js";
 import Button from "./ui/Button";
 import ConfirmDialog from "./ui/ConfirmDialog";
+import OverflowMenu, { OverflowMenuItem } from "./ui/OverflowMenu";
 import ShoppingListItem from "./ui/ShoppingListItem";
 import AddExtrasSheet from "./shopping/AddExtrasSheet";
 import ShoppingChecklistRow from "./shopping/ShoppingChecklistRow";
@@ -100,6 +111,8 @@ function ShoppingList() {
 		shoppingWeekPlan,
 		state,
 		visibleWeekDates,
+		setCalendarView,
+		setCalendarCursorDate,
 		toggleShoppingLine,
 		toggleShoppingSource,
 		setShoppingQtyOverride,
@@ -115,6 +128,7 @@ function ShoppingList() {
 		finishShoppingToPantry,
 		substituteShoppingItem,
 	} = useAppState();
+	const navigate = useNavigate();
 	const toast = useToast();
 	const { i18n } = useLingui();
 	const progress = useMemo(
@@ -144,10 +158,31 @@ function ShoppingList() {
 	const { pdfState, exportToPDF } = usePdfExport();
 	const pdfContentRef = useRef(null);
 	const locale = i18n.locale === "en" ? "en-US" : "es-MX";
+	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const weekLabel =
 		visibleWeekDates?.length >= 7
-			? `${parseDateISO(visibleWeekDates[0]).toLocaleDateString(locale, { day: "numeric", month: "short" })} – ${parseDateISO(visibleWeekDates[6]).toLocaleDateString(locale, { day: "numeric", month: "short" })}`
+			? `${parseDateISO(visibleWeekDates[0]).toLocaleDateString(locale, { day: "numeric", month: "short" })} – ${parseDateISO(visibleWeekDates[6]).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}`
 			: "";
+	const isCurrentWeek = useMemo(() => {
+		const todayWeek = weekDateISOs(todayISO(), weekStartsOn);
+		return todayWeek[0] === visibleWeekDates?.[0];
+	}, [visibleWeekDates, weekStartsOn]);
+	const shiftWeek = (delta) => {
+		const cursor = state.ui.calendarCursorDate || todayISO();
+		setCalendarCursorDate(addDays(cursor, delta * 7));
+	};
+	const goToCurrentWeek = () => setCalendarCursorDate(todayISO());
+	const hasWeekPlanReady = useMemo(() => {
+		const weekStart = visibleWeekDates?.[0];
+		if (!weekStart) return false;
+		return resolveShoppingMemberIds(state).some((memberId) =>
+			weekPlanHasContent(getWeekPlan(state, weekStart, memberId)),
+		);
+	}, [state, visibleWeekDates]);
+	const goToWeekAssign = () => {
+		setCalendarView("week");
+		navigate("/");
+	};
 
 	const [showFullScreenChecklist, setShowFullScreenChecklist] = useState(false);
 	const [showSources, setShowSources] = useState(false);
@@ -296,51 +331,158 @@ function ShoppingList() {
 
 	const finishButton =
 		checkedShoppingItems.length > 0 ? (
-			<Button
-				onClick={() => setFinishConfirmOpen(true)}
-				className="w-full sm:w-auto"
-			>
-				<Trans>Terminar compra</Trans>
+			<Button onClick={() => setFinishConfirmOpen(true)}>
+				<Trans>Terminar</Trans>
 				<span className="opacity-80"> ({checkedShoppingItems.length})</span>
 			</Button>
 		) : null;
 
-	return (
-		<div className="flex flex-col gap-6 relative">
-			<ShoppingMemberPicker />
+	const hasShoppingItems = Object.keys(shoppingList).length > 0;
 
-			<div className="bg-surface p-4 sm:p-6 rounded-app shadow-soft border border-border flex flex-col overflow-hidden max-h-[90dvh]">
-				<div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-					<div>
-						<h2 className="font-display text-2xl text-ink">
-							<Trans>Lista de Compras</Trans>
-						</h2>
-						{weekLabel ? (
-							<p className="text-sm text-ink-muted mt-0.5">
-								<Trans>Basada en la semana</Trans> {weekLabel}
-							</p>
-						) : null}
-						{totalBudget > 0 ? (
-							<p className="text-sm text-ink-muted mt-0.5">
-								<Trans>Presupuesto est. ~{totalBudget} MXN</Trans>
-							</p>
-						) : null}
+	const handleExportPdf = async () => {
+		if (pdfState.isGenerating) return;
+		await exportToPDF(pdfContentRef.current);
+	};
+
+	const subtitle = (
+		<div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+			<div className="flex items-center gap-1 shrink-0">
+				<Button
+					variant="secondary"
+					className="!px-2.5 shrink-0"
+					aria-label={t`Semana anterior`}
+					onClick={() => shiftWeek(-1)}
+				>
+					<ChevronLeft className="size-4" aria-hidden />
+				</Button>
+				<span className="text-sm font-semibold text-ink tabular-nums px-1 whitespace-nowrap">
+					{weekLabel || <Trans>Semana</Trans>}
+				</span>
+				<Button
+					variant="secondary"
+					className="!px-2.5 shrink-0"
+					aria-label={t`Semana siguiente`}
+					onClick={() => shiftWeek(1)}
+				>
+					<ChevronRight className="size-4" aria-hidden />
+				</Button>
+				{!isCurrentWeek ? (
+					<Button
+						variant="secondary"
+						className="!px-3 shrink-0"
+						onClick={goToCurrentWeek}
+					>
+						<Trans>Hoy</Trans>
+					</Button>
+				) : null}
+			</div>
+			{totalBudget > 0 ? (
+				<p className="text-sm text-ink-muted">
+					<Trans>Presupuesto est. ~{totalBudget} MXN</Trans>
+				</p>
+			) : null}
+		</div>
+	);
+
+	const moreMenu = (
+		<OverflowMenu label={t`Más opciones`}>
+			{(close) => (
+				<>
+					<OverflowMenuItem
+						onClick={() => {
+							close();
+							setExtrasOpen(true);
+						}}
+					>
+						<Trans>Agregar extras</Trans>
+					</OverflowMenuItem>
+					<OverflowMenuItem
+						onClick={() => {
+							close();
+							navigate("/pantry");
+						}}
+					>
+						<Trans>Despensa</Trans>
+					</OverflowMenuItem>
+					{hasShoppingItems ? (
+						<>
+							<OverflowMenuItem
+								onClick={() => {
+									close();
+									setShowSources((v) => !v);
+								}}
+							>
+								{showSources ? (
+									<Trans>Ocultar fuentes</Trans>
+								) : (
+									<Trans>Mostrar fuentes</Trans>
+								)}
+							</OverflowMenuItem>
+							<OverflowMenuItem
+								onClick={() => {
+									if (pdfState.isGenerating) return;
+									close();
+									void handleExportPdf();
+								}}
+							>
+								{pdfState.isGenerating ? (
+									<Trans>Generando PDF…</Trans>
+								) : (
+									<Trans>Exportar a PDF</Trans>
+								)}
+							</OverflowMenuItem>
+						</>
+					) : null}
+				</>
+			)}
+		</OverflowMenu>
+	);
+
+	return (
+		<div className="flex-1 min-h-0 flex flex-col gap-4 relative overflow-hidden">
+			<div className="shrink-0">
+				<ShoppingMemberPicker />
+			</div>
+
+			<div className="bg-surface p-4 sm:p-6 rounded-app shadow-soft border border-border flex flex-col flex-1 min-h-0 overflow-hidden">
+				<div className="mb-3 shrink-0 space-y-2">
+					<div className="flex items-center justify-between gap-3">
+						<h1 className="font-display text-2xl text-ink min-w-0 truncate">
+							<Trans>Compras</Trans>
+						</h1>
+						<div className="flex items-center gap-1.5 shrink-0">
+							{hasShoppingItems ? (
+								<Button
+									onClick={() => setShowFullScreenChecklist(true)}
+									className="!px-3"
+									aria-label={t`Ver como checklist`}
+								>
+									<ListChecks className="size-5 shrink-0" aria-hidden />
+									<span className="hidden sm:inline">
+										<Trans>Checklist</Trans>
+									</span>
+								</Button>
+							) : null}
+							{finishButton}
+							{moreMenu}
+						</div>
 					</div>
-					<div className="flex flex-wrap gap-2">
-						<Button variant="secondary" onClick={() => setExtrasOpen(true)}>
-							<Trans>Agregar extras</Trans>
-						</Button>
-						<Link
-							to="/pantry"
-							className="inline-flex items-center justify-center min-h-11 px-4 rounded-app border border-border bg-surface text-sm font-semibold hover:bg-surface-2"
-						>
-							<Trans>Despensa</Trans>
-						</Link>
-					</div>
+					{subtitle}
 				</div>
 
+				{pdfState.error ? (
+					<p className="text-sm text-[var(--color-danger)] mb-2 shrink-0">
+						{pdfState.error}
+					</p>
+				) : null}
+				{pdfState.success ? (
+					<p className="text-sm text-brand mb-2 shrink-0">
+						<Trans>¡PDF generado exitosamente!</Trans>
+					</p>
+				) : null}
+
 				{state.pantry.length > 0 ? (
-					<label className="flex items-center gap-2 text-sm text-ink-muted mb-3 cursor-pointer">
+					<label className="flex items-center gap-2 text-sm text-ink-muted mb-3 cursor-pointer shrink-0">
 						<input
 							type="checkbox"
 							checked={hidePantryCovered}
@@ -351,53 +493,96 @@ function ShoppingList() {
 					</label>
 				) : null}
 
-				{Object.keys(shoppingList).length === 0 ? (
-					<div className="text-center py-8">
+				{!hasShoppingItems ? (
+					<div className="text-center py-8 flex-1 min-h-0 overflow-y-auto">
 						<p className="text-ink-muted mb-2">
 							<Trans>No hay ingredientes en tu lista de compras.</Trans>
 						</p>
 						<p className="text-ink-muted text-sm mb-4">
-							<Trans>
-								Planear la semana agrega comidas; también puedes sumar extras.
-							</Trans>
+							{hasWeekPlanReady ? (
+								<Trans>
+									Asigna planes de día en Semana para llenar la lista; también
+									puedes sumar extras.
+								</Trans>
+							) : (
+								<Trans>
+									Planear la semana agrega comidas; también puedes sumar extras.
+								</Trans>
+							)}
 						</p>
-						<div className="flex flex-wrap gap-2 justify-center">
-							<Link
-								to="/plan/week"
-								className="inline-flex items-center justify-center min-h-11 px-4 rounded-app bg-brand text-white font-semibold"
-							>
-								<Trans>Planear esta semana</Trans>
-							</Link>
+						<div className="flex flex-wrap gap-2 justify-center mb-6">
+							{hasWeekPlanReady ? (
+								<button
+									type="button"
+									onClick={goToWeekAssign}
+									className="inline-flex items-center justify-center min-h-11 px-4 rounded-app bg-brand text-white font-semibold"
+								>
+									<Trans>Ir a Semana</Trans>
+								</button>
+							) : (
+								<Link
+									to="/plan/week"
+									className="inline-flex items-center justify-center min-h-11 px-4 rounded-app bg-brand text-white font-semibold"
+								>
+									<Trans>Planear esta semana</Trans>
+								</Link>
+							)}
 							<Button variant="secondary" onClick={() => setExtrasOpen(true)}>
 								<Trans>Agregar extras</Trans>
 							</Button>
 						</div>
+						{extras.length > 0 ? (
+							<section className="text-left border border-border rounded-app bg-bg p-4 space-y-3">
+								<div className="flex items-center justify-between gap-2">
+									<h3 className="font-display text-lg text-ink">
+										<Trans>Extras persistentes</Trans>
+									</h3>
+									<Button
+										variant="secondary"
+										onClick={() => setExtrasOpen(true)}
+									>
+										<Trans>Agregar</Trans>
+									</Button>
+								</div>
+								<ul className="divide-y divide-border border border-border rounded-app overflow-hidden">
+									{extras.map((extra) => (
+										<li
+											key={extra.id}
+											className="flex items-center justify-between gap-3 px-3 py-2.5 bg-surface"
+										>
+											<button
+												type="button"
+												className="text-left min-w-0 flex-1"
+												onClick={() => setEditingExtra(extra)}
+											>
+												<p className="font-semibold text-ink truncate">
+													{extra.name}
+												</p>
+												<p className="text-sm text-ink-muted">
+													{formatQuantity(extra.quantity)}
+													{extra.category ? ` · ${extra.category}` : ""}
+												</p>
+											</button>
+											<Button
+												variant="ghost"
+												className="!px-2"
+												aria-label={t`Quitar ${extra.name}`}
+												onClick={() => removeShoppingExtra(extra.id)}
+											>
+												<X className="size-4" aria-hidden />
+											</Button>
+										</li>
+									))}
+								</ul>
+							</section>
+						) : null}
 					</div>
 				) : (
 					<>
-						<div className="flex flex-wrap gap-2 mb-3">
-							<button
-								type="button"
-								onClick={() => setShowFullScreenChecklist(true)}
-								className="min-h-11 px-4 rounded-app bg-brand text-white font-semibold"
-							>
-								<Trans>Ver como checklist</Trans>
-							</button>
-							<button
-								type="button"
-								onClick={() => setShowSources((v) => !v)}
-								className="min-h-11 px-4 rounded-app border border-border bg-surface text-ink font-semibold"
-							>
-								{showSources ? (
-									<Trans>Ocultar fuentes</Trans>
-								) : (
-									<Trans>Mostrar fuentes</Trans>
-								)}
-							</button>
-							{finishButton}
-						</div>
-
-						<div className="overflow-y-auto pr-2" ref={pdfContentRef}>
+						<div
+							className="flex-1 min-h-0 overflow-y-auto pr-2"
+							ref={pdfContentRef}
+						>
 							{Object.entries(groupedShoppingList).map(([category, items]) => (
 								<div key={category} className="mb-6">
 									<h3 className="text-lg font-medium text-brand mb-3 border-b border-border pb-2">
@@ -443,82 +628,62 @@ function ShoppingList() {
 									</ul>
 								</div>
 							))}
-						</div>
 
-						<button
-							type="button"
-							onClick={() => exportToPDF(pdfContentRef.current)}
-							disabled={pdfState.isGenerating}
-							className="w-full min-h-11 mt-3 rounded-app bg-brand text-white font-semibold disabled:opacity-50"
-						>
-							{pdfState.isGenerating ? (
-								<Trans>Generando PDF…</Trans>
-							) : (
-								<Trans>Exportar a PDF</Trans>
-							)}
-						</button>
-						{pdfState.error ? (
-							<p className="text-sm text-[var(--color-danger)] mt-2">
-								{pdfState.error}
-							</p>
-						) : null}
-						{pdfState.success ? (
-							<p className="text-sm text-brand mt-2">
-								<Trans>¡PDF generado exitosamente!</Trans>
-							</p>
-						) : null}
+							{extras.length > 0 ? (
+								<section className="border border-border rounded-app bg-bg p-4 space-y-3 mb-2">
+									<div className="flex items-center justify-between gap-2">
+										<h3 className="font-display text-lg text-ink">
+											<Trans>Extras persistentes</Trans>
+										</h3>
+										<Button
+											variant="secondary"
+											onClick={() => setExtrasOpen(true)}
+										>
+											<Trans>Agregar</Trans>
+										</Button>
+									</div>
+									<p className="text-sm text-ink-muted">
+										<Trans>
+											Estos items no se borran al regenerar la lista desde el
+											calendario.
+										</Trans>
+									</p>
+									<ul className="divide-y divide-border border border-border rounded-app overflow-hidden">
+										{extras.map((extra) => (
+											<li
+												key={extra.id}
+												className="flex items-center justify-between gap-3 px-3 py-2.5 bg-surface"
+											>
+												<button
+													type="button"
+													className="text-left min-w-0 flex-1"
+													onClick={() => setEditingExtra(extra)}
+												>
+													<p className="font-semibold text-ink truncate">
+														{extra.name}
+													</p>
+													<p className="text-sm text-ink-muted">
+														{formatQuantity(extra.quantity)}
+														{extra.category ? ` · ${extra.category}` : ""}
+													</p>
+												</button>
+												<Button
+													variant="ghost"
+													className="!px-2"
+													aria-label={t`Quitar ${extra.name}`}
+													onClick={() => removeShoppingExtra(extra.id)}
+												>
+													<X className="size-4" aria-hidden />
+												</Button>
+											</li>
+										))}
+									</ul>
+								</section>
+							) : null}
+						</div>
 					</>
 				)}
 			</div>
-
-			{extras.length > 0 ? (
-				<section className="border border-border rounded-app bg-surface p-4 space-y-3">
-					<div className="flex items-center justify-between gap-2">
-						<h3 className="font-display text-lg text-ink">
-							<Trans>Extras persistentes</Trans>
-						</h3>
-						<Button variant="secondary" onClick={() => setExtrasOpen(true)}>
-							<Trans>Agregar</Trans>
-						</Button>
-					</div>
-					<p className="text-sm text-ink-muted">
-						<Trans>
-							Estos items no se borran al regenerar la lista desde el
-							calendario.
-						</Trans>
-					</p>
-					<ul className="divide-y divide-border border border-border rounded-app overflow-hidden">
-						{extras.map((extra) => (
-							<li
-								key={extra.id}
-								className="flex items-center justify-between gap-3 px-3 py-2.5 bg-bg"
-							>
-								<button
-									type="button"
-									className="text-left min-w-0 flex-1"
-									onClick={() => setEditingExtra(extra)}
-								>
-									<p className="font-semibold text-ink truncate">
-										{extra.name}
-									</p>
-									<p className="text-sm text-ink-muted">
-										{formatQuantity(extra.quantity)}
-										{extra.category ? ` · ${extra.category}` : ""}
-									</p>
-								</button>
-								<Button
-									variant="ghost"
-									className="!px-2"
-									aria-label={t`Quitar ${extra.name}`}
-									onClick={() => removeShoppingExtra(extra.id)}
-								>
-									<X className="size-4" aria-hidden />
-								</Button>
-							</li>
-						))}
-					</ul>
-				</section>
-			) : null}
 
 			<AddExtrasSheet
 				open={extrasOpen}
@@ -600,78 +765,93 @@ function ShoppingList() {
 				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto pb-28">
 					<div className="max-w-4xl mx-auto">
 						<div className="sticky top-0 z-10 px-4 pt-4 pb-3 mb-4 bg-surface/95 backdrop-blur border-b border-border">
-							<div className="flex justify-between items-center mb-3">
-								<h2 className="font-display text-2xl">
-									<Trans>Lista de Compras — Checklist</Trans>
+							<div className="flex items-center justify-between gap-2">
+								<h2 className="font-display text-2xl min-w-0 truncate">
+									{fuseSelectMode ? (
+										<Trans>Combinar items</Trans>
+									) : (
+										<Trans>Checklist</Trans>
+									)}
 								</h2>
-								<button
-									type="button"
-									onClick={() => {
-										exitFuseSelectMode();
-										setShowFullScreenChecklist(false);
-									}}
-									className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-full hover:bg-surface-2"
-									aria-label={t`Cerrar`}
-								>
-									<X className="size-5" aria-hidden />
-								</button>
-							</div>
-							<div className="flex flex-wrap gap-2">
-								{!fuseSelectMode ? (
-									<>
-										<button
-											type="button"
-											onClick={handleCheckAll}
-											className="min-h-11 px-3 rounded-app bg-[var(--color-accent-leaf)]/20 text-brand font-semibold"
-										>
-											<Trans>Marcar todos</Trans>
-										</button>
-										<button
-											type="button"
-											onClick={handleUncheckAll}
-											className="min-h-11 px-3 rounded-app bg-[var(--color-danger-soft)] text-[var(--color-danger)] font-semibold"
-										>
-											<Trans>Desmarcar todo</Trans>
-										</button>
-										<button
-											type="button"
-											onClick={() => setShowSources((v) => !v)}
-											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
-										>
-											{showSources ? (
-												<Trans>Ocultar fuentes</Trans>
-											) : (
-												<Trans>Mostrar fuentes</Trans>
-											)}
-										</button>
-										<button
-											type="button"
-											onClick={() => {
-												setFuseSelectMode(true);
-												setFuseSelectedKeys({});
-											}}
-											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
-										>
-											<Trans>Combinar items</Trans>
-										</button>
-									</>
-								) : (
-									<>
-										<p className="text-sm text-ink-muted self-center">
-											<Trans>
-												Elige 2 o más items para combinarlos en uno.
-											</Trans>
-										</p>
-										<button
-											type="button"
+								<div className="flex items-center gap-1 shrink-0">
+									{!fuseSelectMode ? (
+										<>
+											<Button
+												variant="secondary"
+												onClick={handleCheckAll}
+												className="!px-3"
+												aria-label={t`Marcar todos`}
+											>
+												<CheckCheck className="size-5 shrink-0" aria-hidden />
+												<span className="hidden sm:inline">
+													<Trans>Marcar todos</Trans>
+												</span>
+											</Button>
+											<OverflowMenu label={t`Más opciones`}>
+												{(close) => (
+													<>
+														<OverflowMenuItem
+															onClick={() => {
+																close();
+																handleUncheckAll();
+															}}
+														>
+															<Trans>Desmarcar todo</Trans>
+														</OverflowMenuItem>
+														<OverflowMenuItem
+															onClick={() => {
+																close();
+																setShowSources((v) => !v);
+															}}
+														>
+															{showSources ? (
+																<Trans>Ocultar fuentes</Trans>
+															) : (
+																<Trans>Mostrar fuentes</Trans>
+															)}
+														</OverflowMenuItem>
+														<OverflowMenuItem
+															onClick={() => {
+																close();
+																setFuseSelectMode(true);
+																setFuseSelectedKeys({});
+															}}
+														>
+															<Trans>Combinar items</Trans>
+														</OverflowMenuItem>
+													</>
+												)}
+											</OverflowMenu>
+										</>
+									) : (
+										<Button
+											variant="secondary"
 											onClick={exitFuseSelectMode}
-											className="min-h-11 px-3 rounded-app border border-border bg-surface text-ink font-semibold"
+											className="!px-3"
 										>
 											<Trans>Cancelar</Trans>
-										</button>
-									</>
-								)}
+										</Button>
+									)}
+									<button
+										type="button"
+										onClick={() => {
+											exitFuseSelectMode();
+											setShowFullScreenChecklist(false);
+										}}
+										className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-app text-ink-muted hover:text-ink hover:bg-surface-2"
+										aria-label={t`Cerrar`}
+									>
+										<X className="size-5" aria-hidden />
+									</button>
+								</div>
 							</div>
+							{fuseSelectMode ? (
+								<p className="text-sm text-ink-muted mt-2">
+									<Trans>
+										Elige 2 o más items para combinarlos en uno.
+									</Trans>
+								</p>
+							) : null}
 						</div>
 						<div className="px-4">
 							{uncheckedCategories.length > 0 ? (

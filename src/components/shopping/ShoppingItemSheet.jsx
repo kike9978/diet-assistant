@@ -2,13 +2,68 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useLingui } from "@lingui/react";
-import { X } from "lucide-react";
 import { DAY_LABEL_MSG } from "../../i18n/weekDayLabels";
+import {
+	DEFAULT_QUANTITY_UNIT,
+	isUnitOnlyQuantity,
+	joinQuantityInput,
+	splitQuantityInput,
+} from "../../domain/quantity.js";
+import IngredientQuantityRow, {
+	emptyIngredientQuantityRow,
+} from "../../features/meals/IngredientQuantityRow.jsx";
 import Button from "../ui/Button";
 import Sheet from "../ui/Sheet";
 
 function emptyReplacement() {
-	return { name: "", quantity: "" };
+	return emptyIngredientQuantityRow();
+}
+
+function rowFromIngredient(name, quantity) {
+	const { amount, unit } = splitQuantityInput(quantity);
+	return {
+		name: name || "",
+		amount,
+		unit: unit || DEFAULT_QUANTITY_UNIT,
+	};
+}
+
+/**
+ * Prefill name always. Fill amount/unit only when editing a single meal.
+ * Multi-meal leaves amount empty so each meal keeps its own quantity.
+ */
+function initialReplacementRows(item, selectedSources = []) {
+	const name =
+		item?.name ||
+		selectedSources[0]?.ingredientName ||
+		selectedSources[0]?.name ||
+		"";
+	const qty =
+		selectedSources.length === 1
+			? String(selectedSources[0].quantity || "").trim()
+			: "";
+	return [rowFromIngredient(name, qty)];
+}
+
+function quantityFromReplacementRow(row) {
+	if (isUnitOnlyQuantity(row.unit)) {
+		return joinQuantityInput(row.amount, row.unit);
+	}
+	if (!String(row.amount || "").trim()) return "";
+	return joinQuantityInput(row.amount, row.unit);
+}
+
+function sharedPerMealQty(sources = []) {
+	const quantities = sources
+		.map((source) => String(source.quantity || "").trim())
+		.filter(Boolean);
+	if (
+		quantities.length > 0 &&
+		quantities.every((qty) => qty === quantities[0])
+	) {
+		return quantities[0];
+	}
+	return null;
 }
 
 /**
@@ -35,12 +90,14 @@ export default function ShoppingItemSheet({
 	const [overrideDraft, setOverrideDraft] = useState("");
 	const [replacementRows, setReplacementRows] = useState([emptyReplacement()]);
 	const [updateLibrary, setUpdateLibrary] = useState(false);
+	const [selectedSourceKeys, setSelectedSourceKeys] = useState([]);
 
 	useEffect(() => {
 		if (!open) return;
 		setStep("details");
 		setReplacementRows([emptyReplacement()]);
 		setUpdateLibrary(false);
+		setSelectedSourceKeys([]);
 		setOverrideDraft(view?.override || view?.displayQty || view?.remainingQty || "");
 	}, [open, item?.name, view?.override, view?.displayQty, view?.remainingQty]);
 
@@ -52,30 +109,59 @@ export default function ShoppingItemSheet({
 	const canPantry = !item.isExtra && !item.pantryCovered;
 	const yieldEntry = view?.yieldEntry;
 	const yieldMode = view?.yieldMode || "rawToCooked";
+	const aisleQty = view?.displayQty || view?.remainingQty || "";
+	const perMealQty = sharedPerMealQty(sources);
+
+	const selectedSources = sources.filter((source) =>
+		selectedSourceKeys.includes(source.key),
+	);
+
+	const resetSubstituteState = () => {
+		setReplacementRows([emptyReplacement()]);
+		setUpdateLibrary(false);
+		setSelectedSourceKeys([]);
+	};
 
 	const handleClose = () => {
 		setStep("details");
+		resetSubstituteState();
 		onClose();
+	};
+
+	const enterSubstituteEditor = (nextSources) => {
+		const keys = nextSources.map((source) => source.key);
+		setSelectedSourceKeys(keys);
+		setReplacementRows(initialReplacementRows(item, nextSources));
+		setUpdateLibrary(false);
+		setStep("substitute");
+	};
+
+	const startSubstitute = () => {
+		if (sources.length <= 1) {
+			enterSubstituteEditor(sources);
+			return;
+		}
+		setSelectedSourceKeys([]);
+		setStep("substitute-scope");
 	};
 
 	const handleConfirmSubstitute = () => {
 		const replacements = replacementRows
 			.map((row) => ({
 				name: row.name.trim(),
-				quantity: row.quantity.trim(),
+				quantity: quantityFromReplacementRow(row),
 			}))
 			.filter((row, index) =>
 				index === 0 ? row.name : row.name && row.quantity,
 			);
-		if (!replacements[0]?.name) return;
+		if (!replacements[0]?.name || selectedSources.length === 0) return;
 		onSubstitute?.({
-			sources,
+			sources: selectedSources,
 			replacements,
 			updateLibrary,
 			item,
 		});
-		setReplacementRows([emptyReplacement()]);
-		setUpdateLibrary(false);
+		resetSubstituteState();
 		handleClose();
 	};
 
@@ -85,8 +171,13 @@ export default function ShoppingItemSheet({
 		);
 	};
 
-	if (step === "substitute") {
-		const canConfirm = Boolean(replacementRows[0]?.name.trim());
+	const togglePickSource = (key) => {
+		setSelectedSourceKeys((prev) =>
+			prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+		);
+	};
+
+	if (step === "substitute-scope") {
 		return (
 			<Sheet
 				open={open}
@@ -95,6 +186,150 @@ export default function ShoppingItemSheet({
 				footer={
 					<div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
 						<Button variant="secondary" onClick={() => setStep("details")}>
+							<Trans>Cancelar</Trans>
+						</Button>
+					</div>
+				}
+			>
+				<p className="text-sm text-ink-muted mb-3">
+					<Trans>
+						Vas a sustituir{" "}
+						<span className="font-semibold text-ink">{item.name}</span>.
+						Elige el alcance.
+					</Trans>
+				</p>
+				{aisleQty ? (
+					<p className="text-sm text-ink mb-4">
+						{perMealQty ? (
+							<Trans>
+								<span className="font-semibold tabular-nums">{aisleQty}</span>{" "}
+								en la lista ·{" "}
+								<span className="font-semibold tabular-nums">{perMealQty}</span>{" "}
+								por comida
+							</Trans>
+						) : (
+							<Trans>
+								<span className="font-semibold tabular-nums">{aisleQty}</span>{" "}
+								en la lista · cantidades distintas por comida
+							</Trans>
+						)}
+					</p>
+				) : null}
+				<div className="flex flex-col gap-2">
+					<Button
+						className="w-full"
+						onClick={() => enterSubstituteEditor(sources)}
+					>
+						<Trans>Todas las comidas ({sources.length})</Trans>
+					</Button>
+					<Button
+						variant="secondary"
+						className="w-full"
+						onClick={() => {
+							setSelectedSourceKeys(sources.map((s) => s.key));
+							setStep("substitute-pick");
+						}}
+					>
+						<Trans>Elegir comidas</Trans>
+					</Button>
+				</div>
+			</Sheet>
+		);
+	}
+
+	if (step === "substitute-pick") {
+		const canContinue = selectedSourceKeys.length > 0;
+		return (
+			<Sheet
+				open={open}
+				onClose={() => setStep("substitute-scope")}
+				title={<Trans>Elegir comidas</Trans>}
+				footer={
+					<div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+						<Button
+							variant="secondary"
+							onClick={() => setStep("substitute-scope")}
+						>
+							<Trans>Atrás</Trans>
+						</Button>
+						<Button
+							disabled={!canContinue}
+							onClick={() => enterSubstituteEditor(selectedSources)}
+						>
+							<Trans>Continuar</Trans>
+						</Button>
+					</div>
+				}
+			>
+				<p className="text-sm text-ink-muted mb-3">
+					<Trans>
+						Marca las comidas donde quieres sustituir{" "}
+						<span className="font-semibold text-ink">{item.name}</span>.
+					</Trans>
+				</p>
+				<ul className="space-y-1 mb-3">
+					{sources.map((source) => {
+						const on = selectedSourceKeys.includes(source.key);
+						return (
+							<li key={source.key}>
+								<label className="flex items-center gap-2 min-h-11 text-sm">
+									<input
+										type="checkbox"
+										checked={on}
+										onChange={() => togglePickSource(source.key)}
+										className="h-5 w-5 accent-[var(--color-brand)] shrink-0"
+									/>
+									<span className="min-w-0 flex-1 truncate">
+										{_(DAY_LABEL_MSG[source.dayKey] || DAY_LABEL_MSG.sunday)} ·{" "}
+										{source.mealName}
+									</span>
+									<span className="text-ink-muted shrink-0 tabular-nums">
+										{source.quantity}
+									</span>
+								</label>
+							</li>
+						);
+					})}
+				</ul>
+				<div className="flex gap-2">
+					<button
+						type="button"
+						className="text-xs font-medium text-ink-muted underline underline-offset-2"
+						onClick={() =>
+							setSelectedSourceKeys(sources.map((s) => s.key))
+						}
+					>
+						<Trans>Seleccionar todas</Trans>
+					</button>
+					<button
+						type="button"
+						className="text-xs font-medium text-ink-muted underline underline-offset-2"
+						onClick={() => setSelectedSourceKeys([])}
+					>
+						<Trans>Quitar todas</Trans>
+					</button>
+				</div>
+			</Sheet>
+		);
+	}
+
+	if (step === "substitute") {
+		const canConfirm =
+			Boolean(replacementRows[0]?.name.trim()) && selectedSources.length > 0;
+		const backStep =
+			sources.length > 1
+				? selectedSourceKeys.length === sources.length
+					? "substitute-scope"
+					: "substitute-pick"
+				: "details";
+		return (
+			<Sheet
+				open={open}
+				onClose={() => setStep(backStep)}
+				title={<Trans>Sustituir ingrediente</Trans>}
+				footer={
+					<div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+						<Button variant="secondary" onClick={() => setStep(backStep)}>
 							<Trans>Cancelar</Trans>
 						</Button>
 						<Button onClick={handleConfirmSubstitute} disabled={!canConfirm}>
@@ -108,16 +343,21 @@ export default function ShoppingItemSheet({
 						Vas a sustituir{" "}
 						<span className="font-semibold text-ink">{item.name}</span> en{" "}
 						<span className="font-semibold text-ink">
-							{sources.length} comidas
+							{selectedSources.length} comidas
 						</span>{" "}
 						de esta semana.
 					</Trans>
 				</p>
 				<ul className="mb-4 text-sm text-ink space-y-1 max-h-32 overflow-y-auto">
-					{sources.map((source) => (
-						<li key={source.key} className="truncate">
-							{_(DAY_LABEL_MSG[source.dayKey] || DAY_LABEL_MSG.sunday)} ·{" "}
-							{source.mealName}
+					{selectedSources.map((source) => (
+						<li key={source.key} className="flex gap-2 min-w-0">
+							<span className="min-w-0 flex-1 truncate">
+								{_(DAY_LABEL_MSG[source.dayKey] || DAY_LABEL_MSG.sunday)} ·{" "}
+								{source.mealName}
+							</span>
+							<span className="text-ink-muted shrink-0 tabular-nums">
+								{source.quantity}
+							</span>
 						</li>
 					))}
 				</ul>
@@ -125,45 +365,28 @@ export default function ShoppingItemSheet({
 					<p className="text-sm font-semibold">
 						<Trans>Reemplazar con</Trans>
 					</p>
-					<p className="text-xs text-ink-muted">
-						<Trans>
-							Deja la cantidad vacía para conservar la de cada comida.
-						</Trans>
-					</p>
+					{selectedSources.length > 1 ? (
+						<p className="text-xs text-ink-muted">
+							<Trans>
+								Deja la cantidad vacía para conservar la de cada comida.
+							</Trans>
+						</p>
+					) : null}
 					{replacementRows.map((row, index) => (
-						<div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-							<input
-								value={row.name}
-								onChange={(e) =>
-									updateReplacementRow(index, "name", e.target.value)
-								}
-								placeholder={t`Ingrediente`}
-								className="min-h-11 px-3 rounded-app border border-border bg-surface"
-							/>
-							<input
-								value={row.quantity}
-								onChange={(e) =>
-									updateReplacementRow(index, "quantity", e.target.value)
-								}
-								placeholder={t`1/2 tza`}
-								className="min-h-11 px-3 rounded-app border border-border bg-surface"
-							/>
-							<Button
-								type="button"
-								variant="ghost"
-								className="!px-2"
-								aria-label={t`Quitar ingrediente`}
-								onClick={() =>
-									setReplacementRows((prev) =>
-										prev.length <= 1
-											? [emptyReplacement()]
-											: prev.filter((_, i) => i !== index),
-									)
-								}
-							>
-								<X className="size-4" aria-hidden />
-							</Button>
-						</div>
+						<IngredientQuantityRow
+							key={index}
+							row={row}
+							onChange={(field, value) =>
+								updateReplacementRow(index, field, value)
+							}
+							onRemove={() =>
+								setReplacementRows((prev) =>
+									prev.length <= 1
+										? [emptyReplacement()]
+										: prev.filter((_, i) => i !== index),
+								)
+							}
+						/>
 					))}
 					<Button
 						type="button"
@@ -215,7 +438,7 @@ export default function ShoppingItemSheet({
 						<Button
 							variant="secondary"
 							className="w-full"
-							onClick={() => setStep("substitute")}
+							onClick={startSubstitute}
 						>
 							<Trans>Sustituir</Trans>
 						</Button>
@@ -257,7 +480,7 @@ export default function ShoppingItemSheet({
 			}
 		>
 			<p className="text-sm text-ink-muted mb-4">
-				{view?.displayQty || view?.remainingQty || ""}
+				{aisleQty}
 				{price != null ? ` · ~${price} MXN` : ""}
 			</p>
 

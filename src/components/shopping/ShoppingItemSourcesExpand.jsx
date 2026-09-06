@@ -87,9 +87,9 @@ export default function ShoppingItemSourcesExpand({ item, weekPlan }) {
 					/>
 				</svg>
 				{expanded ? (
-					<Trans>Ocultar detalles</Trans>
+					<Trans>Ocultar detalles ({sources.length})</Trans>
 				) : (
-					<Trans>Mostrar detalles</Trans>
+					<Trans>Mostrar detalles ({sources.length})</Trans>
 				)}
 			</button>
 

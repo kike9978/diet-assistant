@@ -6,6 +6,7 @@ import EmptyState from "../components/ui/EmptyState";
 import Button from "../components/ui/Button";
 import { ChevronRight } from "lucide-react";
 import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
+import MealFlavorText from "../features/meals/MealFlavorText";
 import { MEAL_TYPE_COLOR } from "../features/calendar/mealTypeColors.js";
 
 export default function MealsPage() {
@@ -67,6 +68,11 @@ export default function MealsPage() {
 										{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)} ·{" "}
 										{meal.ingredients.length} <Trans>ingredientes</Trans>
 									</p>
+									<MealFlavorText
+										text={meal.flavorText}
+										variant="snippet"
+										className="mt-0.5"
+									/>
 								</div>
 							</div>
 							<ChevronRight className="size-4 text-ink-muted shrink-0" aria-hidden />

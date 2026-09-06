@@ -91,7 +91,7 @@ export default function ShoppingChecklistRow({
 					className="flex-1 min-w-0 flex items-center gap-2 text-left min-h-11"
 				>
 					<span
-						className={`min-w-0 flex-1 truncate font-semibold ${
+						className={`min-w-0 flex-1 line-clamp-2 font-semibold leading-snug ${
 							fullyChecked && !fuseSelectMode
 								? "line-through text-ink-muted"
 								: "text-ink"

@@ -33,6 +33,7 @@ const SAMPLE = {
 				{
 					id: "meal1",
 					name: "Desayuno: Avena con frutas",
+					flavorText: "Cocer la avena y servir con plátano y berries.",
 					ingredients: [
 						{ name: "Avena", quantity: "1/2 taza" },
 						{ name: "Plátano", quantity: "1 pza" },
@@ -253,6 +254,7 @@ export default function ImportJsonSheet({
       "meals": [
         {
           "name": "Desayuno: Avena",
+          "flavorText": "Cocer la avena y servir con fruta.",
           "ingredients": [
             { "name": "Avena", "quantity": "1/2 taza" }
           ]
@@ -296,7 +298,9 @@ export default function ImportJsonSheet({
 						<p className="text-sm text-ink-muted mb-4">
 							<Trans>
 								Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu
-								plan en el formato que esta app entiende.
+								plan en el formato que esta app entiende. Si el plan trae notas
+								de preparación, el JSON puede incluir una descripción opcional
+								por comida (flavorText).
 							</Trans>
 						</p>
 						<ol className="list-decimal list-inside space-y-3 text-sm text-ink mb-6">

@@ -134,6 +134,14 @@ msgstr "{fuseSelectedCount, plural, one {# item seleccionado} other {# items sel
 #~ msgid "← Calendario"
 #~ msgstr "← Calendario"
 
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "<0>{aisleQty}</0> en la lista · <1>{perMealQty}</1> por comida"
+msgstr "<0>{aisleQty}</0> en la lista · <1>{perMealQty}</1> por comida"
+
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "<0>{aisleQty}</0> en la lista · cantidades distintas por comida"
+msgstr "<0>{aisleQty}</0> en la lista · cantidades distintas por comida"
+
 #: src/features/calendar/DayView.jsx
 #: src/features/calendar/WeekView.jsx
 #~ msgid "1 comida"
@@ -143,13 +151,13 @@ msgstr "{fuseSelectedCount, plural, one {# item seleccionado} other {# items sel
 msgid "1 porción"
 msgstr "1 porción"
 
-#: src/features/meals/MealForm.jsx
+#: src/features/meals/IngredientQuantityRow.jsx
 msgid "1/2"
 msgstr "1/2"
 
 #: src/components/shopping/ShoppingItemSheet.jsx
-msgid "1/2 tza"
-msgstr "1/2 tza"
+#~ msgid "1/2 tza"
+#~ msgstr "1/2 tza"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
 msgid "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
@@ -297,18 +305,26 @@ msgstr "Así la próxima lista restará lo que acabas de comprar. Los extras mar
 msgid "Asigna en la vista Semana"
 msgstr "Asigna en la vista Semana"
 
+#: src/components/ShoppingList.jsx
+msgid "Asigna planes de día en Semana para llenar la lista; también puedes sumar extras."
+msgstr "Asigna planes de día en Semana para llenar la lista; también puedes sumar extras."
+
 #: src/features/calendar/DayView.jsx
 #: src/features/calendar/MonthView.jsx
 msgid "Asignado"
 msgstr "Asignado"
+
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Atrás"
+msgstr "Atrás"
 
 #: src/components/ui/EmptyState.jsx
 msgid "Aún no hay comidas"
 msgstr "Aún no hay comidas"
 
 #: src/components/ShoppingList.jsx
-msgid "Basada en la semana"
-msgstr "Basada en la semana"
+#~ msgid "Basada en la semana"
+#~ msgstr "Basada en la semana"
 
 #: src/pages/MealsPage.jsx
 msgid "Biblioteca vacía"
@@ -336,7 +352,6 @@ msgstr "Cada persona tiene su propio calendario. En Compras puedes combinar vari
 msgid "Calendario"
 msgstr "Calendario"
 
-#: src/features/shopping/ShoppingPage.jsx
 #: src/pages/PrepPage.jsx
 msgid "Cambiar en calendario"
 msgstr "Cambiar en calendario"
@@ -361,7 +376,7 @@ msgstr "Cancelar"
 
 #: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ToolsSidebar.jsx
-#: src/features/meals/MealForm.jsx
+#: src/features/meals/IngredientQuantityRow.jsx
 #: src/features/pantry/PantryFormSheet.jsx
 msgid "Cantidad"
 msgstr "Cantidad"
@@ -404,6 +419,10 @@ msgstr "Cena"
 #: src/features/weekplan/ImportJsonSheet.jsx
 msgid "Cerrar"
 msgstr "Cerrar"
+
+#: src/components/ShoppingList.jsx
+msgid "Checklist"
+msgstr "Checklist"
 
 #: src/components/shopping/ShoppingItemSheet.jsx
 msgid "Cocida"
@@ -478,6 +497,10 @@ msgstr "Comidas, familia, herramientas, planes y ajustes."
 msgid "Cómo generar el JSON"
 msgstr "Cómo generar el JSON"
 
+#: src/features/meals/MealForm.jsx
+msgid "Cómo se prepara, opcional"
+msgstr "Cómo se prepara, opcional"
+
 #: src/components/FirstRun.jsx
 msgid "Compra y prepara"
 msgstr "Compra y prepara"
@@ -487,7 +510,7 @@ msgstr "Compra y prepara"
 #~ msgstr "Comprar como"
 
 #: src/components/shell/BottomNav.jsx
-#: src/features/shopping/ShoppingPage.jsx
+#: src/components/ShoppingList.jsx
 msgid "Compras"
 msgstr "Compras"
 
@@ -501,6 +524,10 @@ msgstr "Compras usa la semana visible del calendario. Prep vive en la misma secc
 #: src/features/calendar/SubstituteSheet.jsx
 msgid "Confirmar"
 msgstr "Confirmar"
+
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Continuar"
+msgstr "Continuar"
 
 #: src/pages/ToolsPage.jsx
 msgid "Convertidor de rendimiento"
@@ -564,6 +591,10 @@ msgstr "Desayuno"
 #: src/features/meals/MealForm.jsx
 msgid "Desayuno: Avena con fruta"
 msgstr "Desayuno: Avena con fruta"
+
+#: src/features/meals/MealForm.jsx
+msgid "Descripción"
+msgstr "Descripción"
 
 #: src/components/ShoppingList.jsx
 msgid "Desmarcar todo"
@@ -694,6 +725,10 @@ msgstr "Ej. Arroz"
 #: src/components/shopping/ShoppingItemSheet.jsx
 #~ msgid "El plan no lo indica. Elige para convertir al otro estado."
 #~ msgstr "El plan no lo indica. Elige para convertir al otro estado."
+
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Elegir comidas"
+msgstr "Elegir comidas"
 
 #: src/components/ShoppingList.jsx
 msgid "Elige 2 o más items para combinarlos en uno."
@@ -898,6 +933,7 @@ msgstr "Hay comidas nuevas o importadas que aún no están en la biblioteca."
 msgid "Herramientas"
 msgstr "Herramientas"
 
+#: src/components/ShoppingList.jsx
 #: src/features/calendar/CalendarChrome.jsx
 #: src/features/calendar/WeekSurface.jsx
 #: src/features/calendar/WeekView.jsx
@@ -938,9 +974,8 @@ msgid "Incluye:"
 msgstr "Incluye:"
 
 #: src/components/shopping/AddExtrasSheet.jsx
-#: src/components/shopping/ShoppingItemSheet.jsx
 #: src/components/ToolsSidebar.jsx
-#: src/features/meals/MealForm.jsx
+#: src/features/meals/IngredientQuantityRow.jsx
 msgid "Ingrediente"
 msgstr "Ingrediente"
 
@@ -979,6 +1014,7 @@ msgstr "Ingredientes Totales"
 msgid "Ir a compras"
 msgstr "Ir a compras"
 
+#: src/components/ShoppingList.jsx
 #: src/pages/WeekPlanPage.jsx
 msgid "Ir a Semana"
 msgstr "Ir a Semana"
@@ -1037,12 +1073,12 @@ msgid "Limpiar semanas pasadas"
 msgstr "Limpiar semanas pasadas"
 
 #: src/components/ShoppingList.jsx
-msgid "Lista de Compras"
-msgstr "Lista de Compras"
+#~ msgid "Lista de Compras"
+#~ msgstr "Lista de Compras"
 
 #: src/components/ShoppingList.jsx
-msgid "Lista de Compras — Checklist"
-msgstr "Lista de Compras — Checklist"
+#~ msgid "Lista de Compras — Checklist"
+#~ msgstr "Lista de Compras — Checklist"
 
 #: src/features/calendar/MonthView.jsx
 msgid "Listo"
@@ -1069,6 +1105,11 @@ msgstr "Lunes"
 msgid "Mar"
 msgstr "Mar"
 
+#. placeholder {0}: item.name
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Marca las comidas donde quieres sustituir <0>{0}</0>."
+msgstr "Marca las comidas donde quieres sustituir <0>{0}</0>."
+
 #: src/components/shopping/ShoppingItemSheet.jsx
 msgid "Marca los días que quieres comprar. La cantidad suma solo los marcados."
 msgstr "Marca los días que quieres comprar. La cantidad suma solo los marcados."
@@ -1090,6 +1131,7 @@ msgstr "Martes"
 msgid "Más"
 msgstr "Más"
 
+#: src/components/ShoppingList.jsx
 #: src/components/ui/OverflowMenu.jsx
 #: src/features/weekplan/SortableDayMeals.jsx
 msgid "Más opciones"
@@ -1119,8 +1161,13 @@ msgid "Mostrar"
 msgstr "Mostrar"
 
 #: src/components/shopping/ShoppingItemSourcesExpand.jsx
-msgid "Mostrar detalles"
-msgstr "Mostrar detalles"
+#~ msgid "Mostrar detalles"
+#~ msgstr "Mostrar detalles"
+
+#. placeholder {0}: sources.length
+#: src/components/shopping/ShoppingItemSourcesExpand.jsx
+msgid "Mostrar detalles ({0})"
+msgstr "Mostrar detalles ({0})"
 
 #: src/components/DietPlanUploader.jsx
 #: src/features/weekplan/ImportJsonSheet.jsx
@@ -1241,8 +1288,13 @@ msgid "Ocultar"
 msgstr "Ocultar"
 
 #: src/components/shopping/ShoppingItemSourcesExpand.jsx
-msgid "Ocultar detalles"
-msgstr "Ocultar detalles"
+#~ msgid "Ocultar detalles"
+#~ msgstr "Ocultar detalles"
+
+#. placeholder {0}: sources.length
+#: src/components/shopping/ShoppingItemSourcesExpand.jsx
+msgid "Ocultar detalles ({0})"
+msgstr "Ocultar detalles ({0})"
 
 #: src/components/DietPlanUploader.jsx
 #: src/features/weekplan/ImportJsonSheet.jsx
@@ -1442,10 +1494,13 @@ msgstr "Quitar día"
 msgid "Quitar fila"
 msgstr "Quitar fila"
 
-#: src/components/shopping/ShoppingItemSheet.jsx
-#: src/features/meals/MealForm.jsx
+#: src/features/meals/IngredientQuantityRow.jsx
 msgid "Quitar ingrediente"
 msgstr "Quitar ingrediente"
+
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Quitar todas"
+msgstr "Quitar todas"
 
 #: src/features/meals/quantityUnitLabels.js
 msgid "rebanada"
@@ -1524,15 +1579,21 @@ msgstr "Selecciona un ingrediente"
 msgid "Seleccionar {0} para combinar"
 msgstr "Seleccionar {0} para combinar"
 
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Seleccionar todas"
+msgstr "Seleccionar todas"
+
 #: src/features/family/MemberSwitcher.jsx
 msgid "Selector de perfil del hogar"
 msgstr "Selector de perfil del hogar"
 
+#: src/components/ShoppingList.jsx
 #: src/features/calendar/CalendarChrome.jsx
 #: src/pages/SettingsPage.jsx
 msgid "Semana"
 msgstr "Semana"
 
+#: src/components/ShoppingList.jsx
 #: src/features/calendar/WeekSurface.jsx
 msgid "Semana anterior"
 msgstr "Semana anterior"
@@ -1545,11 +1606,11 @@ msgstr "Semana de"
 msgid "Semana del"
 msgstr "Semana del"
 
+#: src/components/ShoppingList.jsx
 #: src/features/calendar/WeekSurface.jsx
 msgid "Semana siguiente"
 msgstr "Semana siguiente"
 
-#: src/features/shopping/ShoppingPage.jsx
 #: src/pages/PrepPage.jsx
 msgid "Semana visible:"
 msgstr "Semana visible:"
@@ -1618,6 +1679,10 @@ msgstr "También actualizar la comida en la biblioteca (si está vinculada)"
 #~ msgstr "También en despensa ({0})"
 
 #: src/components/ShoppingList.jsx
+msgid "Terminar"
+msgstr "Terminar"
+
+#: src/components/ShoppingList.jsx
 msgid "Terminar compra"
 msgstr "Terminar compra"
 
@@ -1633,6 +1698,11 @@ msgstr "Toca las comidas que vas a preparar esta semana."
 msgid "Todas"
 msgstr "Todas"
 
+#. placeholder {0}: sources.length
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Todas las comidas ({0})"
+msgstr "Todas las comidas ({0})"
+
 #: src/pages/SettingsPage.jsx
 msgid "Todos los cambios están guardados."
 msgstr "Todos los cambios están guardados."
@@ -1645,14 +1715,18 @@ msgstr "Todos los cambios están guardados."
 #~ msgid "Tu cocina, organizada"
 #~ msgstr "Tu cocina, organizada"
 
-#: src/features/meals/MealForm.jsx
+#: src/features/meals/IngredientQuantityRow.jsx
 #: src/pages/ToolsPage.jsx
 msgid "Unidad"
 msgstr "Unidad"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende."
-msgstr "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende."
+#~ msgid "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende."
+#~ msgstr "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende."
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende. Si el plan trae notas de preparación, el JSON puede incluir una descripción opcional por comida (flavorText)."
+msgstr "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende. Si el plan trae notas de preparación, el JSON puede incluir una descripción opcional por comida (flavorText)."
 
 #: src/features/calendar/DayView.jsx
 msgid "Usar"
@@ -1696,7 +1770,7 @@ msgid "Variaciones:"
 msgstr "Variaciones:"
 
 #. placeholder {0}: item.name
-#. placeholder {1}: sources.length
+#. placeholder {1}: selectedSources.length
 #: src/components/shopping/ShoppingItemSheet.jsx
 msgid "Vas a sustituir <0>{0}</0> en <1>{1} comidas</1> de esta semana."
 msgstr "Vas a sustituir <0>{0}</0> en <1>{1} comidas</1> de esta semana."
@@ -1706,6 +1780,11 @@ msgstr "Vas a sustituir <0>{0}</0> en <1>{1} comidas</1> de esta semana."
 #: src/components/shopping/ShoppingItemSheet.jsx
 #~ msgid "Vas a sustituir <0>{0}</0> en <1>{1} comidas</1> de esta semana. Se conserva la cantidad de cada comida."
 #~ msgstr "Vas a sustituir <0>{0}</0> en <1>{1} comidas</1> de esta semana. Se conserva la cantidad de cada comida."
+
+#. placeholder {0}: item.name
+#: src/components/shopping/ShoppingItemSheet.jsx
+msgid "Vas a sustituir <0>{0}</0>. Elige el alcance."
+msgstr "Vas a sustituir <0>{0}</0>. Elige el alcance."
 
 #: src/components/ShoppingList.jsx
 msgid "Ver como checklist"

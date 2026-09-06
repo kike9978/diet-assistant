@@ -27,6 +27,7 @@ export default function EditScheduledMealSheet({
 			name: meal.name,
 			mealType: meal.mealType,
 			servings: 1,
+			flavorText: meal.flavorText || "",
 			ingredients: (meal.ingredients || []).map((ing) => ({
 				...ing,
 				quantity:
@@ -105,6 +106,7 @@ export function EditDraftMealSheet({ open, onClose, meal, onSave }) {
 			name: meal.name,
 			mealType: meal.mealType,
 			servings: 1,
+			flavorText: meal.flavorText || "",
 			ingredients: (meal.ingredients || []).map((ing) => ({
 				...ing,
 				quantity:

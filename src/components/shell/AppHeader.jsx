@@ -21,7 +21,7 @@ export default function AppHeader() {
 					</div>
 				</div>
 			</header>
-			<div className="sm:hidden sticky top-0 z-20 bg-brand text-[var(--color-surface)] border-t border-white/15 shadow-soft">
+			<div className="sm:hidden shrink-0 bg-brand text-[var(--color-surface)] border-t border-white/15 shadow-soft">
 				<div className="px-3 py-1.5 overflow-x-auto">
 					<MemberSwitcher />
 				</div>

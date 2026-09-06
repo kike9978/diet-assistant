@@ -234,4 +234,39 @@ describe("weekDraft", () => {
 		);
 		expect(state.calendars.m1["2026-09-05"][0].mealId).toBe("meal1");
 	});
+
+	it("flavorText survives import → library → calendar", () => {
+		const draft = draftFromDietJson(
+			{
+				days: [
+					{
+						meals: [
+							{
+								name: "Cena: Salmón",
+								description: "  Hornear con limón.  ",
+								ingredients: [{ name: "Salmón", quantity: "150g" }],
+							},
+						],
+					},
+				],
+			},
+			WEEK,
+		);
+		expect(draft.days[0].meals[0].flavorText).toBe("Hornear con limón.");
+		expect(draft.days[0].meals[0]).not.toHaveProperty("description");
+
+		const groups = uniqueDraftMealsForSave(draft);
+		const { state, draft: linked } = applyLibrarySaveSelections(
+			baseState(),
+			draft,
+			groups[0].tempIds,
+		);
+		const libraryMeal = state.mealLibrary.find((m) => m.name === "Cena: Salmón");
+		expect(libraryMeal.flavorText).toBe("Hornear con limón.");
+
+		const committed = commitWeekDraft(state, linked);
+		expect(committed.calendars.m1["2026-08-31"][0].flavorText).toBe(
+			"Hornear con limón.",
+		);
+	});
 });

@@ -2,20 +2,20 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
 import { useState } from "react";
-import { X } from "lucide-react";
 import {
 	DEFAULT_QUANTITY_UNIT,
-	isUnitOnlyQuantity,
 	joinQuantityInput,
 	splitQuantityInput,
 } from "../../domain/quantity.js";
 import { inferMealType } from "../../domain/mealType.js";
 import Button from "../../components/ui/Button";
+import IngredientQuantityRow, {
+	emptyIngredientQuantityRow,
+} from "./IngredientQuantityRow.jsx";
 import { MEAL_TYPE_MSG, MEAL_TYPE_OPTIONS } from "./mealTypeLabels.js";
-import { unitLabel, unitsForSelect } from "./quantityUnitLabels.js";
 
 function emptyRow() {
-	return { name: "", amount: "", unit: DEFAULT_QUANTITY_UNIT };
+	return emptyIngredientQuantityRow();
 }
 
 function rowsFromMeal(meal) {
@@ -31,7 +31,7 @@ function rowsFromMeal(meal) {
 }
 
 /**
- * Fuller meal builder: name, type, servings, ingredients.
+ * Fuller meal builder: name, type, servings, optional description, ingredients.
  */
 export default function MealForm({
 	initialMeal = null,
@@ -46,6 +46,7 @@ export default function MealForm({
 		initialMeal?.mealType || "otro",
 	);
 	const [servings, setServings] = useState(initialMeal?.servings ?? 1);
+	const [flavorText, setFlavorText] = useState(initialMeal?.flavorText || "");
 	const [rows, setRows] = useState(() => rowsFromMeal(initialMeal));
 	const [error, setError] = useState(null);
 	const [autoType, setAutoType] = useState(!initialMeal);
@@ -95,6 +96,7 @@ export default function MealForm({
 			name: trimmedName,
 			mealType,
 			servings: Number(servings) || 1,
+			flavorText,
 			ingredients,
 			...extra,
 		});
@@ -150,56 +152,31 @@ export default function MealForm({
 				</label>
 			</div>
 
+			<label className="block">
+				<span className="text-sm font-semibold">
+					<Trans>Descripción</Trans>
+				</span>
+				<textarea
+					value={flavorText}
+					onChange={(e) => setFlavorText(e.target.value)}
+					rows={3}
+					className="mt-1 w-full px-3 py-2 rounded-app border border-border bg-surface"
+					placeholder={t`Cómo se prepara, opcional`}
+				/>
+			</label>
+
 			<div className="space-y-2">
 				<p className="text-sm font-semibold">
 					<Trans>Ingredientes</Trans>
 				</p>
-				{rows.map((row, index) => {
-					const unitOnly = isUnitOnlyQuantity(row.unit);
-					return (
-						<div
-							key={index}
-							className="grid grid-cols-[minmax(0,1fr)_4.25rem_5.75rem_auto] gap-2"
-						>
-							<input
-								value={row.name}
-								onChange={(e) => updateRow(index, "name", e.target.value)}
-								placeholder={t`Ingrediente`}
-								className="min-h-11 min-w-0 px-3 rounded-app border border-border bg-surface"
-							/>
-							<input
-								value={unitOnly ? "" : row.amount}
-								onChange={(e) => updateRow(index, "amount", e.target.value)}
-								placeholder={unitOnly ? "—" : t`1/2`}
-								inputMode="decimal"
-								disabled={unitOnly}
-								aria-label={t`Cantidad`}
-								className="min-h-11 min-w-0 px-2 rounded-app border border-border bg-surface disabled:text-ink-muted disabled:opacity-60"
-							/>
-							<select
-								value={row.unit}
-								onChange={(e) => updateRow(index, "unit", e.target.value)}
-								aria-label={t`Unidad`}
-								className="min-h-11 min-w-0 px-2 rounded-app border border-border bg-surface"
-							>
-								{unitsForSelect(row.unit).map((unit) => (
-									<option key={unit} value={unit}>
-										{unitLabel(unit, _)}
-									</option>
-								))}
-							</select>
-							<Button
-								type="button"
-								variant="ghost"
-								className="!px-2"
-								aria-label={t`Quitar ingrediente`}
-								onClick={() => removeRow(index)}
-							>
-								<X className="size-4" aria-hidden />
-							</Button>
-						</div>
-					);
-				})}
+				{rows.map((row, index) => (
+					<IngredientQuantityRow
+						key={index}
+						row={row}
+						onChange={(field, value) => updateRow(index, field, value)}
+						onRemove={() => removeRow(index)}
+					/>
+				))}
 				<Button type="button" variant="secondary" onClick={addRow}>
 					<Trans>Otro ingrediente</Trans>
 				</Button>

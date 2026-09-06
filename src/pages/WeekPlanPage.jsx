@@ -9,6 +9,8 @@ import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
 import Sheet from "../components/ui/Sheet";
 import MealForm from "../features/meals/MealForm";
+import { flavorTextFields, normalizeFlavorText } from "../features/meals/flavorText.js";
+import MealFlavorText from "../features/meals/MealFlavorText";
 import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
 import {
 	parseDateISO,
@@ -176,9 +178,13 @@ export default function WeekPlanPage() {
 
 	const filteredLibrary = useMemo(() => {
 		const q = libraryQuery.trim().toLowerCase();
-		return state.mealLibrary.filter((m) =>
-			q ? m.name.toLowerCase().includes(q) : true,
-		);
+		return state.mealLibrary.filter((m) => {
+			if (!q) return true;
+			return (
+				m.name.toLowerCase().includes(q) ||
+				(m.flavorText || "").toLowerCase().includes(q)
+			);
+		});
 	}, [state.mealLibrary, libraryQuery]);
 
 	const syntheticDraft = useMemo(
@@ -204,6 +210,7 @@ export default function WeekPlanPage() {
 			name: meal.name,
 			mealType: meal.mealType,
 			ingredients: meal.ingredients || [],
+			...flavorTextFields(meal.flavorText),
 			source: "library",
 			dirty: false,
 		});
@@ -221,6 +228,7 @@ export default function WeekPlanPage() {
 			name: payload.name,
 			mealType: payload.mealType,
 			ingredients: payload.ingredients,
+			...flavorTextFields(payload.flavorText),
 			source: "create",
 			mealId: null,
 		});
@@ -260,11 +268,18 @@ export default function WeekPlanPage() {
 	const handleDraftMealSave = (payload, disposition) => {
 		if (!editing) return;
 		const ingredients = ingredientsFromRows(payload.ingredients);
+		const flavorText = normalizeFlavorText(payload.flavorText);
 		const patch = {
 			name: payload.name.trim(),
 			mealType: payload.mealType,
 			ingredients,
 			dirty: true,
+		};
+		const applyPatch = (m, extra) => {
+			const next = { ...m, ...patch, ...extra };
+			if (flavorText) next.flavorText = flavorText;
+			else delete next.flavorText;
+			return next;
 		};
 		const { slotId, meal } = editing;
 
@@ -274,13 +289,11 @@ export default function WeekPlanPage() {
 				...dp,
 				meals: dp.meals.map((m) =>
 					m.tempId === meal.tempId
-						? {
-								...m,
-								...patch,
+						? applyPatch(m, {
 								mealId: meal.mealId,
 								dirty: false,
 								source: "library",
-							}
+							})
 						: m,
 				),
 			}));
@@ -290,13 +303,11 @@ export default function WeekPlanPage() {
 				...dp,
 				meals: dp.meals.map((m) =>
 					m.tempId === meal.tempId
-						? {
-								...m,
-								...patch,
+						? applyPatch(m, {
 								mealId: newId,
 								dirty: false,
 								source: "library",
-							}
+							})
 						: m,
 				),
 			}));
@@ -305,12 +316,10 @@ export default function WeekPlanPage() {
 				...dp,
 				meals: dp.meals.map((m) =>
 					m.tempId === meal.tempId
-						? {
-								...m,
-								...patch,
+						? applyPatch(m, {
 								mealId: null,
 								source: meal.source === "import" ? "import" : "create",
-							}
+							})
 						: m,
 				),
 			}));
@@ -539,6 +548,11 @@ export default function WeekPlanPage() {
 									<span className="text-xs text-ink-muted">
 										{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)}
 									</span>
+									<MealFlavorText
+										text={meal.flavorText}
+										variant="snippet"
+										className="mt-1"
+									/>
 								</button>
 							</li>
 						))}

@@ -69,6 +69,7 @@ const ingredientPrices = {
   "ciruela": { price: 40, unit: "kg" },
   "mandarina": { price: 25, unit: "kg" },
   "toronja": { price: 25, unit: "kg" },
+  "tuna": { price: 35, unit: "kg" },
 
   // Cereales y tubérculos
   "arroz": { price: 30, unit: "kg" },

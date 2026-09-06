@@ -19,6 +19,7 @@ json
 		{
 		  "id": "mealX",     // Replace X with meal number (e.g., "meal1")
 		  "name": "Meal Name", // Format: "Category: Meal Title" (e.g., "Desayuno: Smoothie de proteína vegetal")
+		  "flavorText": "Optional short prep notes or dish description", // Omit the key when there is nothing useful
 		  "ingredients": [
 		    { "name": "Ingredient", "quantity": "Quantity" }, // Individual objects
 		    // ...
@@ -111,7 +112,9 @@ If input is in English, translate meal names and ingredients to Spanish (e.g., "
 
 Preserve Spanish terms if the input is already in Spanish.
 
-No Extra Fields: Do not add description, calories, or other fields unless explicitly requested.
+flavorText: If the source has prep notes, cooking method, or a short dish description, put that plain text in "flavorText" (same language as the meal name). Omit the key when there is nothing useful. Do not invent recipes.
+
+No Extra Fields: Do not add calories, macros, or other fields. Optional "flavorText" is allowed.
 
 7. Validation & Error Handling
 Check for Missing Meals: Ensure all 5 meals are present per day.
@@ -144,6 +147,7 @@ json
 		{
 		  "id": "meal1",
 		  "name": "Desayuno: Smoothie de proteína vegetal",
+		  "flavorText": "Licuar plátano, espinacas y leche de almendras hasta que quede suave.",
 		  "ingredients": [
 		    { "name": "Plátano", "quantity": "1 pza" },
 		    { "name": "Espinacas", "quantity": "1 taza" },

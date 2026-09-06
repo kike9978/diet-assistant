@@ -10,6 +10,11 @@ import {
 import { formatQuantity } from "../../domain/quantity.js";
 import { DAY_LABEL_MSG } from "../../i18n/weekDayLabels";
 import Button from "../../components/ui/Button";
+import MealFlavorText from "../meals/MealFlavorText";
+import {
+	flavorTextSources,
+	resolveMealFlavorText,
+} from "../meals/flavorText.js";
 import { MEAL_TYPE_COLOR } from "../calendar/mealTypeColors.js";
 import { parseDateISO } from "../calendar/dateUtils.js";
 
@@ -20,6 +25,7 @@ function PrepMealCard({
 	isSelected,
 	onToggleSelect,
 	hideUnselected,
+	flavorText,
 }) {
 	const [showIngredients, setShowIngredients] = useState(false);
 
@@ -68,6 +74,20 @@ function PrepMealCard({
 				</span>
 			</div>
 
+			{flavorText ? (
+				<div className="mt-2">
+					{showIngredients ? (
+						<p className="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-0.5">
+							<Trans>Descripción</Trans>
+						</p>
+					) : null}
+					<MealFlavorText
+						text={flavorText}
+						variant={showIngredients ? "full" : "snippet"}
+					/>
+				</div>
+			) : null}
+
 			{showIngredients ? (
 				<ul className="mt-2 space-y-1 text-sm text-ink-muted">
 					{(meal.ingredients || []).map((ing) => (
@@ -101,6 +121,10 @@ export default function PrepMode() {
 
 	const memberId = state.household.activeMemberId;
 	const cal = state.calendars[memberId] ?? {};
+	const flavorSources = useMemo(
+		() => flavorTextSources(state),
+		[state.mealLibrary, state.weekPlans],
+	);
 	const weekDates = visibleWeekDates;
 	const weekStartISO = weekDates[0];
 	const selected = new Set(state.mealPrep.selectedInstanceIds || []);
@@ -235,6 +259,7 @@ export default function PrepMode() {
 							<PrepMealCard
 								key={meal.instanceId}
 								meal={meal}
+								flavorText={resolveMealFlavorText(meal, flavorSources)}
 								dayLabel={day.dayLabel}
 								isSelected={selected.has(meal.instanceId)}
 								hasAnySelection={hasAnySelection}

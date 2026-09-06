@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Button from "../../components/ui/Button";
 import Sheet from "../../components/ui/Sheet";
 import { formatQuantity } from "../../domain/quantity.js";
+import MealFlavorText from "../meals/MealFlavorText";
 import { uniqueDraftMealsForSave } from "./weekDraft.js";
 
 /**
@@ -119,6 +120,11 @@ export default function SaveImportedMealsSheet({
 												qtyPreview || <Trans>Sin ingredientes</Trans>
 											)}
 										</span>
+										<MealFlavorText
+											text={group.meal.flavorText}
+											variant="snippet"
+											className="mt-1"
+										/>
 									</span>
 								</label>
 							</li>

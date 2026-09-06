@@ -2,6 +2,7 @@ import { createId } from "../../domain/ids.js";
 import { ingredientFromLegacy } from "../../domain/ingredient.js";
 import { inferMealType } from "../../domain/mealType.js";
 import { formatQuantity } from "../../domain/quantity.js";
+import { flavorTextFields, flavorTextFromMeal } from "../meals/flavorText.js";
 import { buildLibraryMeal } from "../calendar/calendarActions.js";
 
 /**
@@ -11,6 +12,7 @@ import { buildLibraryMeal } from "../calendar/calendarActions.js";
  *   name: string,
  *   mealType: string,
  *   ingredients: import("../../domain/types.js").Ingredient[],
+ *   flavorText?: string,
  *   dirty: boolean,
  *   source: "library" | "create" | "import"
  * }} DraftMeal
@@ -80,6 +82,7 @@ export function createDraftMeal(opts) {
 		name,
 		mealType: opts.mealType || inferMealType(name),
 		ingredients: ingredientsFromRows(opts.ingredients || []),
+		...flavorTextFields(flavorTextFromMeal(opts)),
 		dirty: Boolean(opts.dirty),
 		source: opts.source || "create",
 	};
@@ -118,6 +121,7 @@ export function draftFromCalendar(state, weekDates) {
 					name: scheduled.name,
 					mealType: scheduled.mealType,
 					ingredients: scheduled.ingredients || [],
+					...flavorTextFields(scheduled.flavorText),
 					dirty: false,
 					source: scheduled.mealId ? "library" : "create",
 				}),
@@ -152,6 +156,7 @@ export function draftFromDietJson(plan, weekDates) {
 								? ing.quantity
 								: formatQuantity(ing.quantity) || "",
 					})),
+					...flavorTextFields(flavorTextFromMeal(meal)),
 					dirty: false,
 					source: "import",
 				}),
@@ -236,6 +241,7 @@ export function applyLibrarySaveSelections(
 							? ing.quantity
 							: formatQuantity(ing.quantity) || "",
 				})),
+				flavorText: group.meal.flavorText,
 				source: group.meal.source === "import" ? "import" : "user",
 			},
 			undefined,
@@ -287,6 +293,7 @@ export function draftMealToScheduled(draftMeal, dateISO, memberId) {
 			...ing,
 			id: createId(),
 		})),
+		...flavorTextFields(draftMeal.flavorText),
 	};
 }
 

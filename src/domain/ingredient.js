@@ -127,6 +127,7 @@ export const INGREDIENT_CATEGORIES = {
 		"berries",
 		"guanábana",
 		"blueberries",
+		"tuna",
 	],
 	"Cereales y tubérculos": [
 		"arroz",
@@ -316,6 +317,7 @@ export const INGREDIENT_EQUIVALENTS = {
 		"1 tza de sandía",
 		"1/4 tza de blueberries",
 		"2 pzas de kiwi",
+		"2 pzas de tuna",
 	],
 	"Cereales y tubérculos": [
 		"1/4 tza de arroz cocido",

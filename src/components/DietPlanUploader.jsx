@@ -59,6 +59,7 @@ function DietPlanUploader({ onUpload }) {
             {
               id: "meal1",
               name: "Breakfast: Oatmeal with Fruits",
+              flavorText: "Cook the oats and top with banana and berries.",
               ingredients: [
                 { name: "Rolled Oats", quantity: "1/2 cup" },
                 { name: "Banana", quantity: "1" },
@@ -149,6 +150,7 @@ function DietPlanUploader({ onUpload }) {
         {
           "id": "meal1",
           "name": "Breakfast: Oatmeal with Fruits",
+          "flavorText": "Cook the oats and top with banana and berries.",
           "ingredients": [
             { "name": "Rolled Oats", "quantity": "1/2 cup" },
             { "name": "Banana", "quantity": "1" },

@@ -4,6 +4,7 @@ import {
 	ingredientFromLegacy,
 } from "../../domain/ingredient.js";
 import { formatQuantity, parseQuantity } from "../../domain/quantity.js";
+import { flavorTextFields, normalizeFlavorText } from "../meals/flavorText.js";
 import { retentionCutoffISO } from "./dateUtils.js";
 
 /**
@@ -46,6 +47,7 @@ export function mealToScheduled(meal, dateISO, memberId, opts = {}) {
 			...ing,
 			id: createId(),
 		})),
+		...flavorTextFields(meal.flavorText),
 		...(opts.replacedFromId ? { replacedFromId: opts.replacedFromId } : {}),
 	};
 }
@@ -509,6 +511,7 @@ export function prunePastCalendarDays(state, opts = {}) {
  *   mealType?: string,
  *   ingredients?: import("../../domain/types.js").Ingredient[],
  *   mealId?: string | null,
+ *   flavorText?: string,
  *   notes?: string
  * }} patch
  */
@@ -539,6 +542,11 @@ export function updateScheduledMeal(state, instanceId, patch) {
 					}
 				: {}),
 		};
+		if (Object.prototype.hasOwnProperty.call(patch, "flavorText")) {
+			const flavorText = normalizeFlavorText(patch.flavorText);
+			if (flavorText) next.flavorText = flavorText;
+			else delete next.flavorText;
+		}
 		const copy = [...list];
 		copy[idx] = next;
 		memberCal[dateISO] = copy;
@@ -562,6 +570,7 @@ export function updateScheduledMeal(state, instanceId, patch) {
  *     name: string,
  *     mealType?: string,
  *     servings?: number,
+ *     flavorText?: string,
  *     ingredients: { name: string, quantity: string }[]
  *   },
  *   disposition: "update" | "duplicate" | "once"
@@ -597,6 +606,9 @@ export function applyMealSaveDisposition(state, opts) {
 		name: payload.name.trim(),
 		mealType: payload.mealType || current.mealType,
 		ingredients,
+		...(payload.flavorText !== undefined
+			? { flavorText: payload.flavorText }
+			: {}),
 	};
 
 	if (disposition === "once" || !current.mealId) {
@@ -660,7 +672,8 @@ export function quantityLabel(quantity) {
  *   servings?: number,
  *   ingredients: { name: string, quantity: string }[],
  *   tags?: string[],
- *   source?: string
+ *   source?: string,
+ *   flavorText?: string
  * }} payload
  * @param {import("../../domain/types.js").Meal} [existing]
  */
@@ -675,6 +688,11 @@ export function buildLibraryMeal(payload, existing) {
 		)
 		.filter((ing) => ing.name);
 
+	const flavorText =
+		payload.flavorText !== undefined
+			? normalizeFlavorText(payload.flavorText)
+			: normalizeFlavorText(existing?.flavorText);
+
 	return {
 		id: existing?.id || createId(),
 		name: payload.name.trim(),
@@ -683,6 +701,7 @@ export function buildLibraryMeal(payload, existing) {
 		tags: payload.tags || existing?.tags || [],
 		servings: payload.servings ?? existing?.servings ?? 1,
 		source: existing?.source || payload.source || "user",
+		...flavorTextFields(flavorText),
 		createdAt: existing?.createdAt || now,
 		updatedAt: now,
 	};

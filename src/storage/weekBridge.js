@@ -3,6 +3,7 @@ import { ingredientFromLegacy } from "../domain/ingredient.js";
 import { inferMealType } from "../domain/mealType.js";
 import { formatQuantity } from "../domain/quantity.js";
 import { WEEK_DAYS } from "../domain/ingredient.js";
+import { flavorTextFields, flavorTextFromMeal } from "../features/meals/flavorText.js";
 import {
 	parseDateISO,
 	weekdayKeysToDateISO,
@@ -154,6 +155,7 @@ export function applyWeekPlanToState(state, weekPlan) {
 					quantity: String(ing.quantity ?? ""),
 				});
 			}),
+			...flavorTextFields(flavorTextFromMeal(meal)),
 		}));
 	}
 

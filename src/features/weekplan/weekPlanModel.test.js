@@ -93,6 +93,29 @@ describe("weekPlanModel", () => {
 		expect(slots[0].meals[0].mealType).toBe("comida");
 	});
 
+	it("dayPlansFromDietJson and copyWeekPlan keep flavorText", () => {
+		const slots = dayPlansFromDietJson({
+			days: [
+				{
+					name: "Día A",
+					meals: [
+						{
+							name: "Cena: Salmón",
+							flavorText: "Hornear con limón.",
+							ingredients: [{ name: "Salmón", quantity: "150g" }],
+						},
+					],
+				},
+			],
+		});
+		expect(slots[0].meals[0].flavorText).toBe("Hornear con limón.");
+
+		let state = saveWeekPlan(baseState(), "2026-08-31", slots);
+		state = copyWeekPlan(state, "2026-08-31", "2026-09-07");
+		const copied = getWeekPlan(state, "2026-09-07");
+		expect(copied.dayPlans[0].meals[0].flavorText).toBe("Hornear con limón.");
+	});
+
 	it("copyWeekPlan deep-copies with new ids", () => {
 		let state = saveWeekPlan(baseState(), "2026-08-31", [
 			createDayPlan({

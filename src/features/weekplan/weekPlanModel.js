@@ -2,6 +2,7 @@ import { createId } from "../../domain/ids.js";
 import { inferMealType } from "../../domain/mealType.js";
 import { formatQuantity } from "../../domain/quantity.js";
 import { buildLibraryMeal } from "../calendar/calendarActions.js";
+import { flavorTextFields, flavorTextFromMeal } from "../meals/flavorText.js";
 import { weekDateISOs } from "../calendar/dateUtils.js";
 import { clearShoppingProgressForMeals } from "../shopping/shoppingProgress.js";
 import {
@@ -242,6 +243,7 @@ export function copyWeekPlan(state, fromWeekStartISO, toWeekStartISO, memberId) 
 					mealId: m.mealId,
 					mealType: m.mealType,
 					ingredients: m.ingredients,
+					...flavorTextFields(m.flavorText),
 					source: m.source || "library",
 					dirty: false,
 				}),
@@ -272,6 +274,7 @@ export function dayPlansFromDietJson(plan) {
 								? ing.quantity
 								: formatQuantity(ing.quantity) || "",
 					})),
+					...flavorTextFields(flavorTextFromMeal(meal)),
 					source: "import",
 					dirty: false,
 				}),
@@ -598,6 +601,7 @@ export function scheduledMealsToDraftMeals(meals) {
 			name: m.name,
 			mealType: m.mealType,
 			ingredients: m.ingredients || [],
+			...flavorTextFields(m.flavorText),
 			dirty: false,
 			source: m.mealId ? "library" : "create",
 		}),
@@ -771,6 +775,7 @@ export function applyLibrarySaveToDayPlans(
 							? ing.quantity
 							: formatQuantity(ing.quantity) || "",
 				})),
+				flavorText: group.meal.flavorText,
 				source: group.meal.source === "import" ? "import" : "user",
 			},
 			undefined,
