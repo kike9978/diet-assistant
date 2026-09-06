@@ -621,16 +621,8 @@ function ShoppingList() {
 			{showFullScreenChecklist && (
 				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto pb-28">
 					<div className="max-w-4xl mx-auto">
-						<div
-							className={
-								fuseSelectMode
-									? "sticky top-0 z-10 px-4 pt-4 pb-3 mb-4 bg-surface/95 backdrop-blur border-b border-border"
-									: "px-4 pt-4"
-							}
-						>
-							<div
-								className={`flex justify-between items-center ${fuseSelectMode ? "mb-3" : "mb-6"}`}
-							>
+						<div className="sticky top-0 z-10 px-4 pt-4 pb-3 mb-4 bg-surface/95 backdrop-blur border-b border-border">
+							<div className="flex justify-between items-center mb-3">
 								<h2 className="font-display text-2xl">
 									<Trans>Lista de Compras — Checklist</Trans>
 								</h2>
@@ -646,9 +638,7 @@ function ShoppingList() {
 									✕
 								</button>
 							</div>
-							<div
-								className={`flex flex-wrap gap-2 ${fuseSelectMode ? "" : "mb-4"}`}
-							>
+							<div className="flex flex-wrap gap-2">
 								{!fuseSelectMode ? (
 									<>
 										<button

@@ -4,19 +4,25 @@ import { unitsCompatible } from "../pantry/pantryActions.js";
 
 /**
  * Sum parseable quantities that share a compatible unit.
+ * Non-numeric misc phrases (al gusto, opcional, …) are kept once per canonical form.
  * @param {string[]} quantityStrings
  * @returns {{ amount: number | null, unit: string | null, rawParts: string[] }}
  */
 export function sumCompatibleQuantities(quantityStrings = []) {
 	/** @type {Record<string, number>} */
 	const byUnit = {};
-	/** @type {string[]} */
-	const leftover = [];
+	/** @type {Map<string, string>} */
+	const leftoverByKey = new Map();
 
 	for (const raw of quantityStrings) {
 		const q = parseQuantity(raw);
 		if (q.amount == null) {
-			if (raw) leftover.push(raw);
+			if (!raw) continue;
+			const key = String(q.unit || raw)
+				.toLowerCase()
+				.trim();
+			if (!key || leftoverByKey.has(key)) continue;
+			leftoverByKey.set(key, formatQuantity(q) || String(raw).trim());
 			continue;
 		}
 		const unitKey = q.unit ? String(q.unit).toLowerCase().trim() : "";
@@ -31,6 +37,7 @@ export function sumCompatibleQuantities(quantityStrings = []) {
 		byUnit[bucket] += q.amount;
 	}
 
+	const leftover = [...leftoverByKey.values()];
 	const units = Object.keys(byUnit);
 	if (units.length === 1 && leftover.length === 0) {
 		const unit = units[0] || null;

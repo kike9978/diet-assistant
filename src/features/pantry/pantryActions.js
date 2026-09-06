@@ -31,13 +31,18 @@ export function quantityForPantryStock(item) {
 
 	/** @type {Record<string, number>} */
 	const byUnit = {};
-	/** @type {string[]} */
-	const leftover = [];
+	/** @type {Map<string, string>} */
+	const leftoverByKey = new Map();
 
 	for (const raw of quantities) {
 		const q = parseQuantity(raw);
 		if (q.amount == null) {
-			if (raw) leftover.push(raw);
+			if (!raw) continue;
+			const key = String(q.unit || raw)
+				.toLowerCase()
+				.trim();
+			if (!key || leftoverByKey.has(key)) continue;
+			leftoverByKey.set(key, formatQuantity(q) || String(raw).trim());
 			continue;
 		}
 		const unitKey = q.unit ? String(q.unit).toLowerCase().trim() : "";
@@ -51,6 +56,7 @@ export function quantityForPantryStock(item) {
 		byUnit[bucket] += q.amount;
 	}
 
+	const leftover = [...leftoverByKey.values()];
 	const units = Object.keys(byUnit);
 	if (units.length === 1 && leftover.length === 0) {
 		return formatQuantity({

@@ -43,6 +43,21 @@ describe("formatShoppingQuantities", () => {
 		);
 	});
 
+	it("dedupes misc phrases to a single mention", () => {
+		expect(
+			formatShoppingQuantities(["al gusto", "al gusto", "c.s."]),
+		).toBe("al gusto");
+		expect(
+			formatShoppingQuantities(["opcional", "optional", "opcional"]),
+		).toBe("opcional");
+		expect(formatShoppingQuantities(["to taste", "al gusto"])).toBe(
+			"al gusto",
+		);
+		expect(
+			formatShoppingQuantities(["1 pza", "al gusto", "al gusto"]),
+		).toBe("1 pza, al gusto");
+	});
+
 	it("returns empty for no quantities", () => {
 		expect(formatShoppingQuantities([])).toBe("");
 	});

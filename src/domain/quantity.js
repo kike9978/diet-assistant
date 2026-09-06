@@ -2,10 +2,28 @@
  * @typedef {{ amount: number | null, unit: string | null, raw: string }} Quantity
  */
 
+/**
+ * Non-numeric / presence-only phrases → canonical unit (Spanish source labels).
+ * Aliases in ES/EN collapse to the same key for shopping aggregation.
+ */
 const SPECIAL_CASES = {
 	"c.s.": "al gusto",
 	"c.s": "al gusto",
 	"al gusto": "al gusto",
+	"a gusto": "al gusto",
+	"to taste": "al gusto",
+	"cantidad suficiente": "al gusto",
+	"opcional": "opcional",
+	"optional": "opcional",
+	"opc.": "opcional",
+	"opc": "opcional",
+	"pizca": "pizca",
+	"pizcas": "pizca",
+	"pinch": "pizca",
+	"pinches": "pizca",
+	"puñado": "puñado",
+	"un puñado": "puñado",
+	"handful": "puñado",
 	"c.c.": "cucharadita",
 	"c.c": "cucharadita",
 };
@@ -55,6 +73,17 @@ export function parseQuantity(quantityStr) {
 }
 
 /**
+ * True when the quantity is a non-numeric misc phrase (al gusto, opcional, …).
+ * @param {Quantity | string | null | undefined} q
+ */
+export function isMiscQuantity(q) {
+	const parsed = typeof q === "string" || q == null ? parseQuantity(q) : q;
+	if (!parsed || parsed.amount != null) return false;
+	const unit = parsed.unit ? String(parsed.unit).toLowerCase().trim() : "";
+	return Boolean(unit && Object.values(SPECIAL_CASES).includes(unit));
+}
+
+/**
  * Format a Quantity for display (prefers raw when amount is null).
  * @param {Quantity | string | null | undefined} q
  * @returns {string}
@@ -64,7 +93,8 @@ export function formatQuantity(q) {
 	if (typeof q === "string") return q;
 
 	if (q.amount == null) {
-		if (q.unit === "al gusto") return "al gusto";
+		const unit = q.unit ? String(q.unit).toLowerCase().trim() : "";
+		if (unit && Object.values(SPECIAL_CASES).includes(unit)) return unit;
 		return q.raw || q.unit || "";
 	}
 

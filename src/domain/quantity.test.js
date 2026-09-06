@@ -42,12 +42,35 @@ describe("parseQuantity", () => {
 			unit: "al gusto",
 			raw: "c.s.",
 		});
+		expect(parseQuantity("to taste")).toEqual({
+			amount: null,
+			unit: "al gusto",
+			raw: "to taste",
+		});
+		expect(parseQuantity("opcional")).toEqual({
+			amount: null,
+			unit: "opcional",
+			raw: "opcional",
+		});
+		expect(parseQuantity("optional")).toEqual({
+			amount: null,
+			unit: "opcional",
+			raw: "optional",
+		});
+	});
+
+	it("normalizes un puñado as misc", () => {
+		expect(parseQuantity("un puñado")).toEqual({
+			amount: null,
+			unit: "puñado",
+			raw: "un puñado",
+		});
 	});
 
 	it("returns null amount for unparsed text", () => {
-		const q = parseQuantity("un puñado");
+		const q = parseQuantity("según se necesite");
 		expect(q.amount).toBeNull();
-		expect(q.raw).toBe("un puñado");
+		expect(q.raw).toBe("según se necesite");
 	});
 });
 

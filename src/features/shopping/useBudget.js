@@ -20,7 +20,19 @@ export function estimatePrice(item) {
 	}
 
 	const normalizedName = item.name.toLowerCase();
-	const specialCases = ["c.s.", "c.c.", "al gusto", "pizca", "pizcas"];
+	const specialCases = [
+		"c.s.",
+		"c.c.",
+		"al gusto",
+		"to taste",
+		"opcional",
+		"optional",
+		"pizca",
+		"pizcas",
+		"pinch",
+		"puñado",
+		"handful",
+	];
 	if (
 		(item.quantities || []).some((q) =>
 			specialCases.some((special) => String(q).toLowerCase().includes(special)),
