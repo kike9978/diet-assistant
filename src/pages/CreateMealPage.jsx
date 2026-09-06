@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAppState } from "../context/AppState";
 import { todayISO } from "../features/calendar/dateUtils.js";
 import Button from "../components/ui/Button";
@@ -9,6 +9,12 @@ import Button from "../components/ui/Button";
 export default function CreateMealPage() {
 	const { createMealAndSchedule } = useAppState();
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const scheduleDate =
+		searchParams.get("date") && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.get("date"))
+			? searchParams.get("date")
+			: todayISO();
+	const schedulingToday = scheduleDate === todayISO();
 	const [name, setName] = useState("");
 	const [rows, setRows] = useState([{ name: "", quantity: "" }]);
 	const [error, setError] = useState(null);
@@ -40,7 +46,7 @@ export default function CreateMealPage() {
 		createMealAndSchedule({
 			name: trimmedName,
 			ingredients,
-			dateISO: todayISO(),
+			dateISO: scheduleDate,
 		});
 		navigate("/");
 	};
@@ -51,10 +57,17 @@ export default function CreateMealPage() {
 				<Trans>Crear comida</Trans>
 			</h1>
 			<p className="text-sm text-ink-muted mb-6">
-				<Trans>
-					Mínimo: nombre + ingredientes. Se guarda en la biblioteca y se agenda
-					para hoy.
-				</Trans>
+				{schedulingToday ? (
+					<Trans>
+						Mínimo: nombre + ingredientes. Se guarda en la biblioteca y se
+						agenda para hoy.
+					</Trans>
+				) : (
+					<Trans>
+						Mínimo: nombre + ingredientes. Se guarda en la biblioteca y se
+						agenda para el día seleccionado.
+					</Trans>
+				)}
 			</p>
 
 			<form onSubmit={handleSubmit} className="space-y-4">

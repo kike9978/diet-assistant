@@ -10,6 +10,10 @@ import { createId } from "../domain/ids.js";
 import { ingredientFromLegacy } from "../domain/ingredient.js";
 import { inferMealType } from "../domain/mealType.js";
 import { parseQuantity } from "../domain/quantity.js";
+import {
+	assignDayTemplateToDate,
+	clearCalendarDay as clearCalendarDayInState,
+} from "../features/calendar/calendarActions.js";
 import { todayISO } from "../features/calendar/dateUtils.js";
 import {
 	loadState,
@@ -232,6 +236,14 @@ export function AppStateProvider({ children }) {
 		}));
 	}, []);
 
+	const assignDayTemplate = useCallback((dayTemplateId, dateISO) => {
+		setState((prev) => assignDayTemplateToDate(prev, dayTemplateId, dateISO));
+	}, []);
+
+	const clearCalendarDay = useCallback((dateISO) => {
+		setState((prev) => clearCalendarDayInState(prev, dateISO));
+	}, []);
+
 	const weekPlan = useMemo(() => calendarsToWeekPlan(state), [state]);
 	const dietPlan = useMemo(() => dietTemplatesToLegacyDietPlan(state), [state]);
 
@@ -266,6 +278,8 @@ export function AppStateProvider({ children }) {
 			setWeekStartsOn,
 			saveSettings,
 			setCalendarCursorDate,
+			assignDayTemplate,
+			clearCalendarDay,
 			hasContent,
 		}),
 		[
@@ -287,6 +301,8 @@ export function AppStateProvider({ children }) {
 			setWeekStartsOn,
 			saveSettings,
 			setCalendarCursorDate,
+			assignDayTemplate,
+			clearCalendarDay,
 			hasContent,
 		],
 	);
