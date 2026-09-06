@@ -68,15 +68,6 @@ export default function DayView({ dateISO }) {
 							{dateLabel}
 						</span>
 					</h2>
-					<p className="text-sm text-ink-muted mt-1">
-						{meals.length === 0 ? (
-							<Trans>Sin comidas. Aplica un plan de día abajo.</Trans>
-						) : meals.length === 1 ? (
-							<Trans>1 comida</Trans>
-						) : (
-							<Trans>{meals.length} comidas</Trans>
-						)}
-					</p>
 				</div>
 				{meals.length > 0 ? (
 					<Button
@@ -200,7 +191,6 @@ export default function DayView({ dateISO }) {
 					<ul className="space-y-2">
 						{dayPlans.map((dayPlan, index) => {
 							const planMeals = dayPlan.meals || [];
-							const mealCount = planMeals.length;
 							const expandKey = dayPlan.id;
 							const isExpanded = expandedId === expandKey;
 
@@ -234,18 +224,9 @@ export default function DayView({ dateISO }) {
 													d="M19 9l-7 7-7-7"
 												/>
 											</svg>
-											<div className="min-w-0">
-												<p className="font-semibold text-ink truncate">
-													{dayPlan.name || `Día ${index + 1}`}
-												</p>
-												<p className="text-xs text-ink-muted">
-													{mealCount === 1 ? (
-														<Trans>1 comida</Trans>
-													) : (
-														<Trans>{mealCount} comidas</Trans>
-													)}
-												</p>
-											</div>
+											<p className="font-semibold text-ink truncate">
+												{dayPlan.name || `Día ${index + 1}`}
+											</p>
 										</button>
 										<Button
 											variant="secondary"

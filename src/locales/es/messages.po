@@ -56,8 +56,8 @@ msgstr "{0, plural, one {Se guardará # item marcado en la despensa.} other {Se 
 #. placeholder {0}: meals.length
 #: src/features/calendar/DayView.jsx
 #: src/features/calendar/WeekView.jsx
-msgid "{0} comidas"
-msgstr "{0} comidas"
+#~ msgid "{0} comidas"
+#~ msgstr "{0} comidas"
 
 #. placeholder {0}: meal.servings
 #: src/pages/MealDetailPage.jsx
@@ -73,8 +73,8 @@ msgid "{fallback}"
 msgstr "{fallback}"
 
 #: src/features/calendar/DayView.jsx
-msgid "{mealCount} comidas"
-msgstr "{mealCount} comidas"
+#~ msgid "{mealCount} comidas"
+#~ msgstr "{mealCount} comidas"
 
 #: src/pages/WeekPlanPage.jsx
 msgid "← Calendario"
@@ -82,8 +82,8 @@ msgstr "← Calendario"
 
 #: src/features/calendar/DayView.jsx
 #: src/features/calendar/WeekView.jsx
-msgid "1 comida"
-msgstr "1 comida"
+#~ msgid "1 comida"
+#~ msgstr "1 comida"
 
 #: src/pages/MealDetailPage.jsx
 msgid "1 porción"
@@ -209,12 +209,16 @@ msgid "Aparece {0} veces esta semana"
 msgstr "Aparece {0} veces esta semana"
 
 #: src/features/calendar/WeekAssignBar.jsx
-msgid "Arma el plan de semana, luego asigna cada plan de día abajo."
-msgstr "Arma el plan de semana, luego asigna cada plan de día abajo."
+#~ msgid "Arma el plan de semana, luego asigna cada plan de día abajo."
+#~ msgstr "Arma el plan de semana, luego asigna cada plan de día abajo."
 
 #: src/pages/WeekPlanPage.jsx
 msgid "Arma los planes de día (comidas por slot). Arrastra para reordenar. Los cambios se guardan solos. Luego, en Semana, asigna cada plan a un día."
 msgstr "Arma los planes de día (comidas por slot). Arrastra para reordenar. Los cambios se guardan solos. Luego, en Semana, asigna cada plan a un día."
+
+#: src/components/ShoppingList.jsx
+msgid "Artículos"
+msgstr "Artículos"
 
 #: src/components/ShoppingList.jsx
 msgid "Así la próxima lista restará lo que acabas de comprar. Los extras marcados se quitan de la lista persistente."
@@ -559,8 +563,8 @@ msgid "Ej. Arroz"
 msgstr "Ej. Arroz"
 
 #: src/features/calendar/WeekAssignBar.jsx
-msgid "El plan de semana aún no tiene comidas. Edítalo para armar los planes de día."
-msgstr "El plan de semana aún no tiene comidas. Edítalo para armar los planes de día."
+#~ msgid "El plan de semana aún no tiene comidas. Edítalo para armar los planes de día."
+#~ msgstr "El plan de semana aún no tiene comidas. Edítalo para armar los planes de día."
 
 #: src/pages/PrepPage.jsx
 msgid "Elige qué comidas de la semana vas a preparar y revisa los ingredientes agregados."
@@ -571,8 +575,8 @@ msgid "Elige qué comidas nuevas quieres guardar en tu lista. Puedes editarlas d
 msgstr "Elige qué comidas nuevas quieres guardar en tu lista. Puedes editarlas después en Comidas."
 
 #: src/features/calendar/WeekAssignBar.jsx
-msgid "Elige un día abajo y usa un plan de día con Usar."
-msgstr "Elige un día abajo y usa un plan de día con Usar."
+#~ msgid "Elige un día abajo y usa un plan de día con Usar."
+#~ msgstr "Elige un día abajo y usa un plan de día con Usar."
 
 #: src/pages/FamilyPage.jsx
 #: src/pages/MealDetailPage.jsx
@@ -905,6 +909,10 @@ msgstr "Lunes"
 #: src/i18n/weekDayLabels.js
 msgid "Mar"
 msgstr "Mar"
+
+#: src/components/ShoppingList.jsx
+msgid "Marcados"
+msgstr "Marcados"
 
 #: src/components/ShoppingList.jsx
 msgid "Marcar todos"
@@ -1338,8 +1346,8 @@ msgid "Sin comidas en este plan de día."
 msgstr "Sin comidas en este plan de día."
 
 #: src/features/calendar/DayView.jsx
-msgid "Sin comidas. Aplica un plan de día abajo."
-msgstr "Sin comidas. Aplica un plan de día abajo."
+#~ msgid "Sin comidas. Aplica un plan de día abajo."
+#~ msgstr "Sin comidas. Aplica un plan de día abajo."
 
 #: src/features/calendar/DayView.jsx
 #: src/features/weekplan/SaveImportedMealsSheet.jsx

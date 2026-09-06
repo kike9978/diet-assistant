@@ -32,6 +32,64 @@ function itemKeyFor(item) {
 	return ingredientChecklistKey(item.normalizedName || item.name);
 }
 
+function ChecklistCategoryBlocks({
+	categories,
+	isChecked,
+	shoppingWeekPlan,
+	showSources,
+	onToggle,
+	onMoveToPantry,
+}) {
+	return categories.map(({ category, items }) => (
+		<div key={category} className="mb-6">
+			<h3 className="text-lg font-medium text-brand mb-3 border-b border-border pb-2">
+				{category}{" "}
+				<span className="text-ink-muted text-sm">({items.length})</span>
+			</h3>
+			<ul className="space-y-2">
+				{items.map((item) => {
+					const key = itemKeyFor(item);
+					return (
+						<li
+							key={key}
+							className={`py-2 px-3 rounded-app ${isChecked ? "bg-[var(--color-accent-leaf)]/10" : "bg-surface-2"}`}
+						>
+							<div className="flex items-start gap-3">
+								<input
+									type="checkbox"
+									checked={isChecked}
+									onChange={() => onToggle(key)}
+									className="mt-1 h-5 w-5 accent-[var(--color-brand)] shrink-0"
+									aria-label={item.name}
+								/>
+								<div className="flex-1 min-w-0">
+									<ShoppingListItem
+										item={item}
+										priceEstimate={estimatePrice(item)}
+										formatQuantity={formatItemQuantity}
+										weekPlan={shoppingWeekPlan}
+										showSources={showSources}
+										checked={isChecked}
+									/>
+								</div>
+							</div>
+							{!item.isExtra && !item.pantryCovered ? (
+								<button
+									type="button"
+									onClick={() => onMoveToPantry(item)}
+									className="mt-1 text-xs font-semibold text-[var(--color-accent-pantry)]"
+								>
+									<Trans>Ya lo tengo → despensa</Trans>
+								</button>
+							) : null}
+						</li>
+					);
+				})}
+			</ul>
+		</div>
+	));
+}
+
 function ShoppingList() {
 	const {
 		shoppingWeekPlan,
@@ -75,6 +133,28 @@ function ShoppingList() {
 			return Boolean(checkedItems[itemKeyFor(item)]);
 		});
 	}, [shoppingList, checkedItems]);
+
+	/** Checklist: split categories into unchecked vs checked (like pre-refactor UX). */
+	const { uncheckedCategories, checkedCategories } = useMemo(() => {
+		const unchecked = [];
+		const checked = [];
+		Object.entries(groupedShoppingList).forEach(([category, items]) => {
+			const uncheckedItems = [];
+			const checkedItemsList = [];
+			items.forEach((item) => {
+				const key = itemKeyFor(item);
+				if (checkedItems[key]) checkedItemsList.push(item);
+				else uncheckedItems.push(item);
+			});
+			if (uncheckedItems.length > 0) {
+				unchecked.push({ category, items: uncheckedItems });
+			}
+			if (checkedItemsList.length > 0) {
+				checked.push({ category, items: checkedItemsList });
+			}
+		});
+		return { uncheckedCategories: unchecked, checkedCategories: checked };
+	}, [groupedShoppingList, checkedItems]);
 
 	const handleAddExtras = (items) => {
 		for (const item of items) {
@@ -492,54 +572,36 @@ function ShoppingList() {
 								)}
 							</button>
 						</div>
-						{Object.entries(groupedShoppingList).map(([category, items]) => (
-							<div key={category} className="mb-6">
-								<h3 className="text-lg font-medium text-brand mb-3 border-b border-border pb-2">
-									{category}
-								</h3>
-								<ul className="space-y-2">
-									{items.map((item) => {
-										const key = itemKeyFor(item);
-										const isChecked = Boolean(checkedItems[key]);
-										return (
-											<li
-												key={key}
-												className={`py-2 px-3 rounded-app ${isChecked ? "bg-[var(--color-accent-leaf)]/10" : "bg-surface-2"}`}
-											>
-												<div className="flex items-start gap-3">
-													<input
-														type="checkbox"
-														checked={isChecked}
-														onChange={() => toggleItem(key)}
-														className="mt-1 h-5 w-5 accent-[var(--color-brand)] shrink-0"
-														aria-label={item.name}
-													/>
-													<div className="flex-1 min-w-0">
-														<ShoppingListItem
-															item={item}
-															priceEstimate={estimatePrice(item)}
-															formatQuantity={formatItemQuantity}
-															weekPlan={shoppingWeekPlan}
-															showSources={showSources}
-															checked={isChecked}
-														/>
-													</div>
-												</div>
-												{!item.isExtra && !item.pantryCovered ? (
-													<button
-														type="button"
-														onClick={() => handleMoveToPantry(item)}
-														className="mt-1 text-xs font-semibold text-[var(--color-accent-pantry)]"
-													>
-														<Trans>Ya lo tengo → despensa</Trans>
-													</button>
-												) : null}
-											</li>
-										);
-									})}
-								</ul>
-							</div>
-						))}
+						{uncheckedCategories.length > 0 ? (
+							<section className="mb-2">
+								<h2 className="font-display text-xl text-ink mb-4">
+									<Trans>Artículos</Trans>
+								</h2>
+								<ChecklistCategoryBlocks
+									categories={uncheckedCategories}
+									isChecked={false}
+									shoppingWeekPlan={shoppingWeekPlan}
+									showSources={showSources}
+									onToggle={toggleItem}
+									onMoveToPantry={handleMoveToPantry}
+								/>
+							</section>
+						) : null}
+						{checkedCategories.length > 0 ? (
+							<section className="mt-8">
+								<h2 className="font-display text-xl text-ink mb-4">
+									<Trans>Marcados</Trans>
+								</h2>
+								<ChecklistCategoryBlocks
+									categories={checkedCategories}
+									isChecked={true}
+									shoppingWeekPlan={shoppingWeekPlan}
+									showSources={showSources}
+									onToggle={toggleItem}
+									onMoveToPantry={handleMoveToPantry}
+								/>
+							</section>
+						) : null}
 					</div>
 
 					{checkedShoppingItems.length > 0 ? (
