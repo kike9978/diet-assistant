@@ -762,7 +762,7 @@ function ShoppingList() {
 			/>
 
 			{showFullScreenChecklist ? (
-				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto pb-28">
+				<div className="fixed inset-0 z-50 bg-surface overflow-y-auto">
 					<div className="max-w-4xl mx-auto">
 						<div className="sticky top-0 z-10 px-4 pt-4 pb-3 mb-4 bg-surface/95 backdrop-blur border-b border-border">
 							<div className="flex items-center justify-between gap-2">

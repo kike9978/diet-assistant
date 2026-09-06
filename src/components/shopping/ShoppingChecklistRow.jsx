@@ -1,6 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { ChevronRight } from "lucide-react";
 import ShoppingItemSourcesExpand from "./ShoppingItemSourcesExpand";
 
@@ -22,7 +22,7 @@ function Chip({ chip }) {
 }
 
 /**
- * Single-line aisle row. Checkbox checks; the rest of the row opens the item sheet.
+ * Single-line aisle row. Checkbox + name check; qty/chevron open the item sheet.
  * When showSources is on, a Mostrar detalles expander appears under the row.
  */
 export default function ShoppingChecklistRow({
@@ -39,10 +39,12 @@ export default function ShoppingChecklistRow({
 	onToggleFuseSelect,
 	onOpen,
 }) {
+	const checkboxId = useId();
 	const checkboxRef = useRef(null);
 	const mixed = view?.checkState === "mixed";
 	const fullyChecked = Boolean(checked || view?.checkState === "checked");
 	const sourcesVisible = showSources && !fuseSelectMode;
+	const fuseDisabled = fuseSelectMode && item.isFused;
 
 	useEffect(() => {
 		if (checkboxRef.current) {
@@ -50,14 +52,19 @@ export default function ShoppingChecklistRow({
 		}
 	}, [mixed, fuseSelectMode]);
 
-	const canFuseSelect = fuseSelectMode && !item.isFused;
 	const displayQty = item.pantryCovered ? "" : view?.displayQty || "";
+	const nameClass = `min-w-0 flex-1 line-clamp-2 font-semibold leading-snug ${
+		fullyChecked && !fuseSelectMode
+			? "line-through text-ink-muted"
+			: "text-ink"
+	}`;
 
 	return (
 		<div>
 			<div className="flex items-center gap-2 min-h-11">
 				{showCheckbox ? (
 					<input
+						id={checkboxId}
 						ref={checkboxRef}
 						type="checkbox"
 						checked={
@@ -67,12 +74,11 @@ export default function ShoppingChecklistRow({
 									: fuseSelected
 								: fullyChecked
 						}
-						disabled={fuseSelectMode && item.isFused}
+						disabled={fuseDisabled}
 						onChange={() => {
 							if (fuseSelectMode) onToggleFuseSelect?.();
 							else onToggle?.();
 						}}
-						onClick={(e) => e.stopPropagation()}
 						className={`h-5 w-5 shrink-0 ${
 							fuseSelectMode
 								? "accent-[var(--color-accent-shopping)]"
@@ -81,24 +87,34 @@ export default function ShoppingChecklistRow({
 						aria-label={
 							fuseSelectMode
 								? t`Seleccionar ${item.name} para combinar`
-								: item.name
+								: undefined
 						}
 					/>
 				) : null}
-				<button
-					type="button"
-					onClick={onOpen}
-					className="flex-1 min-w-0 flex items-center gap-2 text-left min-h-11"
-				>
-					<span
-						className={`min-w-0 flex-1 line-clamp-2 font-semibold leading-snug ${
-							fullyChecked && !fuseSelectMode
-								? "line-through text-ink-muted"
-								: "text-ink"
+				{showCheckbox ? (
+					<label
+						htmlFor={checkboxId}
+						className={`${nameClass} py-2 ${
+							fuseDisabled ? "cursor-default" : "cursor-pointer"
 						}`}
 					>
 						{item.name}
-					</span>
+					</label>
+				) : (
+					<button
+						type="button"
+						onClick={onOpen}
+						className={`${nameClass} text-left py-2`}
+					>
+						{item.name}
+					</button>
+				)}
+				<button
+					type="button"
+					onClick={onOpen}
+					aria-label={t`Abrir ${item.name}`}
+					className="shrink-0 flex items-center gap-2 text-left min-h-11"
+				>
 					<div className="shrink-0 text-right">
 						{displayQty ? (
 							<p className="text-sm text-ink-muted tabular-nums leading-tight">

@@ -163,6 +163,11 @@ msgstr "1/2"
 msgid "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
 msgstr "Open the LLM and paste the prompt. In the same message, attach your meal-plan PDF or image (or paste the plan text)."
 
+#. placeholder {0}: item.name
+#: src/components/shopping/ShoppingChecklistRow.jsx
+msgid "Abrir {0}"
+msgstr "Open {0}"
+
 #: src/components/MealPlanner.jsx
 #~ msgid "Abrir herramientas"
 #~ msgstr "Open tools"
@@ -593,6 +598,7 @@ msgid "Desayuno: Avena con fruta"
 msgstr "Breakfast: Oatmeal with fruit"
 
 #: src/features/meals/MealForm.jsx
+#: src/features/shopping/PrepMode.jsx
 msgid "Descripción"
 msgstr "Description"
 
