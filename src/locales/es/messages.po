@@ -114,6 +114,10 @@ msgstr "{0} porciones"
 msgid "{0} sustituida en {1} comidas de esta semana."
 msgstr "{0} sustituida en {1} comidas de esta semana."
 
+#: src/features/meals/MealTile.jsx
+msgid "{count} ingredientes"
+msgstr "{count} ingredientes"
+
 #: src/components/ShoppingList.jsx
 msgid "{count} items guardados en despensa"
 msgstr "{count} items guardados en despensa"
@@ -129,6 +133,10 @@ msgstr "{fuseSelectedCount, plural, one {# item seleccionado} other {# items sel
 #: src/features/calendar/DayView.jsx
 #~ msgid "{mealCount} comidas"
 #~ msgstr "{mealCount} comidas"
+
+#: src/features/meals/MealTile.jsx
+msgid "{servings} porciones"
+msgstr "{servings} porciones"
 
 #: src/pages/WeekPlanPage.jsx
 #~ msgid "← Calendario"
@@ -147,6 +155,11 @@ msgstr "<0>{aisleQty}</0> en la lista · cantidades distintas por comida"
 #~ msgid "1 comida"
 #~ msgstr "1 comida"
 
+#: src/features/meals/MealTile.jsx
+msgid "1 ingrediente"
+msgstr "1 ingrediente"
+
+#: src/features/meals/MealTile.jsx
 #: src/pages/MealDetailPage.jsx
 msgid "1 porción"
 msgstr "1 porción"
@@ -162,6 +175,11 @@ msgstr "1/2"
 #: src/features/weekplan/ImportJsonSheet.jsx
 msgid "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
 msgstr "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
+
+#. placeholder {0}: item.name
+#: src/components/shopping/ShoppingChecklistRow.jsx
+msgid "Abrir {0}"
+msgstr "Abrir {0}"
 
 #: src/components/MealPlanner.jsx
 #~ msgid "Abrir herramientas"
@@ -322,6 +340,10 @@ msgstr "Atrás"
 msgid "Aún no hay comidas"
 msgstr "Aún no hay comidas"
 
+#: src/features/meals/MealIconPicker.jsx
+msgid "Automático"
+msgstr "Automático"
+
 #: src/components/ShoppingList.jsx
 #~ msgid "Basada en la semana"
 #~ msgstr "Basada en la semana"
@@ -338,7 +360,7 @@ msgstr "Biblioteca vacía"
 msgid "Borra comidas agendadas de hace más de ~4 meses. La biblioteca no se toca."
 msgstr "Borra comidas agendadas de hace más de ~4 meses. La biblioteca no se toca."
 
-#: src/pages/WeekPlanPage.jsx
+#: src/features/meals/MealLibraryBrowser.jsx
 msgid "Buscar comida…"
 msgstr "Buscar comida…"
 
@@ -355,6 +377,10 @@ msgstr "Calendario"
 #: src/pages/PrepPage.jsx
 msgid "Cambiar en calendario"
 msgstr "Cambiar en calendario"
+
+#: src/pages/MealDetailPage.jsx
+msgid "Cambiar icono"
+msgstr "Cambiar icono"
 
 #: src/features/family/MemberSwitcher.jsx
 msgid "Cambiar persona"
@@ -416,6 +442,7 @@ msgstr "Cena"
 #: src/components/ToolsSidebar.jsx
 #: src/components/ui/ConfirmDialog.jsx
 #: src/components/ui/Sheet.jsx
+#: src/features/meals/MealLibrarySheet.jsx
 #: src/features/weekplan/ImportJsonSheet.jsx
 msgid "Cerrar"
 msgstr "Cerrar"
@@ -472,6 +499,7 @@ msgstr "Comida no encontrada."
 #~ msgid "Comida personalizada"
 #~ msgstr "Comida personalizada"
 
+#: src/pages/MealDetailPage.jsx
 #: src/pages/MealsPage.jsx
 #: src/pages/MorePage.jsx
 msgid "Comidas"
@@ -593,6 +621,7 @@ msgid "Desayuno: Avena con fruta"
 msgstr "Desayuno: Avena con fruta"
 
 #: src/features/meals/MealForm.jsx
+#: src/features/shopping/PrepMode.jsx
 msgid "Descripción"
 msgstr "Descripción"
 
@@ -729,6 +758,10 @@ msgstr "Ej. Arroz"
 #: src/components/shopping/ShoppingItemSheet.jsx
 msgid "Elegir comidas"
 msgstr "Elegir comidas"
+
+#: src/features/meals/MealIconPicker.jsx
+msgid "Elegir icono"
+msgstr "Elegir icono"
 
 #: src/components/ShoppingList.jsx
 msgid "Elige 2 o más items para combinarlos en uno."
@@ -990,7 +1023,6 @@ msgstr "Ingrediente a sustituir"
 
 #: src/features/calendar/DayView.jsx
 #: src/features/weekplan/SortableDayMeals.jsx
-#: src/pages/MealsPage.jsx
 msgid "ingredientes"
 msgstr "ingredientes"
 
@@ -1195,7 +1227,7 @@ msgstr "Ninguna"
 msgid "No guardar ninguna"
 msgstr "No guardar ninguna"
 
-#: src/pages/WeekPlanPage.jsx
+#: src/features/meals/MealLibraryBrowser.jsx
 msgid "No hay comidas en la biblioteca."
 msgstr "No hay comidas en la biblioteca."
 
@@ -1206,6 +1238,10 @@ msgstr "No hay comidas en la semana visible ({weekLabel}). Arma la semana primer
 #: src/features/weekplan/SaveImportedMealsSheet.jsx
 msgid "No hay comidas nuevas que guardar."
 msgstr "No hay comidas nuevas que guardar."
+
+#: src/features/meals/MealLibraryBrowser.jsx
+msgid "No hay comidas que coincidan."
+msgstr "No hay comidas que coincidan."
 
 #: src/components/shopping/ShoppingItemSheet.jsx
 msgid "No hay comidas vinculadas esta semana."
@@ -1321,6 +1357,18 @@ msgstr "Omitir"
 #: src/features/meals/quantityUnitLabels.js
 msgid "opcional"
 msgstr "opcional"
+
+#: src/features/meals/MealLibraryBrowser.jsx
+msgid "Ordenar por fecha"
+msgstr "Ordenar por fecha"
+
+#: src/features/meals/MealLibraryBrowser.jsx
+msgid "Ordenar por ingredientes"
+msgstr "Ordenar por ingredientes"
+
+#: src/features/meals/MealLibraryBrowser.jsx
+msgid "Ordenar por nombre"
+msgstr "Ordenar por nombre"
 
 #: src/features/meals/mealTypeLabels.js
 msgid "Otro"
@@ -1690,10 +1738,15 @@ msgstr "Terminar compra"
 msgid "Tipo"
 msgstr "Tipo"
 
+#: src/features/meals/MealLibraryBrowser.jsx
+msgid "Tipo de comida"
+msgstr "Tipo de comida"
+
 #: src/features/shopping/PrepMode.jsx
 msgid "Toca las comidas que vas a preparar esta semana."
 msgstr "Toca las comidas que vas a preparar esta semana."
 
+#: src/features/meals/MealLibraryBrowser.jsx
 #: src/features/weekplan/SaveImportedMealsSheet.jsx
 msgid "Todas"
 msgstr "Todas"
@@ -1812,8 +1865,8 @@ msgid "Volver"
 msgstr "Volver"
 
 #: src/pages/MealDetailPage.jsx
-msgid "Volver a comidas"
-msgstr "Volver a comidas"
+#~ msgid "Volver a comidas"
+#~ msgstr "Volver a comidas"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
 msgid "Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa “Cargar al borrador”."

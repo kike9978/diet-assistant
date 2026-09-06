@@ -1,5 +1,6 @@
 import { syncAllWeekPlanAssignmentsFromCalendar } from "../features/weekplan/weekPlanModel.js";
 import { backfillCalendarFlavorText } from "../features/meals/flavorText.js";
+import { normalizeMealIcon } from "../features/meals/mealIconCatalog.js";
 import { isValidV2State, createEmptyState } from "./defaults.js";
 import {
 	clearLegacyKeys,
@@ -80,9 +81,11 @@ export function normalizeV2State(state) {
 		}
 	}
 
-	const mealLibrary = (state.mealLibrary || []).map((meal) =>
-		meal?.source === "template" ? { ...meal, source: "import" } : meal,
-	);
+	const mealLibrary = (state.mealLibrary || []).map((meal) => {
+		const next =
+			meal?.source === "template" ? { ...meal, source: "import" } : { ...meal };
+		return { ...next, icon: normalizeMealIcon(next.icon) };
+	});
 
 	const next = {
 		...state,

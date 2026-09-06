@@ -55,6 +55,7 @@ function ensureLibraryMeal(meal, source, fingerprintToId, library) {
 		servings: 1,
 		source,
 		...flavorTextFields(flavorTextFromMeal(meal)),
+		icon: null,
 		createdAt: now,
 		updatedAt: now,
 	});

@@ -5,6 +5,7 @@ import {
 } from "../../domain/ingredient.js";
 import { formatQuantity, parseQuantity } from "../../domain/quantity.js";
 import { flavorTextFields, normalizeFlavorText } from "../meals/flavorText.js";
+import { normalizeMealIcon } from "../meals/mealIconCatalog.js";
 import { retentionCutoffISO } from "./dateUtils.js";
 
 /**
@@ -673,35 +674,49 @@ export function quantityLabel(quantity) {
  *   ingredients: { name: string, quantity: string }[],
  *   tags?: string[],
  *   source?: string,
- *   flavorText?: string
+ *   flavorText?: string,
+ *   icon?: string | null
  * }} payload
  * @param {import("../../domain/types.js").Meal} [existing]
  */
 export function buildLibraryMeal(payload, existing) {
 	const now = new Date().toISOString();
-	const ingredients = (payload.ingredients || [])
-		.map((ing) =>
-			ingredientFromLegacy({
-				name: ing.name,
-				quantity: ing.quantity,
-			}),
-		)
-		.filter((ing) => ing.name);
+	const ingredients =
+		payload.ingredients !== undefined
+			? (payload.ingredients || [])
+					.map((ing) =>
+						ingredientFromLegacy({
+							name: ing.name,
+							quantity: ing.quantity,
+						}),
+					)
+					.filter((ing) => ing.name)
+			: existing?.ingredients || [];
 
 	const flavorText =
 		payload.flavorText !== undefined
 			? normalizeFlavorText(payload.flavorText)
 			: normalizeFlavorText(existing?.flavorText);
 
+	const name = String(
+		payload.name !== undefined ? payload.name : existing?.name || "",
+	).trim();
+
+	const icon =
+		payload.icon !== undefined
+			? normalizeMealIcon(payload.icon)
+			: normalizeMealIcon(existing?.icon);
+
 	return {
 		id: existing?.id || createId(),
-		name: payload.name.trim(),
+		name,
 		mealType: payload.mealType || existing?.mealType || "otro",
 		ingredients,
 		tags: payload.tags || existing?.tags || [],
 		servings: payload.servings ?? existing?.servings ?? 1,
 		source: existing?.source || payload.source || "user",
 		...flavorTextFields(flavorText),
+		icon,
 		createdAt: existing?.createdAt || now,
 		updatedAt: now,
 	};

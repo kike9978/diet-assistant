@@ -1,18 +1,13 @@
 import { Trans } from "@lingui/react/macro";
-import { useLingui } from "@lingui/react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppState } from "../context/AppState";
 import EmptyState from "../components/ui/EmptyState";
 import Button from "../components/ui/Button";
-import { ChevronRight } from "lucide-react";
-import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
-import MealFlavorText from "../features/meals/MealFlavorText";
-import { MEAL_TYPE_COLOR } from "../features/calendar/mealTypeColors.js";
+import MealLibraryBrowser from "../features/meals/MealLibraryBrowser.jsx";
 
 export default function MealsPage() {
 	const { state } = useAppState();
 	const navigate = useNavigate();
-	const { _ } = useLingui();
 	const meals = state.mealLibrary;
 
 	if (meals.length === 0) {
@@ -46,40 +41,10 @@ export default function MealsPage() {
 					</Button>
 				</div>
 			</div>
-			<ul className="divide-y divide-border border border-border rounded-app bg-surface overflow-hidden">
-				{meals.map((meal) => (
-					<li key={meal.id}>
-						<Link
-							to={`/meals/${meal.id}`}
-							className="flex items-center justify-between gap-3 px-4 py-3 min-h-11 hover:bg-surface-2"
-						>
-							<div className="flex items-center gap-3 min-w-0">
-								<span
-									className="w-2.5 h-2.5 rounded-full shrink-0"
-									style={{
-										backgroundColor:
-											MEAL_TYPE_COLOR[meal.mealType] || MEAL_TYPE_COLOR.otro,
-									}}
-									aria-hidden
-								/>
-								<div className="min-w-0">
-									<p className="font-semibold text-ink truncate">{meal.name}</p>
-									<p className="text-xs text-ink-muted">
-										{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)} ·{" "}
-										{meal.ingredients.length} <Trans>ingredientes</Trans>
-									</p>
-									<MealFlavorText
-										text={meal.flavorText}
-										variant="snippet"
-										className="mt-0.5"
-									/>
-								</div>
-							</div>
-							<ChevronRight className="size-4 text-ink-muted shrink-0" aria-hidden />
-						</Link>
-					</li>
-				))}
-			</ul>
+			<MealLibraryBrowser
+				meals={meals}
+				onSelect={(meal) => navigate(`/meals/${meal.id}`)}
+			/>
 		</div>
 	);
 }

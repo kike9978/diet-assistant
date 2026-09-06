@@ -9,9 +9,8 @@ import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
 import Sheet from "../components/ui/Sheet";
 import MealForm from "../features/meals/MealForm";
+import MealLibrarySheet from "../features/meals/MealLibrarySheet.jsx";
 import { flavorTextFields, normalizeFlavorText } from "../features/meals/flavorText.js";
-import MealFlavorText from "../features/meals/MealFlavorText";
-import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
 import {
 	parseDateISO,
 	weekDateISOs,
@@ -66,7 +65,7 @@ export default function WeekPlanPage() {
 	const location = useLocation();
 	const [params] = useSearchParams();
 	const toast = useToast();
-	const { _, i18n } = useLingui();
+	const { i18n } = useLingui();
 	const weekStartsOn = state.settings.weekStartsOn ?? 1;
 	const locale = i18n.locale === "en" ? "en-US" : "es-MX";
 
@@ -121,7 +120,6 @@ export default function WeekPlanPage() {
 	const [importOpen, setImportOpen] = useState(false);
 	const [librarySaveOpen, setLibrarySaveOpen] = useState(false);
 	const [copyOpen, setCopyOpen] = useState(false);
-	const [libraryQuery, setLibraryQuery] = useState("");
 
 	useEffect(() => {
 		if (location.state?.dietPlan) {
@@ -176,17 +174,6 @@ export default function WeekPlanPage() {
 		[state, weekStartISO],
 	);
 
-	const filteredLibrary = useMemo(() => {
-		const q = libraryQuery.trim().toLowerCase();
-		return state.mealLibrary.filter((m) => {
-			if (!q) return true;
-			return (
-				m.name.toLowerCase().includes(q) ||
-				(m.flavorText || "").toLowerCase().includes(q)
-			);
-		});
-	}, [state.mealLibrary, libraryQuery]);
-
 	const syntheticDraft = useMemo(
 		() => ({
 			weekStartISO,
@@ -219,7 +206,6 @@ export default function WeekPlanPage() {
 			meals: [...dp.meals, draftMeal],
 		}));
 		setLibrarySlotId(null);
-		setLibraryQuery("");
 	};
 
 	const handleCreateMeal = (payload) => {
@@ -515,50 +501,13 @@ export default function WeekPlanPage() {
 				</Button>
 			</div>
 
-			<Sheet
+			<MealLibrarySheet
 				open={Boolean(librarySlotId)}
-				onClose={() => {
-					setLibrarySlotId(null);
-					setLibraryQuery("");
-				}}
+				onClose={() => setLibrarySlotId(null)}
 				title={<Trans>De la biblioteca</Trans>}
-			>
-				<input
-					value={libraryQuery}
-					onChange={(e) => setLibraryQuery(e.target.value)}
-					placeholder={t`Buscar comida…`}
-					className="w-full min-h-11 px-3 rounded-app border border-border bg-surface mb-3"
-				/>
-				{filteredLibrary.length === 0 ? (
-					<p className="text-sm text-ink-muted">
-						<Trans>No hay comidas en la biblioteca.</Trans>
-					</p>
-				) : (
-					<ul className="space-y-2 max-h-72 overflow-y-auto">
-						{filteredLibrary.map((meal) => (
-							<li key={meal.id}>
-								<button
-									type="button"
-									onClick={() => handlePickLibrary(meal)}
-									className="w-full text-left border border-border rounded-app px-3 py-3 hover:bg-surface-2"
-								>
-									<span className="font-semibold text-ink block">
-										{meal.name}
-									</span>
-									<span className="text-xs text-ink-muted">
-										{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)}
-									</span>
-									<MealFlavorText
-										text={meal.flavorText}
-										variant="snippet"
-										className="mt-1"
-									/>
-								</button>
-							</li>
-						))}
-					</ul>
-				)}
-			</Sheet>
+				meals={state.mealLibrary}
+				onSelect={handlePickLibrary}
+			/>
 
 			<Sheet
 				open={Boolean(createSlotId)}

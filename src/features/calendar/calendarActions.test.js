@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	applyIngredientSubstitution,
+	buildLibraryMeal,
 	parseEquivalentLine,
 	prunePastCalendarDays,
 	scheduleLibraryMeal,
@@ -171,5 +172,44 @@ describe("calendarActions", () => {
 		expect(next.calendars.m1["2025-01-01"]).toBeUndefined();
 		expect(next.calendars.m1["2026-09-05"]).toHaveLength(1);
 		expect(next.mealPrep.selectedInstanceIds).toEqual(["new"]);
+	});
+});
+
+describe("buildLibraryMeal icon", () => {
+	const existing = {
+		id: "meal1",
+		name: "Desayuno: Avena",
+		mealType: "desayuno",
+		ingredients: [
+			{
+				id: "ing1",
+				name: "avena",
+				quantity: { amount: 0.5, unit: "tza", raw: "1/2 tza" },
+			},
+		],
+		tags: [],
+		servings: 1,
+		source: "user",
+		icon: "wheat",
+		createdAt: "2026-01-01T00:00:00.000Z",
+		updatedAt: "2026-01-01T00:00:00.000Z",
+	};
+
+	it("keeps a stored icon when omitted and patches when provided", () => {
+		const kept = buildLibraryMeal({ name: "Desayuno: Avena" }, existing);
+		expect(kept.icon).toBe("wheat");
+		expect(kept.ingredients).toHaveLength(1);
+		expect(kept.ingredients[0].id).toBe("ing1");
+
+		const patched = buildLibraryMeal({ icon: "fish" }, existing);
+		expect(patched.icon).toBe("fish");
+		expect(patched.name).toBe("Desayuno: Avena");
+		expect(patched.ingredients[0].id).toBe("ing1");
+
+		const cleared = buildLibraryMeal({ icon: null }, existing);
+		expect(cleared.icon).toBeNull();
+
+		const unknown = buildLibraryMeal({ icon: "not-real" }, existing);
+		expect(unknown.icon).toBeNull();
 	});
 });

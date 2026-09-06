@@ -22,6 +22,7 @@
  *   servings: number,
  *   source: "user" | "import",
  *   flavorText?: string,
+ *   icon?: string | null,
  *   createdAt: string,
  *   updatedAt: string
  * }} Meal

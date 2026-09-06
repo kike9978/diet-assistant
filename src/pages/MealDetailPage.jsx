@@ -2,10 +2,14 @@ import { Trans } from "@lingui/react/macro";
 import { useLingui } from "@lingui/react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { t } from "@lingui/core/macro";
+import { ChevronLeft } from "lucide-react";
 import { useAppState } from "../context/AppState";
 import { formatQuantity } from "../domain/quantity.js";
 import MealForm from "../features/meals/MealForm";
 import MealFlavorText from "../features/meals/MealFlavorText";
+import MealPlate from "../features/meals/MealPlate.jsx";
+import MealIconPicker from "../features/meals/MealIconPicker.jsx";
 import { MEAL_TYPE_MSG } from "../features/meals/mealTypeLabels.js";
 import Button from "../components/ui/Button";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
@@ -18,6 +22,7 @@ export default function MealDetailPage() {
 	const meal = state.mealLibrary.find((m) => m.id === id);
 	const [editing, setEditing] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [iconOpen, setIconOpen] = useState(false);
 
 	if (!meal) {
 		return (
@@ -57,18 +62,42 @@ export default function MealDetailPage() {
 
 	return (
 		<div className="max-w-lg space-y-4">
-			<div>
-				<p className="text-xs uppercase tracking-wide text-ink-muted mb-1">
-					{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)}
-				</p>
-				<h1 className="font-display text-2xl mb-1">{meal.name}</h1>
-				<p className="text-sm text-ink-muted">
-					{meal.servings === 1 ? (
-						<Trans>1 porción</Trans>
-					) : (
-						<Trans>{meal.servings} porciones</Trans>
-					)}
-				</p>
+			<div className="flex items-start gap-3">
+				<Link
+					to="/meals"
+					className="shrink-0 self-center inline-flex items-center text-ink-muted hover:text-ink"
+					aria-label={t`Comidas`}
+				>
+					<ChevronLeft className="size-5" aria-hidden />
+				</Link>
+				<button
+					type="button"
+					onClick={() => setIconOpen(true)}
+					className="shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2"
+					aria-label={t`Cambiar icono`}
+				>
+					<MealPlate
+						meal={meal}
+						size="lg"
+						ribbon={_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro).slice(
+							0,
+							3,
+						)}
+					/>
+				</button>
+				<div className="min-w-0">
+					<p className="text-xs uppercase tracking-wide text-ink-muted mb-1">
+						{_(MEAL_TYPE_MSG[meal.mealType] || MEAL_TYPE_MSG.otro)}
+					</p>
+					<h1 className="font-display text-2xl mb-1">{meal.name}</h1>
+					<p className="text-sm text-ink-muted">
+						{meal.servings === 1 ? (
+							<Trans>1 porción</Trans>
+						) : (
+							<Trans>{meal.servings} porciones</Trans>
+						)}
+					</p>
+				</div>
 			</div>
 
 			<MealFlavorText text={meal.flavorText} />
@@ -103,10 +132,6 @@ export default function MealDetailPage() {
 				</Link>
 			</p>
 
-			<Link to="/meals" className="text-sm text-brand underline font-semibold">
-				<Trans>Volver a comidas</Trans>
-			</Link>
-
 			<ConfirmDialog
 				open={confirmDelete}
 				danger
@@ -128,6 +153,15 @@ export default function MealDetailPage() {
 					navigate("/meals");
 				}}
 				onCancel={() => setConfirmDelete(false)}
+			/>
+			<MealIconPicker
+				open={iconOpen}
+				meal={meal}
+				onClose={() => setIconOpen(false)}
+				onPick={(icon) => {
+					updateMeal(meal.id, { icon });
+					setIconOpen(false);
+				}}
 			/>
 		</div>
 	);
