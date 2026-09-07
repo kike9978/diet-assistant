@@ -1,17 +1,10 @@
 import { t } from "@lingui/core/macro";
 import { Trans, Plural } from "@lingui/react/macro";
-import { useLingui } from "@lingui/react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
-import { CheckCheck, ChevronLeft, ChevronRight, ListChecks, X } from "lucide-react";
+import { CheckCheck, ListChecks, X } from "lucide-react";
 import { useAppState } from "../context/AppState";
 import { useToast } from "./Toast";
-import {
-	addDays,
-	parseDateISO,
-	todayISO,
-	weekDateISOs,
-} from "../features/calendar/dateUtils.js";
 import {
 	expandFusedShoppingItem,
 	shoppingItemChecklistKey,
@@ -35,6 +28,7 @@ import Button from "./ui/Button";
 import ConfirmDialog from "./ui/ConfirmDialog";
 import OverflowMenu, { OverflowMenuItem } from "./ui/OverflowMenu";
 import ShoppingListItem from "./ui/ShoppingListItem";
+import VisibleWeekNav from "./VisibleWeekNav";
 import AddExtrasSheet from "./shopping/AddExtrasSheet";
 import ShoppingChecklistRow from "./shopping/ShoppingChecklistRow";
 import ShoppingItemSheet from "./shopping/ShoppingItemSheet";
@@ -111,7 +105,6 @@ function ShoppingList() {
 		state,
 		visibleWeekDates,
 		setCalendarView,
-		setCalendarCursorDate,
 		toggleShoppingLine,
 		toggleShoppingSource,
 		setShoppingQtyOverride,
@@ -129,7 +122,6 @@ function ShoppingList() {
 	} = useAppState();
 	const navigate = useNavigate();
 	const toast = useToast();
-	const { i18n } = useLingui();
 	const progress = useMemo(
 		() => ({
 			checkedItems: state.checkedItems || {},
@@ -156,21 +148,6 @@ function ShoppingList() {
 	const totalBudget = useBudget(groupedShoppingList);
 	const { pdfState, exportToPDF } = usePdfExport();
 	const pdfContentRef = useRef(null);
-	const locale = i18n.locale === "en" ? "en-US" : "es-MX";
-	const weekStartsOn = state.settings.weekStartsOn ?? 1;
-	const weekLabel =
-		visibleWeekDates?.length >= 7
-			? `${parseDateISO(visibleWeekDates[0]).toLocaleDateString(locale, { day: "numeric", month: "short" })} – ${parseDateISO(visibleWeekDates[6]).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })}`
-			: "";
-	const isCurrentWeek = useMemo(() => {
-		const todayWeek = weekDateISOs(todayISO(), weekStartsOn);
-		return todayWeek[0] === visibleWeekDates?.[0];
-	}, [visibleWeekDates, weekStartsOn]);
-	const shiftWeek = (delta) => {
-		const cursor = state.ui.calendarCursorDate || todayISO();
-		setCalendarCursorDate(addDays(cursor, delta * 7));
-	};
-	const goToCurrentWeek = () => setCalendarCursorDate(todayISO());
 	const hasWeekPlanReady = useMemo(() => {
 		const weekStart = visibleWeekDates?.[0];
 		if (!weekStart) return false;
@@ -345,36 +322,7 @@ function ShoppingList() {
 
 	const subtitle = (
 		<div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-			<div className="flex items-center gap-1 shrink-0">
-				<Button
-					variant="secondary"
-					className="!px-2.5 shrink-0"
-					aria-label={t`Semana anterior`}
-					onClick={() => shiftWeek(-1)}
-				>
-					<ChevronLeft className="size-4" aria-hidden />
-				</Button>
-				<span className="text-sm font-semibold text-ink tabular-nums px-1 whitespace-nowrap">
-					{weekLabel || <Trans>Semana</Trans>}
-				</span>
-				<Button
-					variant="secondary"
-					className="!px-2.5 shrink-0"
-					aria-label={t`Semana siguiente`}
-					onClick={() => shiftWeek(1)}
-				>
-					<ChevronRight className="size-4" aria-hidden />
-				</Button>
-				{!isCurrentWeek ? (
-					<Button
-						variant="secondary"
-						className="!px-3 shrink-0"
-						onClick={goToCurrentWeek}
-					>
-						<Trans>Hoy</Trans>
-					</Button>
-				) : null}
-			</div>
+			<VisibleWeekNav />
 			{totalBudget > 0 ? (
 				<p className="text-sm text-ink-muted">
 					<Trans>Presupuesto est. ~{totalBudget} MXN</Trans>

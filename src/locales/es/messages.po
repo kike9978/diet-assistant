@@ -341,8 +341,8 @@ msgstr "Aparece {0} veces esta semana"
 #~ msgstr "Arma los planes de día (comidas por slot). Arrastra para reordenar. Los cambios se guardan solos. Luego, en Semana, asigna cada plan a un día."
 
 #: src/components/FirstRun.jsx
-msgid "Arma planes de día con comidas de la biblioteca. En el mes, cada fila es una semana — usa «Editar plan»."
-msgstr "Arma planes de día con comidas de la biblioteca. En el mes, cada fila es una semana — usa «Editar plan»."
+#~ msgid "Arma planes de día con comidas de la biblioteca. En el mes, cada fila es una semana — usa «Editar plan»."
+#~ msgstr "Arma planes de día con comidas de la biblioteca. En el mes, cada fila es una semana — usa «Editar plan»."
 
 #: src/pages/PlansPage.jsx
 msgid "Arma planes de día para la semana visible y asígnalos en la vista Semana. Crear comidas en la biblioteca es el camino habitual."
@@ -369,8 +369,8 @@ msgid "Así la próxima lista restará lo que acabas de comprar. Los extras marc
 msgstr "Así la próxima lista restará lo que acabas de comprar. Los extras marcados se quitan de la lista persistente."
 
 #: src/components/FirstRun.jsx
-msgid "Asigna en la vista Semana"
-msgstr "Asigna en la vista Semana"
+#~ msgid "Asigna en la vista Semana"
+#~ msgstr "Asigna en la vista Semana"
 
 #: src/components/ShoppingList.jsx
 msgid "Asigna planes de día en Semana para llenar la lista; también puedes sumar extras."
@@ -395,6 +395,7 @@ msgstr "asignados"
 #~ msgid "Asignar {0}/{1}"
 #~ msgstr "Asignar {0}/{1}"
 
+#: src/components/OnboardingModal.jsx
 #: src/components/shopping/ShoppingItemSheet.jsx
 msgid "Atrás"
 msgstr "Atrás"
@@ -442,8 +443,8 @@ msgid "Calendario"
 msgstr "Calendario"
 
 #: src/pages/PrepPage.jsx
-msgid "Cambiar en calendario"
-msgstr "Cambiar en calendario"
+#~ msgid "Cambiar en calendario"
+#~ msgstr "Cambiar en calendario"
 
 #: src/pages/MealDetailPage.jsx
 msgid "Cambiar icono"
@@ -505,6 +506,7 @@ msgstr "Categoría"
 msgid "Cena"
 msgstr "Cena"
 
+#: src/components/OnboardingModal.jsx
 #: src/components/ShoppingList.jsx
 #: src/components/ToolsSidebar.jsx
 #: src/components/ui/ConfirmDialog.jsx
@@ -592,6 +594,10 @@ msgstr "Comidas guardadas en la biblioteca."
 msgid "Comidas, familia, herramientas, planes y ajustes."
 msgstr "Comidas, familia, herramientas, planes y ajustes."
 
+#: src/components/OnboardingModal.jsx
+#~ msgid "Cómo empezar"
+#~ msgstr "Cómo empezar"
+
 #: src/components/shopping/ShoppingItemSheet.jsx
 #~ msgid "Como está"
 #~ msgstr "Como está"
@@ -605,8 +611,8 @@ msgid "Cómo se prepara, opcional"
 msgstr "Cómo se prepara, opcional"
 
 #: src/components/FirstRun.jsx
-msgid "Compra y prepara"
-msgstr "Compra y prepara"
+#~ msgid "Compra y prepara"
+#~ msgstr "Compra y prepara"
 
 #: src/features/weekplan/WeekReadinessStrip.jsx
 #~ msgid "Comprar"
@@ -626,8 +632,8 @@ msgstr "Compras"
 #~ msgstr "Compras usa la semana visible del calendario. Prep vive en la misma sección."
 
 #: src/components/FirstRun.jsx
-msgid "Compras y Preparar usan la semana visible del calendario. Cada una tiene su propia pestaña abajo."
-msgstr "Compras y Preparar usan la semana visible del calendario. Cada una tiene su propia pestaña abajo."
+#~ msgid "Compras y Preparar usan la semana visible del calendario. Cada una tiene su propia pestaña abajo."
+#~ msgstr "Compras y Preparar usan la semana visible del calendario. Cada una tiene su propia pestaña abajo."
 
 #: src/components/shopping/ShoppingItemSheet.jsx
 #: src/components/ui/base/Modal.jsx
@@ -668,6 +674,10 @@ msgstr "Copiar prompt"
 msgid "Copiar prompt y continuar"
 msgstr "Copiar prompt y continuar"
 
+#: src/components/OnboardingModal.jsx
+msgid "Crea comidas reutilizables en la biblioteca. Con ellas armas planes de día y los asignas a la semana."
+msgstr "Crea comidas reutilizables en la biblioteca. Con ellas armas planes de día y los asignas a la semana."
+
 #: src/pages/CalendarPage.jsx
 #: src/pages/CreateMealPage.jsx
 #: src/pages/MealsPage.jsx
@@ -679,6 +689,10 @@ msgstr "Crear comida"
 #: src/pages/WeekPlanPage.jsx
 msgid "Crear comida nueva"
 msgstr "Crear comida nueva"
+
+#: src/components/OnboardingModal.jsx
+msgid "Crear comidas"
+msgstr "Crear comidas"
 
 #: src/components/shopping/ShoppingItemSheet.jsx
 msgid "Cruda"
@@ -786,8 +800,8 @@ msgid "Edita el plan"
 msgstr "Edita el plan"
 
 #: src/components/FirstRun.jsx
-msgid "Edita el plan de una semana"
-msgstr "Edita el plan de una semana"
+#~ msgid "Edita el plan de una semana"
+#~ msgstr "Edita el plan de una semana"
 
 #: src/components/shopping/ShoppingItemSheet.jsx
 #: src/features/calendar/DayView.jsx
@@ -819,7 +833,6 @@ msgstr "Editar perfil"
 msgid "Editar plan"
 msgstr "Editar plan"
 
-#: src/components/FirstRun.jsx
 #: src/pages/CalendarPage.jsx
 #: src/pages/PlansPage.jsx
 msgid "Editar plan de esta semana"
@@ -869,6 +882,10 @@ msgstr "Elegir icono"
 msgid "Elige 2 o más items para combinarlos en uno."
 msgstr "Elige 2 o más items para combinarlos en uno."
 
+#: src/components/OnboardingModal.jsx
+msgid "Elige cómo empezar"
+msgstr "Elige cómo empezar"
+
 #: src/pages/PrepPage.jsx
 msgid "Elige qué comidas de la semana vas a preparar y revisa los ingredientes agregados."
 msgstr "Elige qué comidas de la semana vas a preparar y revisa los ingredientes agregados."
@@ -878,8 +895,8 @@ msgid "Elige qué comidas nuevas quieres guardar en tu lista. Puedes editarlas d
 msgstr "Elige qué comidas nuevas quieres guardar en tu lista. Puedes editarlas después en Comidas."
 
 #: src/components/FirstRun.jsx
-msgid "Elige qué plan de día va en cada weekday, o usa «Autocompletar» para asignarlos de una vez."
-msgstr "Elige qué plan de día va en cada weekday, o usa «Autocompletar» para asignarlos de una vez."
+#~ msgid "Elige qué plan de día va en cada weekday, o usa «Autocompletar» para asignarlos de una vez."
+#~ msgstr "Elige qué plan de día va en cada weekday, o usa «Autocompletar» para asignarlos de una vez."
 
 #: src/components/FirstRun.jsx
 #~ msgid "Elige qué plan de día va en cada weekday, o usa «Llenar semana» para asignarlos de una vez."
@@ -909,6 +926,10 @@ msgstr "Eliminar comida"
 #: src/pages/FamilyPage.jsx
 msgid "Eliminar perfil"
 msgstr "Eliminar perfil"
+
+#: src/components/OnboardingModal.jsx
+msgid "Empezar con plan de ejemplo"
+msgstr "Empezar con plan de ejemplo"
 
 #: src/components/FirstRun.jsx
 #~ msgid "En el mes, cada fila es una semana. Usa «Editar plan de semana» para armar planes de día con comidas de la biblioteca o un JSON."
@@ -1088,7 +1109,7 @@ msgstr "Hay comidas nuevas o importadas que aún no están en la biblioteca."
 msgid "Herramientas"
 msgstr "Herramientas"
 
-#: src/components/ShoppingList.jsx
+#: src/components/VisibleWeekNav.jsx
 #: src/features/calendar/CalendarChrome.jsx
 #: src/features/calendar/WeekSurface.jsx
 #: src/features/calendar/WeekView.jsx
@@ -1099,6 +1120,14 @@ msgstr "Hoy"
 msgid "Idioma"
 msgstr "Idioma"
 
+#: src/components/OnboardingModal.jsx
+msgid "Importa el plan de tu nutriólogo"
+msgstr "Importa el plan de tu nutriólogo"
+
+#: src/components/OnboardingModal.jsx
+msgid "Importa tu plan con un LLM, prueba el ejemplo de 5 días, o crea comidas a mano. Los datos viven en este dispositivo."
+msgstr "Importa tu plan con un LLM, prueba el ejemplo de 5 días, o crea comidas a mano. Los datos viven en este dispositivo."
+
 #: src/pages/PlansPage.jsx
 msgid "Importa un JSON como planes de día de la semana visible. Luego asígnalos a Mon–Dom en la vista Semana."
 msgstr "Importa un JSON como planes de día de la semana visible. Luego asígnalos a Mon–Dom en la vista Semana."
@@ -1108,17 +1137,22 @@ msgid "Importar"
 msgstr "Importar"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
+#: src/pages/CalendarPage.jsx
 #: src/pages/WeekPlanPage.jsx
 msgid "Importar JSON"
 msgstr "Importar JSON"
 
 #: src/pages/CalendarPage.jsx
-msgid "Importar JSON (avanzado)"
-msgstr "Importar JSON (avanzado)"
+#~ msgid "Importar JSON (avanzado)"
+#~ msgstr "Importar JSON (avanzado)"
 
 #: src/pages/MealsPage.jsx
 msgid "Importar plan"
 msgstr "Importar plan"
+
+#: src/components/OnboardingModal.jsx
+msgid "Importar plan con LLM"
+msgstr "Importar plan con LLM"
 
 #: src/pages/PlansPage.jsx
 #~ msgid "Importar solo como plantilla"
@@ -1221,6 +1255,14 @@ msgstr "La biblioteca está vacía. Crea una comida primero."
 msgid "La semana empieza en"
 msgstr "La semana empieza en"
 
+#: src/components/OnboardingModal.jsx
+msgid "Las comidas son la base"
+msgstr "Las comidas son la base"
+
+#: src/components/OnboardingModal.jsx
+#~ msgid "Las comidas son la base: créalas en la biblioteca y úsalas para armar planes de día y la semana."
+#~ msgstr "Las comidas son la base: créalas en la biblioteca y úsalas para armar planes de día y la semana."
+
 #: src/features/meals/quantityUnitLabels.js
 msgid "lata"
 msgstr "lata"
@@ -1257,7 +1299,6 @@ msgstr "Listo"
 msgid "Lo que ya tienes se resta de la lista de compras."
 msgstr "Lo que ya tienes se resta de la lista de compras."
 
-#: src/components/FirstRun.jsx
 #: src/pages/MorePage.jsx
 #: src/pages/SettingsPage.jsx
 msgid "Los datos viven en este dispositivo."
@@ -1275,6 +1316,14 @@ msgstr "Lun"
 #: src/pages/SettingsPage.jsx
 msgid "Lunes"
 msgstr "Lunes"
+
+#: src/components/OnboardingModal.jsx
+#~ msgid "Malanga"
+#~ msgstr "Malanga"
+
+#: src/components/OnboardingModal.jsx
+msgid "Malanga te ayuda a convertir un plan de comidas en una semana concreta: calendario, lista de compras y preparación — todo en este dispositivo."
+msgstr "Malanga te ayuda a convertir un plan de comidas en una semana concreta: calendario, lista de compras y preparación — todo en este dispositivo."
 
 #: src/i18n/weekDayLabels.js
 msgid "Mar"
@@ -1498,7 +1547,7 @@ msgstr "Ocultar lo que ya está en despensa"
 msgid "Ocultar no seleccionados"
 msgstr "Ocultar no seleccionados"
 
-#: src/components/FirstRun.jsx
+#: src/components/OnboardingModal.jsx
 msgid "Omitir"
 msgstr "Omitir"
 
@@ -1546,7 +1595,7 @@ msgstr "Para poner comidas en el calendario, arma un plan de día y asígnalo a 
 
 #. placeholder {0}: step + 1
 #. placeholder {1}: STEPS.length
-#: src/components/FirstRun.jsx
+#: src/components/OnboardingModal.jsx
 msgid "Paso {0} de {1}"
 msgstr "Paso {0} de {1}"
 
@@ -1801,13 +1850,13 @@ msgstr "Seleccionar todas"
 msgid "Selector de perfil del hogar"
 msgstr "Selector de perfil del hogar"
 
-#: src/components/ShoppingList.jsx
+#: src/components/VisibleWeekNav.jsx
 #: src/features/calendar/CalendarChrome.jsx
 #: src/pages/SettingsPage.jsx
 msgid "Semana"
 msgstr "Semana"
 
-#: src/components/ShoppingList.jsx
+#: src/components/VisibleWeekNav.jsx
 #: src/features/calendar/WeekSurface.jsx
 msgid "Semana anterior"
 msgstr "Semana anterior"
@@ -1820,14 +1869,14 @@ msgstr "Semana anterior"
 msgid "Semana del"
 msgstr "Semana del"
 
-#: src/components/ShoppingList.jsx
+#: src/components/VisibleWeekNav.jsx
 #: src/features/calendar/WeekSurface.jsx
 msgid "Semana siguiente"
 msgstr "Semana siguiente"
 
 #: src/pages/PrepPage.jsx
-msgid "Semana visible:"
-msgstr "Semana visible:"
+#~ msgid "Semana visible:"
+#~ msgstr "Semana visible:"
 
 #: src/pages/SettingsPage.jsx
 msgid "Semanas pasadas limpiadas"
@@ -1837,7 +1886,19 @@ msgstr "Semanas pasadas limpiadas"
 msgid "Separar"
 msgstr "Separar"
 
-#: src/components/FirstRun.jsx
+#: src/components/OnboardingModal.jsx
+#~ msgid "Si quieres probar ya, carga el plan de ejemplo de 5 días."
+#~ msgstr "Si quieres probar ya, carga el plan de ejemplo de 5 días."
+
+#: src/components/OnboardingModal.jsx
+msgid "Si ya tienes un PDF o notas, copia el prompt de la app, pégalo en un LLM (ChatGPT, Claude, etc.) con tu plan, y vuelve a pegar el JSON en «Importar JSON»."
+msgstr "Si ya tienes un PDF o notas, copia el prompt de la app, pégalo en un LLM (ChatGPT, Claude, etc.) con tu plan, y vuelve a pegar el JSON en «Importar JSON»."
+
+#: src/components/OnboardingModal.jsx
+#~ msgid "Si ya tienes un plan de tu nutriólogo (PDF o notas), lo más rápido es importarlo: copia el prompt de la app, pégalo en un LLM externo (ChatGPT, Claude, etc.) junto con tu plan, y pega aquí el JSON que te devuelva en «Importar JSON»."
+#~ msgstr "Si ya tienes un plan de tu nutriólogo (PDF o notas), lo más rápido es importarlo: copia el prompt de la app, pégalo en un LLM externo (ChatGPT, Claude, etc.) junto con tu plan, y pega aquí el JSON que te devuelva en «Importar JSON»."
+
+#: src/components/OnboardingModal.jsx
 #: src/features/calendar/CalendarChrome.jsx
 msgid "Siguiente"
 msgstr "Siguiente"
@@ -1908,6 +1969,14 @@ msgstr "También actualizar la comida en la biblioteca (si está vinculada)"
 #~ msgid "También en despensa ({0})"
 #~ msgstr "También en despensa ({0})"
 
+#: src/components/OnboardingModal.jsx
+#~ msgid "También puedes conversar con el LLM usando esas instrucciones para pedirle un plan semanal a tu medida, y luego pegar el JSON generado."
+#~ msgstr "También puedes conversar con el LLM usando esas instrucciones para pedirle un plan semanal a tu medida, y luego pegar el JSON generado."
+
+#: src/components/OnboardingModal.jsx
+msgid "También puedes hablar con el LLM usando esas instrucciones para pedirle un plan semanal a tu medida."
+msgstr "También puedes hablar con el LLM usando esas instrucciones para pedirle un plan semanal a tu medida."
+
 #: src/components/ShoppingList.jsx
 msgid "Terminar"
 msgstr "Terminar"
@@ -1949,6 +2018,10 @@ msgstr "Todos los cambios están guardados."
 #: src/components/shell/AppHeader.jsx
 #~ msgid "Tu cocina, organizada"
 #~ msgstr "Tu cocina, organizada"
+
+#: src/components/OnboardingModal.jsx
+msgid "Tu dieta, en el día a día"
+msgstr "Tu dieta, en el día a día"
 
 #: src/pages/SettingsPage.jsx
 msgid "Último guardado:"

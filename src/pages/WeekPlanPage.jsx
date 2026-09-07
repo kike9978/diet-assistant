@@ -121,12 +121,14 @@ export default function WeekPlanPage() {
 	const [createSlotId, setCreateSlotId] = useState(null);
 	const [editing, setEditing] = useState(null);
 	const [expandedMealKey, setExpandedMealKey] = useState(null);
-	const [importOpen, setImportOpen] = useState(false);
+	const [importOpen, setImportOpen] = useState(
+		() => Boolean(location.state?.openImport),
+	);
 	const [librarySaveOpen, setLibrarySaveOpen] = useState(false);
 	const [copyOpen, setCopyOpen] = useState(false);
 
 	useEffect(() => {
-		if (location.state?.dietPlan) {
+		if (location.state?.dietPlan || location.state?.openImport) {
 			navigate(".", { replace: true, state: {} });
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- clear one-shot nav state

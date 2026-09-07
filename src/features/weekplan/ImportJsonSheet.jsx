@@ -5,6 +5,7 @@ import Button from "../../components/ui/Button";
 import Sheet from "../../components/ui/Sheet";
 import { useToast } from "../../components/Toast";
 import { DIET_PLAN_IMPORT_PROMPT } from "./dietPlanImportPrompt";
+import { QUICK_START_DIET_PLAN } from "./quickStartDietPlan";
 
 function validateDietPlan(plan) {
 	if (!plan.days || !Array.isArray(plan.days) || plan.days.length === 0) {
@@ -23,69 +24,6 @@ function validateDietPlan(plan) {
 	}
 	return true;
 }
-
-const SAMPLE = {
-	days: [
-		{
-			id: "day1",
-			name: "Día 1",
-			meals: [
-				{
-					id: "meal1",
-					name: "Desayuno: Avena con frutas",
-					flavorText: "Cocer la avena y servir con plátano y berries.",
-					ingredients: [
-						{ name: "Avena", quantity: "1/2 taza" },
-						{ name: "Plátano", quantity: "1 pza" },
-						{ name: "Berries", quantity: "1/2 taza" },
-					],
-				},
-				{
-					id: "meal2",
-					name: "Comida: Ensalada de pollo",
-					ingredients: [
-						{ name: "Pechuga de pollo", quantity: "150g" },
-						{ name: "Lechuga", quantity: "2 tazas" },
-						{ name: "Aceite de oliva", quantity: "1 cdita" },
-					],
-				},
-				{
-					id: "meal3",
-					name: "Cena: Salmón con verduras",
-					ingredients: [
-						{ name: "Salmón", quantity: "150g" },
-						{ name: "Brócoli", quantity: "1 taza" },
-						{ name: "Arroz integral", quantity: "1/2 taza" },
-					],
-				},
-			],
-		},
-		{
-			id: "day2",
-			name: "Día 2",
-			meals: [
-				{
-					id: "meal4",
-					name: "Desayuno: Pan con aguacate",
-					ingredients: [
-						{ name: "Pan integral", quantity: "2 rebanadas" },
-						{ name: "Aguacate", quantity: "1 pza" },
-						{ name: "Huevo", quantity: "2 pzas" },
-					],
-				},
-				{
-					id: "meal5",
-					name: "Comida: Bowl de quinoa",
-					ingredients: [
-						{ name: "Quinoa", quantity: "1/2 taza" },
-						{ name: "Frijoles negros", quantity: "1/2 taza" },
-						{ name: "Elote", quantity: "1/4 taza" },
-					],
-				},
-			],
-		},
-	],
-};
 
 /**
  * Sheet that parses diet JSON and returns the plan via onImport(plan, mode).
@@ -197,7 +135,9 @@ export default function ImportJsonSheet({
 							<Button
 								variant="secondary"
 								onClick={() => {
-									setJsonInput(JSON.stringify(SAMPLE, null, 2));
+									setJsonInput(
+										JSON.stringify(QUICK_START_DIET_PLAN, null, 2),
+									);
 									setError(null);
 								}}
 							>

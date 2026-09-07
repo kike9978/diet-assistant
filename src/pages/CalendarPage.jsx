@@ -12,7 +12,7 @@ import {
 	todayISO,
 	weekDateISOs,
 } from "../features/calendar/dateUtils.js";
-import FirstRun from "../components/FirstRun";
+import OnboardingModal from "../components/OnboardingModal";
 import Button from "../components/ui/Button";
 import { getWeekReadiness } from "../features/weekplan/weekReadiness.js";
 
@@ -87,9 +87,11 @@ export default function CalendarPage() {
 		}
 	};
 
+	const weekPlanPath = `/plan/week?week=${encodeURIComponent(weekStartISO)}`;
+
 	return (
 		<div>
-			{showOnboarding ? <FirstRun /> : null}
+			<OnboardingModal open={showOnboarding} />
 
 			<div className="flex items-center justify-between gap-3 mb-3">
 				<h1 className="font-display text-xl text-ink">
@@ -141,15 +143,16 @@ export default function CalendarPage() {
 						<Trans>Crear comida</Trans>
 					</Link>
 					<span aria-hidden>·</span>
-					<Link
-						to={`/plan/week?week=${encodeURIComponent(weekStartISO)}`}
-						className="underline"
-					>
+					<Link to={weekPlanPath} className="underline">
 						<Trans>Editar plan de esta semana</Trans>
 					</Link>
 					<span aria-hidden>·</span>
-					<Link to="/plans" className="underline">
-						<Trans>Importar JSON (avanzado)</Trans>
+					<Link
+						to={weekPlanPath}
+						state={{ openImport: true }}
+						className="underline"
+					>
+						<Trans>Importar JSON</Trans>
 					</Link>
 				</p>
 			) : readiness.libraryThin && view === "week" ? (
@@ -158,7 +161,11 @@ export default function CalendarPage() {
 						<Trans>Nueva comida</Trans>
 					</Link>
 					<span aria-hidden>·</span>
-					<Link to="/plans" className="underline">
+					<Link
+						to={weekPlanPath}
+						state={{ openImport: true }}
+						className="underline"
+					>
 						<Trans>Importar</Trans>
 					</Link>
 				</p>
