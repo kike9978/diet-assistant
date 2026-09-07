@@ -152,7 +152,7 @@ export default function CalendarPage() {
 						state={{ openImport: true }}
 						className="underline"
 					>
-						<Trans>Importar JSON</Trans>
+						<Trans>Importar plan</Trans>
 					</Link>
 				</p>
 			) : readiness.libraryThin && view === "week" ? (

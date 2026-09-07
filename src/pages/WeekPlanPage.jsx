@@ -374,7 +374,7 @@ export default function WeekPlanPage() {
 						<Trans>Ir a Semana</Trans>
 					</Button>
 					<Button variant="secondary" onClick={() => setImportOpen(true)}>
-						<Trans>Importar JSON</Trans>
+						<Trans>Importar plan</Trans>
 					</Button>
 					<Button variant="ghost" onClick={() => setCopyOpen(true)}>
 						<Trans>Usar otra semana</Trans>

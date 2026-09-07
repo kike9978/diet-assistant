@@ -19,7 +19,6 @@ export function AppI18nProvider({ locale = "es", children }) {
 
 	useEffect(() => {
 		let cancelled = false;
-		setReady(false);
 		(async () => {
 			await activateLocale(locale);
 			if (!cancelled) {
@@ -42,9 +41,5 @@ export function AppI18nProvider({ locale = "es", children }) {
 		);
 	}
 
-	return (
-		<I18nProvider key={locale} i18n={i18n}>
-			{children}
-		</I18nProvider>
-	);
+	return <I18nProvider i18n={i18n}>{children}</I18nProvider>;
 }

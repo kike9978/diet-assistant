@@ -28,8 +28,12 @@ msgid "¿Borrar del calendario todo lo anterior a hace unos 4 meses? No afecta l
 msgstr "¿Borrar del calendario todo lo anterior a hace unos 4 meses? No afecta la biblioteca."
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "¿Cómo cargar el JSON?"
-msgstr "¿Cómo cargar el JSON?"
+#~ msgid "¿Cómo cargar el JSON?"
+#~ msgstr "¿Cómo cargar el JSON?"
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "¿Cómo cargar el plan?"
+msgstr "¿Cómo cargar el plan?"
 
 #: src/features/weekplan/MealSaveDispositionDialog.jsx
 msgid "¿Cómo guardar los cambios?"
@@ -194,8 +198,12 @@ msgstr "1/2"
 #~ msgstr "1/2 tza"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
-msgstr "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
+#~ msgid "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
+#~ msgstr "Ábrelo en el LLM y pega el prompt. En el mismo mensaje, adjunta tu PDF o imagen del plan de comidas (o pega el texto del plan)."
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Ábrelo en la IA y pega las instrucciones. En el mismo mensaje, adjunta tu PDF o imagen del plan (o pega el texto)."
+msgstr "Ábrelo en la IA y pega las instrucciones. En el mismo mensaje, adjunta tu PDF o imagen del plan (o pega el texto)."
 
 #. placeholder {0}: item.name
 #: src/components/shopping/ShoppingChecklistRow.jsx
@@ -416,6 +424,10 @@ msgstr "Avanzado"
 #~ msgid "Basada en la semana"
 #~ msgstr "Basada en la semana"
 
+#: src/components/OnboardingModal.jsx
+#~ msgid "Biblioteca de comidas"
+#~ msgstr "Biblioteca de comidas"
+
 #: src/pages/MealsPage.jsx
 msgid "Biblioteca vacía"
 msgstr "Biblioteca vacía"
@@ -436,11 +448,16 @@ msgstr "Buscar comida…"
 msgid "Cada persona tiene su propio calendario. En Compras puedes combinar varios."
 msgstr "Cada persona tiene su propio calendario. En Compras puedes combinar varios."
 
+#: src/components/OnboardingIllustrations.jsx
 #: src/components/shell/BottomNav.jsx
 #: src/pages/CalendarPage.jsx
 #: src/pages/WeekPlanPage.jsx
 msgid "Calendario"
 msgstr "Calendario"
+
+#: src/components/OnboardingModal.jsx
+#~ msgid "Calendario, compras y preparación"
+#~ msgstr "Calendario, compras y preparación"
 
 #: src/pages/PrepPage.jsx
 #~ msgid "Cambiar en calendario"
@@ -493,8 +510,12 @@ msgstr "Cantidad cruda"
 #~ msgstr "Cantidades actualizadas en {0} comidas de esta semana."
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Cargar al borrador"
-msgstr "Cargar al borrador"
+#~ msgid "Cargar al borrador"
+#~ msgstr "Cargar al borrador"
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Cargar plan"
+msgstr "Cargar plan"
 
 #: src/components/shopping/AddExtrasSheet.jsx
 #: src/components/ToolsSidebar.jsx
@@ -603,8 +624,12 @@ msgstr "Comidas, familia, herramientas, planes y ajustes."
 #~ msgstr "Como está"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Cómo generar el JSON"
-msgstr "Cómo generar el JSON"
+#~ msgid "Cómo generar el JSON"
+#~ msgstr "Cómo generar el JSON"
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Cómo preparar tu plan"
+msgstr "Cómo preparar tu plan"
 
 #: src/features/meals/MealForm.jsx
 msgid "Cómo se prepara, opcional"
@@ -622,6 +647,7 @@ msgstr "Cómo se prepara, opcional"
 #~ msgid "Comprar como"
 #~ msgstr "Comprar como"
 
+#: src/components/OnboardingIllustrations.jsx
 #: src/components/shell/BottomNav.jsx
 #: src/components/ShoppingList.jsx
 msgid "Compras"
@@ -663,8 +689,12 @@ msgid "Copia de seguridad en Ajustes"
 msgstr "Copia de seguridad en Ajustes"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Copia el prompt con el botón de abajo."
-msgstr "Copia el prompt con el botón de abajo."
+#~ msgid "Copia el prompt con el botón de abajo."
+#~ msgstr "Copia el prompt con el botón de abajo."
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Copia las instrucciones con el botón de abajo."
+msgstr "Copia las instrucciones con el botón de abajo."
 
 #: src/features/weekplan/ImportJsonSheet.jsx
 msgid "Copiar prompt"
@@ -690,6 +720,7 @@ msgstr "Crear comida"
 msgid "Crear comida nueva"
 msgstr "Crear comida nueva"
 
+#: src/components/OnboardingIllustrations.jsx
 #: src/components/OnboardingModal.jsx
 msgid "Crear comidas"
 msgstr "Crear comidas"
@@ -886,6 +917,10 @@ msgstr "Elige 2 o más items para combinarlos en uno."
 msgid "Elige cómo empezar"
 msgstr "Elige cómo empezar"
 
+#: src/components/OnboardingModal.jsx
+msgid "Elige el idioma de la app. / Choose the app language."
+msgstr "Elige el idioma de la app. / Choose the app language."
+
 #: src/pages/PrepPage.jsx
 msgid "Elige qué comidas de la semana vas a preparar y revisa los ingredientes agregados."
 msgstr "Elige qué comidas de la semana vas a preparar y revisa los ingredientes agregados."
@@ -927,6 +962,7 @@ msgstr "Eliminar comida"
 msgid "Eliminar perfil"
 msgstr "Eliminar perfil"
 
+#: src/components/OnboardingIllustrations.jsx
 #: src/components/OnboardingModal.jsx
 msgid "Empezar con plan de ejemplo"
 msgstr "Empezar con plan de ejemplo"
@@ -1116,9 +1152,15 @@ msgstr "Herramientas"
 msgid "Hoy"
 msgstr "Hoy"
 
+#: src/components/OnboardingIllustrations.jsx
+#: src/components/OnboardingModal.jsx
 #: src/pages/SettingsPage.jsx
 msgid "Idioma"
 msgstr "Idioma"
+
+#: src/components/OnboardingModal.jsx
+msgid "Idioma / Language"
+msgstr "Idioma / Language"
 
 #: src/components/OnboardingModal.jsx
 msgid "Importa el plan de tu nutriólogo"
@@ -1129,8 +1171,12 @@ msgid "Importa tu plan con un LLM, prueba el ejemplo de 5 días, o crea comidas 
 msgstr "Importa tu plan con un LLM, prueba el ejemplo de 5 días, o crea comidas a mano. Los datos viven en este dispositivo."
 
 #: src/pages/PlansPage.jsx
-msgid "Importa un JSON como planes de día de la semana visible. Luego asígnalos a Mon–Dom en la vista Semana."
-msgstr "Importa un JSON como planes de día de la semana visible. Luego asígnalos a Mon–Dom en la vista Semana."
+#~ msgid "Importa un JSON como planes de día de la semana visible. Luego asígnalos a Mon–Dom en la vista Semana."
+#~ msgstr "Importa un JSON como planes de día de la semana visible. Luego asígnalos a Mon–Dom en la vista Semana."
+
+#: src/pages/PlansPage.jsx
+msgid "Importa un plan como planes de día de la semana visible. Luego asígnalos a Lun–Dom en la vista Semana."
+msgstr "Importa un plan como planes de día de la semana visible. Luego asígnalos a Lun–Dom en la vista Semana."
 
 #: src/pages/CalendarPage.jsx
 msgid "Importar"
@@ -1139,17 +1185,21 @@ msgstr "Importar"
 #: src/features/weekplan/ImportJsonSheet.jsx
 #: src/pages/CalendarPage.jsx
 #: src/pages/WeekPlanPage.jsx
-msgid "Importar JSON"
-msgstr "Importar JSON"
+#~ msgid "Importar JSON"
+#~ msgstr "Importar JSON"
 
 #: src/pages/CalendarPage.jsx
 #~ msgid "Importar JSON (avanzado)"
 #~ msgstr "Importar JSON (avanzado)"
 
+#: src/features/weekplan/ImportJsonSheet.jsx
+#: src/pages/CalendarPage.jsx
 #: src/pages/MealsPage.jsx
+#: src/pages/WeekPlanPage.jsx
 msgid "Importar plan"
 msgstr "Importar plan"
 
+#: src/components/OnboardingIllustrations.jsx
 #: src/components/OnboardingModal.jsx
 msgid "Importar plan con LLM"
 msgstr "Importar plan con LLM"
@@ -1206,6 +1256,10 @@ msgstr "Ingredientes Totales"
 #~ msgid "Ingredientes:"
 #~ msgstr "Ingredientes:"
 
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Instrucciones copiadas. Pégalas en ChatGPT con tu plan."
+msgstr "Instrucciones copiadas. Pégalas en ChatGPT con tu plan."
+
 #: src/pages/CalendarPage.jsx
 msgid "Ir a compras"
 msgstr "Ir a compras"
@@ -1235,7 +1289,6 @@ msgid "Items separados"
 msgstr "Items separados"
 
 #: src/components/DietPlanUploader.jsx
-#: src/features/weekplan/ImportJsonSheet.jsx
 msgid "JSON inválido. Revisa la sintaxis."
 msgstr "JSON inválido. Revisa la sintaxis."
 
@@ -1483,6 +1536,10 @@ msgstr "No se pudo copiar el prompt."
 msgid "No se pudo leer el archivo. ¿Es una copia de Malanga?"
 msgstr "No se pudo leer el archivo. ¿Es una copia de Malanga?"
 
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "No se pudo leer el plan. Revisa que lo hayas pegado completo."
+msgstr "No se pudo leer el plan. Revisa que lo hayas pegado completo."
+
 #: src/features/meals/MealForm.jsx
 #: src/features/pantry/PantryFormSheet.jsx
 #: src/pages/FamilyPage.jsx
@@ -1560,6 +1617,10 @@ msgstr "opcional"
 msgid "Opciones de {0}"
 msgstr "Opciones de {0}"
 
+#: src/components/OnboardingModal.jsx
+#~ msgid "Opciones para empezar"
+#~ msgstr "Opciones para empezar"
+
 #: src/features/meals/MealLibraryBrowser.jsx
 msgid "Ordenar por fecha"
 msgstr "Ordenar por fecha"
@@ -1604,24 +1665,40 @@ msgid "Pega aquí el JSON de tu plan alimenticio…"
 msgstr "Pega aquí el JSON de tu plan alimenticio…"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Pega aquí el JSON de tu plan…"
-msgstr "Pega aquí el JSON de tu plan…"
+#~ msgid "Pega aquí el JSON de tu plan…"
+#~ msgstr "Pega aquí el JSON de tu plan…"
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Pega aquí el plan que te devolvió la IA…"
+msgstr "Pega aquí el plan que te devolvió la IA…"
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Pega aquí tu plan de comidas. Si lo tienes en PDF o notas, copia las instrucciones, pégalas en ChatGPT (u otra IA) junto con tu plan, y vuelve a pegar la respuesta aquí."
+msgstr "Pega aquí tu plan de comidas. Si lo tienes en PDF o notas, copia las instrucciones, pégalas en ChatGPT (u otra IA) junto con tu plan, y vuelve a pegar la respuesta aquí."
 
 #: src/components/DietPlanUploader.jsx
 msgid "Pega tu plan en formato JSON o usa los datos de ejemplo para empezar."
 msgstr "Pega tu plan en formato JSON o usa los datos de ejemplo para empezar."
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Pega un plan con días y comidas. Copia el prompt, úsalo en un LLM externo con tu PDF o notas, y pega aquí el JSON generado."
-msgstr "Pega un plan con días y comidas. Copia el prompt, úsalo en un LLM externo con tu PDF o notas, y pega aquí el JSON generado."
+#~ msgid "Pega un plan con días y comidas. Copia el prompt, úsalo en un LLM externo con tu PDF o notas, y pega aquí el JSON generado."
+#~ msgstr "Pega un plan con días y comidas. Copia el prompt, úsalo en un LLM externo con tu PDF o notas, y pega aquí el JSON generado."
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Pide al LLM que responda solo con el JSON del plan."
-msgstr "Pide al LLM que responda solo con el JSON del plan."
+#~ msgid "Pide al LLM que responda solo con el JSON del plan."
+#~ msgstr "Pide al LLM que responda solo con el JSON del plan."
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Pide que responda solo con el plan en el formato pedido."
+msgstr "Pide que responda solo con el plan en el formato pedido."
 
 #: src/features/meals/quantityUnitLabels.js
 msgid "pizca"
 msgstr "pizca"
+
+#: src/components/OnboardingIllustrations.jsx
+msgid "Plan"
+msgstr "Plan"
 
 #: src/pages/WeekPlanPage.jsx
 msgid "Plan actualizado con el JSON."
@@ -1638,6 +1715,10 @@ msgstr "Plan copiado."
 #: src/pages/WeekPlanPage.jsx
 msgid "Plan de semana"
 msgstr "Plan de semana"
+
+#: src/components/OnboardingModal.jsx
+#~ msgid "Plan del nutriólogo a JSON con un LLM"
+#~ msgstr "Plan del nutriólogo a JSON con un LLM"
 
 #: src/pages/WeekPlanPage.jsx
 #~ msgid "Plan importado"
@@ -1689,6 +1770,7 @@ msgstr "porción"
 msgid "Porciones"
 msgstr "Porciones"
 
+#: src/components/OnboardingIllustrations.jsx
 #: src/components/shell/BottomNav.jsx
 #: src/pages/PrepPage.jsx
 msgid "Preparar"
@@ -1703,8 +1785,8 @@ msgstr "Presupuesto est. ~{totalBudget} MXN"
 #~ msgstr "Progreso de la semana"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Prompt copiado. Pégalo en un LLM con tu plan."
-msgstr "Prompt copiado. Pégalo en un LLM con tu plan."
+#~ msgid "Prompt copiado. Pégalo en un LLM con tu plan."
+#~ msgstr "Prompt copiado. Pégalo en un LLM con tu plan."
 
 #: src/pages/SettingsPage.jsx
 #~ msgid "Puedes borrar comidas agendadas de hace más de ~4 meses. Biblioteca y plantillas no se tocan."
@@ -1891,8 +1973,12 @@ msgstr "Separar"
 #~ msgstr "Si quieres probar ya, carga el plan de ejemplo de 5 días."
 
 #: src/components/OnboardingModal.jsx
-msgid "Si ya tienes un PDF o notas, copia el prompt de la app, pégalo en un LLM (ChatGPT, Claude, etc.) con tu plan, y vuelve a pegar el JSON en «Importar JSON»."
-msgstr "Si ya tienes un PDF o notas, copia el prompt de la app, pégalo en un LLM (ChatGPT, Claude, etc.) con tu plan, y vuelve a pegar el JSON en «Importar JSON»."
+#~ msgid "Si ya tienes un PDF o notas, copia el prompt de la app, pégalo en un LLM (ChatGPT, Claude, etc.) con tu plan, y vuelve a pegar el JSON en «Importar JSON»."
+#~ msgstr "Si ya tienes un PDF o notas, copia el prompt de la app, pégalo en un LLM (ChatGPT, Claude, etc.) con tu plan, y vuelve a pegar el JSON en «Importar JSON»."
+
+#: src/components/OnboardingModal.jsx
+msgid "Si ya tienes un PDF o notas, copia las instrucciones de la app, pégalas en ChatGPT (u otra IA) con tu plan, y vuelve a pegar la respuesta en «Importar plan»."
+msgstr "Si ya tienes un PDF o notas, copia las instrucciones de la app, pégalas en ChatGPT (u otra IA) con tu plan, y vuelve a pegar la respuesta en «Importar plan»."
 
 #: src/components/OnboardingModal.jsx
 #~ msgid "Si ya tienes un plan de tu nutriólogo (PDF o notas), lo más rápido es importarlo: copia el prompt de la app, pégalo en un LLM externo (ChatGPT, Claude, etc.) junto con tu plan, y pega aquí el JSON que te devuelva en «Importar JSON»."
@@ -2033,12 +2119,16 @@ msgid "Unidad"
 msgstr "Unidad"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Usa ChatGPT, Claude u otra IA para convertir tu PDF o notas al formato que Malanga entiende. Si el plan trae notas de preparación, pueden incluirse como descripción de cada comida."
+msgstr "Usa ChatGPT, Claude u otra IA para convertir tu PDF o notas al formato que Malanga entiende. Si el plan trae notas de preparación, pueden incluirse como descripción de cada comida."
+
+#: src/features/weekplan/ImportJsonSheet.jsx
 #~ msgid "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende."
 #~ msgstr "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende."
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende. Si el plan trae notas de preparación, el JSON puede incluir una descripción opcional por comida (flavorText)."
-msgstr "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende. Si el plan trae notas de preparación, el JSON puede incluir una descripción opcional por comida (flavorText)."
+#~ msgid "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende. Si el plan trae notas de preparación, el JSON puede incluir una descripción opcional por comida (flavorText)."
+#~ msgstr "Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu plan en el formato que esta app entiende. Si el plan trae notas de preparación, el JSON puede incluir una descripción opcional por comida (flavorText)."
 
 #: src/features/calendar/DayView.jsx
 msgid "Usar"
@@ -2128,12 +2218,28 @@ msgstr "Volver"
 #~ msgstr "Volver a comidas"
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa “Cargar al borrador”."
-msgstr "Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa “Cargar al borrador”."
+#~ msgid "Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa “Cargar al borrador”."
+#~ msgstr "Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa “Cargar al borrador”."
 
 #: src/features/weekplan/ImportJsonSheet.jsx
-msgid "Ya hay planes de día en el borrador. ¿Quieres reemplazarlos con este JSON, o añadir los días importados al final?"
-msgstr "Ya hay planes de día en el borrador. ¿Quieres reemplazarlos con este JSON, o añadir los días importados al final?"
+#~ msgid "Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa “Cargar plan”."
+#~ msgstr "Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa “Cargar plan”."
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Vuelve aquí, pega la respuesta en el cuadro de texto y pulsa “Cargar plan”."
+msgstr "Vuelve aquí, pega la respuesta en el cuadro de texto y pulsa “Cargar plan”."
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+#~ msgid "Ya hay planes de día en el borrador. ¿Quieres reemplazarlos con este JSON, o añadir los días importados al final?"
+#~ msgstr "Ya hay planes de día en el borrador. ¿Quieres reemplazarlos con este JSON, o añadir los días importados al final?"
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+#~ msgid "Ya hay planes de día. ¿Quieres reemplazarlos con este JSON, o añadir los días importados al final?"
+#~ msgstr "Ya hay planes de día. ¿Quieres reemplazarlos con este JSON, o añadir los días importados al final?"
+
+#: src/features/weekplan/ImportJsonSheet.jsx
+msgid "Ya hay planes de día. ¿Quieres reemplazarlos con este plan, o añadir los días importados al final?"
+msgstr "Ya hay planes de día. ¿Quieres reemplazarlos con este plan, o añadir los días importados al final?"
 
 #: src/components/ShoppingList.jsx
 #~ msgid "Ya lo tengo"

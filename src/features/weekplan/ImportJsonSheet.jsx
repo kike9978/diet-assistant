@@ -78,7 +78,7 @@ export default function ImportJsonSheet({
 			}
 			setPendingPlan(plan);
 		} catch {
-			setError(t`JSON inválido. Revisa la sintaxis.`);
+			setError(t`No se pudo leer el plan. Revisa que lo hayas pegado completo.`);
 		}
 	};
 
@@ -86,7 +86,7 @@ export default function ImportJsonSheet({
 		try {
 			await navigator.clipboard.writeText(DIET_PLAN_IMPORT_PROMPT);
 			setPromptHelpOpen(false);
-			toast.success(t`Prompt copiado. Pégalo en un LLM con tu plan.`);
+			toast.success(t`Instrucciones copiadas. Pégalas en ChatGPT con tu plan.`);
 		} catch {
 			toast.error(t`No se pudo copiar el prompt.`);
 		}
@@ -105,9 +105,9 @@ export default function ImportJsonSheet({
 			onClose={handleClose}
 			title={
 				pendingPlan ? (
-					<Trans>¿Cómo cargar el JSON?</Trans>
+					<Trans>¿Cómo cargar el plan?</Trans>
 				) : (
-					<Trans>Importar JSON</Trans>
+					<Trans>Importar plan</Trans>
 				)
 			}
 			footer={
@@ -151,7 +151,7 @@ export default function ImportJsonSheet({
 							</Button>
 						</div>
 						<Button onClick={handleSubmit}>
-							<Trans>Cargar al borrador</Trans>
+							<Trans>Cargar plan</Trans>
 						</Button>
 					</div>
 				)
@@ -161,8 +161,8 @@ export default function ImportJsonSheet({
 				<div className="space-y-3">
 					<p className="text-sm text-ink-muted">
 						<Trans>
-							Ya hay planes de día en el borrador. ¿Quieres reemplazarlos con
-							este JSON, o añadir los días importados al final?
+							Ya hay planes de día. ¿Quieres reemplazarlos con este plan, o
+							añadir los días importados al final?
 						</Trans>
 					</p>
 				</div>
@@ -170,8 +170,9 @@ export default function ImportJsonSheet({
 				<>
 					<p className="text-sm text-ink-muted mb-3">
 						<Trans>
-							Pega un plan con días y comidas. Copia el prompt, úsalo en un LLM
-							externo con tu PDF o notas, y pega aquí el JSON generado.
+							Pega aquí tu plan de comidas. Si lo tienes en PDF o notas, copia
+							las instrucciones, pégalas en ChatGPT (u otra IA) junto con tu
+							plan, y vuelve a pegar la respuesta aquí.
 						</Trans>
 					</p>
 					<button
@@ -209,7 +210,7 @@ export default function ImportJsonSheet({
 						value={jsonInput}
 						onChange={(e) => setJsonInput(e.target.value)}
 						className="w-full h-48 p-3 border border-border rounded-app bg-surface text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)]"
-						placeholder={t`Pega aquí el JSON de tu plan…`}
+						placeholder={t`Pega aquí el plan que te devolvió la IA…`}
 					/>
 					{error ? (
 						<p className="text-sm text-[var(--color-danger)] mt-2">{error}</p>
@@ -233,38 +234,36 @@ export default function ImportJsonSheet({
 						className="relative bg-surface rounded-app shadow-soft max-w-md w-full p-6 text-left"
 					>
 						<h3 className="font-display text-xl text-ink mb-2">
-							<Trans>Cómo generar el JSON</Trans>
+							<Trans>Cómo preparar tu plan</Trans>
 						</h3>
 						<p className="text-sm text-ink-muted mb-4">
 							<Trans>
-								Usa un LLM externo (ChatGPT, Claude, etc.) para convertir tu
-								plan en el formato que esta app entiende. Si el plan trae notas
-								de preparación, el JSON puede incluir una descripción opcional
-								por comida (flavorText).
+								Usa ChatGPT, Claude u otra IA para convertir tu PDF o notas al
+								formato que Malanga entiende. Si el plan trae notas de
+								preparación, pueden incluirse como descripción de cada comida.
 							</Trans>
 						</p>
 						<ol className="list-decimal list-inside space-y-3 text-sm text-ink mb-6">
 							<li>
 								<Trans>
-									Copia el prompt con el botón de abajo.
+									Copia las instrucciones con el botón de abajo.
 								</Trans>
 							</li>
 							<li>
 								<Trans>
-									Ábrelo en el LLM y pega el prompt. En el mismo mensaje,
-									adjunta tu PDF o imagen del plan de comidas (o pega el texto
-									del plan).
+									Ábrelo en la IA y pega las instrucciones. En el mismo
+									mensaje, adjunta tu PDF o imagen del plan (o pega el texto).
 								</Trans>
 							</li>
 							<li>
 								<Trans>
-									Pide al LLM que responda solo con el JSON del plan.
+									Pide que responda solo con el plan en el formato pedido.
 								</Trans>
 							</li>
 							<li>
 								<Trans>
-									Vuelve aquí, pega ese JSON en el cuadro de texto y pulsa
-									“Cargar al borrador”.
+									Vuelve aquí, pega la respuesta en el cuadro de texto y pulsa
+									“Cargar plan”.
 								</Trans>
 							</li>
 						</ol>

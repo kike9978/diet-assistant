@@ -70,8 +70,8 @@ export default function PlansPage() {
 				</h2>
 				<p className="text-sm text-ink-muted mb-4">
 					<Trans>
-						Importa un JSON como planes de día de la semana visible. Luego
-						asígnalos a Mon–Dom en la vista Semana.
+						Importa un plan como planes de día de la semana visible. Luego
+						asígnalos a Lun–Dom en la vista Semana.
 					</Trans>
 				</p>
 				<div className="bg-surface border border-border rounded-app p-6 shadow-soft">

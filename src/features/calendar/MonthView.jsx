@@ -3,7 +3,6 @@ import { useLingui } from "@lingui/react";
 import { useNavigate } from "react-router-dom";
 import { useAppState } from "../../context/AppState";
 import { DAY_SHORT_MSG } from "../../i18n/weekDayLabels";
-import { MEAL_TYPE_COLOR } from "./mealTypeColors.js";
 import {
 	monthGridWeeks,
 	orderedWeekdayKeys,
@@ -13,26 +12,46 @@ import {
 } from "./dateUtils.js";
 import {
 	getWeekPlan,
+	resolveDayPlanForDate,
 	weekCalendarHasMeals,
 	weekPlanHasContent,
 } from "../weekplan/weekPlanModel.js";
 
-function MealChip({ meal }) {
+/** Distinct accents for day-plan badges (cycles by plan index). */
+const DAY_PLAN_BADGE_COLORS = [
+	"var(--color-accent-breakfast)",
+	"var(--color-accent-lunch)",
+	"var(--color-accent-dinner)",
+	"var(--color-accent-snack)",
+	"var(--color-accent-blueberry)",
+	"var(--color-accent-tomato)",
+	"var(--color-accent-citrus)",
+	"var(--color-accent-leaf)",
+];
+
+function dayPlanBadgeColor(dayPlans, dayPlanId) {
+	const index = Math.max(
+		0,
+		(dayPlans || []).findIndex((dp) => dp.id === dayPlanId),
+	);
+	return DAY_PLAN_BADGE_COLORS[index % DAY_PLAN_BADGE_COLORS.length];
+}
+
+function DayPlanBadge({ name, color }) {
 	return (
-		<div
-			className="text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-md text-white truncate leading-tight"
-			style={{
-				backgroundColor: MEAL_TYPE_COLOR[meal.mealType] || MEAL_TYPE_COLOR.otro,
-			}}
-			title={meal.name}
+		<span
+			className="block w-full text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-md text-white leading-tight line-clamp-2 break-words"
+			style={{ backgroundColor: color }}
+			title={name}
 		>
-			{meal.name}
-		</div>
+			{name}
+		</span>
 	);
 }
 
 /**
  * Month calendar as one grid. First cell of each week row edits that week's plan.
+ * Day cells show the assigned day-plan name (never individual meal chips).
  */
 export default function MonthView({ selectedDateISO, onSelectDate }) {
 	const { state } = useAppState();
@@ -63,6 +82,7 @@ export default function MonthView({ selectedDateISO, onSelectDate }) {
 				{weeks.map((weekDates) => {
 					const weekStart = weekDates[0];
 					const plan = getWeekPlan(state, weekStart, memberId);
+					const dayPlans = plan?.dayPlans || [];
 					const hasPlan = weekPlanHasContent(plan);
 					const hasCal = weekCalendarHasMeals(
 						state,
@@ -109,6 +129,8 @@ export default function MonthView({ selectedDateISO, onSelectDate }) {
 							{weekDates.map((dateISO) => {
 								const inMonth = dateISO.startsWith(monthPrefix);
 								const meals = cal[dateISO] || [];
+								const matched = resolveDayPlanForDate(plan, dateISO, meals);
+								const dayPlanName = matched?.name?.trim() || null;
 								const isToday = dateISO === today;
 								const selected = dateISO === selectedDateISO;
 								const d = parseDateISO(dateISO);
@@ -135,16 +157,12 @@ export default function MonthView({ selectedDateISO, onSelectDate }) {
 										>
 											{d.getDate()}
 										</span>
-										<div className="space-y-0.5">
-											{meals.slice(0, 2).map((meal) => (
-												<MealChip key={meal.instanceId} meal={meal} />
-											))}
-											{meals.length > 2 ? (
-												<p className="text-[10px] text-ink-muted font-semibold px-0.5">
-													+{meals.length - 2}
-												</p>
-											) : null}
-										</div>
+										{dayPlanName ? (
+											<DayPlanBadge
+												name={dayPlanName}
+												color={dayPlanBadgeColor(dayPlans, matched.id)}
+											/>
+										) : null}
 									</button>
 								);
 							})}
